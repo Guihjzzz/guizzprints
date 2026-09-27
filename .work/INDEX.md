@@ -1,0 +1,27 @@
+# Semantic map
+
+- Admin catalog, publish/edit form: src/app/[locale]/upload/page.tsx
+- Protected catalog CRUD: src/app/api/admin/mods/route.ts; auth: src/lib/admin-auth.ts, src/lib/supabase-admin.ts
+- Operations probe: src/app/api/health/route.ts (public liveness only; no dependency calls)
+- Public browsing: src/app/[locale]/page.tsx, category/[slug]/page.tsx, search/page.tsx (home covers all six categories with bounded rails and full-catalog links; category/search pages use bounded retry-safe pagination with localized failure recovery; search uses a query-version guard against stale responses)
+- Mod details: src/components/ModViewer.tsx, src/app/[locale]/mod/[id]/page.tsx
+- Marketplace refresh health: src/app/api/mods/[id]/refresh/route.ts, supabase/migrations/20260920_07_minecraft_source_health.sql; admin alerts in src/app/[locale]/upload/page.tsx and src/app/api/admin/mods/route.ts
+- Download protection: src/app/api/download/{session,open}/route.ts; src/lib/download-access.ts, download-url.ts; private one-time nonce ledger in supabase/migrations/20260917_03_one_time_download_sessions.sql
+- Download dialog: src/components/DownloadFlow.tsx controller; DownloadFlowView.tsx and .module.css presentation (video-derived stages, ready glow, final cover/countdown, localized non-VIP VIP prompt that hides on scroll/dismissal, narrow-screen ad placeholder fit); tests/download-flow-mobile.mjs.
+- Version identifiers: src/lib/mod-version.ts
+- Category membership/filter safety/labels: src/lib/mod-categories.ts; shared public badges: src/components/CategoryBadges.tsx; tests/subcategories.test.mjs
+- Full CSV export: src/lib/catalog-csv.ts; export=1 branch in admin mods GET; tests/catalog-export.test.mjs
+- Accounts: src/app/[locale]/login/ (localized password visibility controls, mode focus restoration), src/app/auth/callback/route.ts; src/lib/auth-actions.ts (email/Google), auth-return.ts (redirect allowlist), src/lib/server-observability.ts, src/components/AuthCaptcha.tsx; tests/auth-actions.test.mjs/auth-return.test.mjs/server-observability.mjs/auth-password-visibility.mjs/auth-focus-flow.mjs; docs/auth-rollout.md; Supabase Authentication dashboard.
+- Account settings: src/app/[locale]/settings/page.tsx (profile, password, preferences, server-backed VIP status/expiry CTA); Settings translations live in src/messages/{en,pt,es}.json.
+- Navigation: src/app/[locale]/layout.tsx, src/components/MobileNav.tsx (stable scroll listener and safe-area bottom spacing); tests/mobile-nav.mjs
+- Site motion: src/components/SiteMotion.tsx (navigation enhancement), src/app/[locale]/site-motion.css (opt-in cards/images/panels, reduced motion), tests/site-motion.mjs.
+- VIP preview and entitlement UI: src/app/[locale]/vip/page.tsx, src/components/VipExperience.tsx and .module.css, src/lib/vip-copy.ts, vip-checkout-copy.ts, vip-plans.ts; active status is read from `/api/vip/status` and rendered with plan/expiry; checkout/return copy follows effective mode and tests/vip-checkout-copy.mjs/vip-return-notice.mjs cover it.
+- Payments and VIP foundation: Mercado Pago is the sole provider. Checkout lives in src/app/api/vip/checkout/route.ts; the Orders/PIX adapter is src/lib/mercadopago-checkout.ts with signed Order webhook at src/app/api/vip/webhook/mercadopago/route.ts and verifier in src/lib/mercadopago-webhook.ts. Shared order/entitlement tables are in supabase/migrations/20260916_04_vip_payments.sql. Tests: tests/mercadopago-checkout.test.mjs and tests/mercadopago-webhook.test.mjs. Setup docs: docs/mercadopago-payments.md. Orders/webhook ledger/entitlements are server-only; active entitlements gate ads and download wait on the server.
+- VIP order reconciliation: admin-only POST endpoint at src/app/api/admin/vip/reconcile/route.ts reconciles at most 20 old live checkout_created Mercado Pago PIX Orders through apply_vip_payment_checked; provider binding, PIX proof, amount/status validation and paid settlement checks are shared in src/lib/mercadopago-webhook.ts. Isolated coverage: tests/mercadopago-reconciliation.test.mjs.
+- Installation: src/components/InstallAppButton.tsx, src/lib/install-copy.ts, src/app/manifest.ts, public/icons/. VIP auth return: src/lib/auth-return.ts and tests/auth-return.test.mjs.
+- Ads: src/components/AdPlaceholder.tsx dispatches required format to AdsterraSidebar.tsx exports (160x600 sidebar/stacked, 320x50 mobile, 300x250 rectangle, 468x60 download-banner, 728x90 leaderboard with width fallbacks); src/components/VipAdGate.tsx resolves server entitlement before mounting direct page-DOM Adsterra hosts; the provider creates its own child iframe. src/components/AdblockGuard.tsx adds best-effort non-VIP blocker messaging; tests/adsterra-sidebar.mjs. All 19 slot call sites explicit. Google AdSense legacy component/metadata removed.
+- Translations: src/messages/{en,pt,es}.json; src/i18n/
+- Database changes: supabase/migrations/ (public view, private columns, invoker permissions)
+- Verification: tests/site-smoke.test.mjs, tests/admin-catalog-api.test.mjs, tests/admin-repeat-submit.mjs, tests/catalog-values.test.mjs, tests/catalog-permissions.mjs
+- Legal/SEO: src/lib/site-pages.ts, src/lib/site-metadata.ts; src/app/robots.ts, sitemap.ts
+- Launch planning: docs/MAPA_MESTRE_LANCAMENTO.md, docs/RELEASE_READINESS.md, docs/LAUNCH_MAP.md, docs/PLANO_VIDEOS_SUPABASE_MERCADOPAGO.md

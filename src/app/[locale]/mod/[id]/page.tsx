@@ -1,0 +1,55 @@
+import { Metadata } from 'next';
+import { supabase } from '@/lib/supabase';
+import ModViewer from '@/components/ModViewer';
+import { getTranslations } from 'next-intl/server';
+
+type Props = {
+  params: Promise<{ id: string; locale: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id, locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Mod' });
+  
+  // CORREÇÃO: Removido 'author' para evitar Erro 400
+  const { data } = await supabase
+    .from('public_mods')
+    .select('title, description, image_url_1')
+    .eq('id', id)
+    .single();
+
+  if (!data) {
+    return { title: `${t('notFound')} | GuizzMods` };
+  }
+
+  return {
+    title: `${data.title} | GuizzMods`,
+    description: data.description?.substring(0, 160) || t('metadataDescription'),
+    authors: [{ name: 'GuizzMods' }],
+    openGraph: {
+      title: data.title,
+      description: data.description?.substring(0, 160),
+      siteName: 'GuizzMods',
+      type: 'article',
+      images: [{ url: data.image_url_1 || '/logo.jpg', alt: data.title }],
+    },
+    twitter: { card: 'summary_large_image', title: data.title, description: data.description?.substring(0, 160), images: [data.image_url_1 || '/logo.jpg'] },
+  };
+}
+
+export default async function ModDetailsPage({ params }: Props) {
+  const { id, locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Mod' });
+  
+  const { data, error } = await supabase
+    .from('public_mods')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    return <div className="p-10 text-white text-center font-bold">{t('notFound')}</div>;
+  }
+
+  return <ModViewer mod={data} locale={locale} />;
+}

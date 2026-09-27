@@ -1,0 +1,32 @@
+export const installCopy = {
+  pt: {
+    button: 'Instalar Guizz', title: 'O Guizz na sua tela inicial',
+    description: 'Adicione um atalho para abrir o Guizz direto do seu celular. O acesso ao conteúdo continua precisando de internet.',
+    android: 'No Android', androidSteps: 'Abra o menu do navegador (⋮) e procure “Instalar app” ou “Adicionar à tela inicial”. A opção depende do navegador.',
+    iphone: 'No iPhone', iphoneSteps: 'Abra este site no Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.',
+    desktop: 'No computador, procure o ícone de instalação na barra de endereço ou a opção de instalar no menu do navegador, quando disponível.',
+    install: 'Instalar agora', later: 'Agora não', close: 'Fechar', installed: 'O Guizz já está instalado ou aberto como app neste dispositivo.',
+    unavailable: 'A instalação direta não está disponível agora. Você pode seguir as instruções desta janela.',
+    accepted: 'Pedido de instalação enviado ao navegador. Conclua as etapas que ele apresentar.',
+  },
+  en: {
+    button: 'Install Guizz', title: 'Guizz on your home screen',
+    description: 'Add a shortcut to open Guizz directly from your phone. An internet connection is still required to access content.',
+    android: 'On Android', androidSteps: 'Open your browser menu (⋮) and look for “Install app” or “Add to Home screen”. Availability depends on your browser.',
+    iphone: 'On iPhone', iphoneSteps: 'Open this site in Safari, tap Share and choose “Add to Home Screen”.',
+    desktop: 'On a computer, look for the install icon in the address bar or the install option in your browser menu, when available.',
+    install: 'Install now', later: 'Not now', close: 'Close', installed: 'Guizz is already installed or running as an app on this device.',
+    unavailable: 'Direct installation is not available right now. You can follow the instructions in this window.',
+    accepted: 'Installation requested in your browser. Complete any steps it displays.',
+  },
+  es: {
+    button: 'Instalar Guizz', title: 'Guizz en tu pantalla de inicio',
+    description: 'Añade un acceso directo para abrir Guizz desde tu móvil. Necesitas conexión a internet para acceder al contenido.',
+    android: 'En Android', androidSteps: 'Abre el menú del navegador (⋮) y busca “Instalar aplicación” o “Añadir a pantalla de inicio”. La opción depende del navegador.',
+    iphone: 'En iPhone', iphoneSteps: 'Abre este sitio en Safari, toca Compartir y elige “Añadir a pantalla de inicio”.',
+    desktop: 'En el ordenador, busca el icono de instalación en la barra de direcciones o la opción de instalar en el menú del navegador, si está disponible.',
+    install: 'Instalar ahora', later: 'Ahora no', close: 'Cerrar', installed: 'Guizz ya está instalado o abierto como aplicación en este dispositivo.',
+    unavailable: 'La instalación directa no está disponible ahora. Puedes seguir las instrucciones de esta ventana.',
+    accepted: 'Instalación solicitada al navegador. Completa los pasos que muestre.',
+  },
+} as const;

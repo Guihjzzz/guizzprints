@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  /* GuizzMods is intentionally single-theme: ignore the browser preference. */
+  color-scheme: dark;
+  --background: #07090D;
+  --foreground: #F8FAFC;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.guizz-download-overlay {
+  background-image: radial-gradient(ellipse at 50% 20%, rgb(37 99 235 / 14%), transparent 65%);
+}
+@keyframes guizz-download-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .guizz-download-card, .guizz-download-enter {
+    animation: guizz-download-enter 300ms ease-out both;
+  }
+}
