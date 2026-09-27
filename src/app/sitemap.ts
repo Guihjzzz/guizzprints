@@ -5,7 +5,7 @@ import { siteLocales } from '@/lib/site-pages';
 // URL on the final canonical origin so crawlers do not see cross-property
 // redirects or split indexing signals.
 const BASE_URL = 'https://www.guizz.xyz';
-const paths = ['', '/about', '/privacy', '/terms', '/contact', '/category/addons', '/category/textures', '/category/shaders', '/category/maps', '/category/skins', '/category/holoprint', '/category/mash-up'];
+const paths = ['', '/about', '/privacy', '/terms', '/contact', '/category/bedrock', '/category/java'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return paths.flatMap((path) => siteLocales.map((locale) => ({

@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Play, Tag, Sun, Map as MapIcon, UserRound, Box, Search, TrendingUp, type LucideIcon } from "lucide-react";
+import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Play, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
 import DownloadFlow from './DownloadFlow';
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from 'next-intl';
 import { InstallAppButton } from '@/components/InstallAppButton';
-import { AdPlaceholder } from '@/components/AdPlaceholder';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryLabel } from '@/lib/mod-categories';
@@ -211,8 +210,8 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   // Handler de Compartilhamento (Nativo Celular / Copiar Link PC)
   const handleShare = async () => {
     const shareData = {
-      title: mod.title || 'GuizzMods',
-      text: t('shareText', { title: mod.title || 'GuizzMods' }),
+      title: mod.title || 'Guizzprints',
+      text: t('shareText', { title: mod.title || 'Guizzprints' }),
       url: window.location.href,
     };
 
@@ -258,7 +257,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   };
 
   const getEmbedUrl = (url?: string) => {
-    if (!url) return 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&controls=1';
+    if (!url) return '';
     const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
     return `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1`;
   };
@@ -266,7 +265,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   const ytThumbUrl = extractYtThumb(mod.youtube_trailer_url) || modData.imageUrl;
 
   const rawMediaList = [
-    { type: 'video', url: getEmbedUrl(mod.youtube_trailer_url), thumb: ytThumbUrl },
+    mod.youtube_trailer_url ? { type: 'video', url: getEmbedUrl(mod.youtube_trailer_url), thumb: ytThumbUrl } : null,
     mod.image_url_1 ? { type: 'image', url: mod.image_url_1 } : null,
     mod.image_url_2 ? { type: 'image', url: mod.image_url_2 } : null,
     mod.image_url_3 ? { type: 'image', url: mod.image_url_3 } : null,
@@ -276,9 +275,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   const mediaList = rawMediaList.filter((item): item is { type: string; url: string; thumb?: string } => item !== null);
 
-  const categorySlug = modData.category.toLowerCase() === 'add-ons'
-    ? 'addons'
-    : modData.category.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+  const categorySlug = modData.category.toLowerCase().replace(/[^a-z0-9-]+/g, '');
 
   const discoveryCategories: Array<{
     id: string;
@@ -288,21 +285,12 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     color: string;
     background: string;
   }> = [
-    { id: 'shaders', icon: Sun, title: t('exploreShaders'), description: t('exploreShadersDescription'), color: 'text-yellow-300', background: 'from-yellow-500/20' },
-    { id: 'maps', icon: MapIcon, title: t('exploreMaps'), description: t('exploreMapsDescription'), color: 'text-orange-300', background: 'from-orange-500/20' },
-    { id: 'skins', icon: UserRound, title: t('exploreSkins'), description: t('exploreSkinsDescription'), color: 'text-purple-300', background: 'from-purple-500/20' },
-    { id: 'holoprint', icon: Box, title: t('exploreHoloprint'), description: t('exploreHoloprintDescription'), color: 'text-cyan-300', background: 'from-cyan-500/20' },
+    { id: 'bedrock', icon: Gamepad2, title: 'Minecraft Bedrock', description: 'Holoprint, .mcstructure, .mcaddon e .mcworld.', color: 'text-emerald-300', background: 'from-emerald-500/20' },
+    { id: 'java', icon: Coffee, title: 'Minecraft Java', description: '.litematic, .schematic, world e .mcfunction.', color: 'text-orange-300', background: 'from-orange-500/20' },
   ];
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[2200px] items-start gap-6 p-3 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
-
-      {/* --- ANÚNCIO LATERAL ESQUERDO (PC) --- */}
-      <div className="hidden min-[1800px]:block shrink-0 self-stretch">
-<AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        Ad Slot Vertical (Esquerda)
-      </AdPlaceholder>
-      </div>
 
       {/* --- CONTEÚDO CENTRAL PRINCIPAL --- */}
       <main className="mx-auto min-w-0 w-full max-w-[1280px] flex-1 basis-0 space-y-6">
@@ -365,8 +353,8 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
               <div className="mx-auto flex w-fit flex-wrap items-center gap-4 text-sm text-zinc-400 bg-[#111318] p-3 rounded-xl shadow-[0_0_10px_rgba(59,130,246,0.5)] border border-blue-500/30">
                 <span className="font-bold text-zinc-200 flex items-center gap-2">
-                  <OptimizedImage src="/logo.jpg" optimizeWidth={48} optimizeHeight={48} alt="GuizzMods" width={24} height={24} className="w-6 h-6 rounded-full object-cover border border-zinc-700" />
-                  <span className="text-white">GuizzMods</span>
+                  <OptimizedImage src="/logo.jpg" optimizeWidth={48} optimizeHeight={48} alt="Guizzprints" width={24} height={24} className="w-6 h-6 rounded-full object-cover border border-zinc-700" />
+                  <span className="text-white">Guizzprints</span>
                 </span>
                 <div className="w-1 h-1 rounded-full bg-zinc-700"></div>
                 <span className="flex items-center gap-1.5"><Star size={16} className="text-yellow-500 fill-current" /> {Number(liveRating).toFixed(1)}</span>
@@ -374,10 +362,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 <span className="flex items-center gap-1.5"><Download size={16} className="text-blue-500" /> {liveDownloads}</span>
               </div>
             </div>
-
-            <AdPlaceholder format="leaderboard" className="ad-slot mobile-detail-ad w-full min-w-0 lg:-mb-6">
-              Ad Slot - Banner Horizontal (GuizzMods / Download)
-            </AdPlaceholder>
 
             <div className="w-full rounded-2xl border border-[#1D2433] bg-[#111318] p-3 shadow-xl">
               <div className="grid grid-cols-2 gap-2">
@@ -433,10 +417,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 )}
               </div>
             </div>
-
-            <AdPlaceholder format="leaderboard" className="ad-slot mobile-detail-ad w-full min-w-0">
-              Ad Slot - Banner Horizontal (Overview / Technical Specifications)
-            </AdPlaceholder>
 
 <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 shadow-xl">
@@ -495,9 +475,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 </div>
               </div>
             </div>
-            <div className="flex min-w-0 justify-center">              <AdPlaceholder format="rectangle" className="ad-slot w-full min-w-0">
-                Ad Slot - Quadrado (300x250)
-              </AdPlaceholder></div>
 </div>
 
         {/* --- MODS SUGERIDOS --- */}
@@ -514,10 +491,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
             </div>
           </section>
         )}
-
-        <AdPlaceholder format="leaderboard" className="ad-slot mobile-detail-ad w-full min-w-0">
-          Ad Slot - Banner Horizontal (You may also like / Explore)
-        </AdPlaceholder>
 
         <section className="pt-8 sm:pt-12 border-t border-[#1D2433] space-y-6 mt-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -554,10 +527,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
           </div>
         </section>
 
-        <AdPlaceholder format="leaderboard" className="ad-slot mobile-detail-ad w-full min-w-0">
-          Ad Slot - Banner Horizontal (Explore / Popular downloads)
-        </AdPlaceholder>
-
         {popularMods.length > 0 && (
           <section className="space-y-5 pt-4">
             <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
@@ -582,7 +551,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href={`/${locale}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500">
-                <Box size={17} /> {t('browseCatalog')}
+                <Gamepad2 size={17} /> {t('browseCatalog')}
               </Link>
               <Link href={`/${locale}/search`} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-black/30 px-5 py-3 text-sm font-black text-zinc-200 transition hover:border-blue-500/60 hover:text-white">
                 <Search size={17} /> {t('searchMods')}
@@ -595,7 +564,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] mt-8">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0">
-              <OptimizedImage src="/logo.jpg" optimizeWidth={96} optimizeHeight={96} alt="GuizzMods" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
+              <OptimizedImage src="/logo.jpg" optimizeWidth={96} optimizeHeight={96} alt="Guizzprints" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
             </div>
             <div>
               <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
@@ -618,20 +587,13 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
       </main>
 
-      {/* --- ANÚNCIO LATERAL DIREITO (PC) --- */}
-      <div className="hidden min-[1800px]:block shrink-0 self-stretch">
-<AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        Ad Slot Vertical (Direita)
-      </AdPlaceholder>
-      </div>
-
     </div>
   );
 }
 
 function RecommendationCard({ mod, locale }: { mod: ModSuggestion; locale: string }) {
   return (
-    <Link href={`/${locale}/mod/${mod.id}`} className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
+    <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
       <div className="relative aspect-video overflow-hidden bg-[#07090D]">
         <OptimizedImage src={mod.image_url_1 || '/logo.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-cover opacity-90 group-hover:opacity-100" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

@@ -6,7 +6,7 @@ import { Lock, Save, Loader2, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { defaultLocale, isAppLocale } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { getVipReturnPath } from '@/lib/auth-return';
+import { getSafeReturnPath } from '@/lib/auth-return';
 import { authErrorKey } from '@/lib/auth-actions';
 
 export default function UpdatePasswordPage() {
@@ -32,7 +32,7 @@ export default function UpdatePasswordPage() {
     });
     return () => { live = false; if (redirectTimer.current) clearTimeout(redirectTimer.current); };
   }, [t]);
-  const returnPath = () => getVipReturnPath(new URLSearchParams(window.location.search).get('next'));
+  const returnPath = () => getSafeReturnPath(new URLSearchParams(window.location.search).get('next'));
   const loginPath = () => `/${locale}/login${returnPath() ? `?next=${encodeURIComponent(returnPath()!)}` : ''}`;
   const update = async (event: React.FormEvent) => {
     event.preventDefault();

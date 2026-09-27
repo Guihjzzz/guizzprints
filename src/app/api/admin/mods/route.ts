@@ -73,6 +73,7 @@ function nullableSourceDate(value: unknown) {
 function sanitizePayload(body: Record<string, unknown>): ModPayload {
   const title = stringValue(body.title);
   const category = stringValue(body.category);
+  const subcategory = stringValue(body.subcategory);
   const teraboxUrl = stringValue(body.terabox_url);
   const sourceUrlInput = nullableString(body.source_url);
   const sourceUrl = sourceUrlInput ? parseMinecraftMarketplaceUrl(sourceUrlInput).toString() : null;
@@ -80,14 +81,18 @@ function sanitizePayload(body: Record<string, unknown>): ModPayload {
   const sourceFingerprint = sourceFingerprintInput && /^[a-f0-9]{64}$/i.test(sourceFingerprintInput)
     ? sourceFingerprintInput.toLowerCase() : null;
 
-  if (!title || !category || !teraboxUrl) {
-    throw new Error('Title, category and Terabox URL are required.');
+  const formats: Record<string, string[]> = {
+    bedrock: ['holoprint', 'mcstructure', 'mcaddon', 'mcworld'],
+    java: ['litematic', 'schematic', 'world', 'mcfunction'],
+  };
+  if (!title || !formats[category]?.includes(subcategory) || !teraboxUrl) {
+    throw new Error('Title, platform, file format and direct download URL are required.');
   }
 
   return {
     title,
     category,
-    subcategory: nullableString(body.subcategory),
+    subcategory,
     description: stringValue(body.description),
     version: validateModVersion(stringValue(body.version, '1.0.0')),
     file_size: stringValue(body.file_size),
@@ -193,7 +198,7 @@ export async function GET(request: NextRequest) {
       return errorResponse('Invalid catalog page or page size.', 400);
     }
     const category = params.get('category') || 'all';
-    if (!['all', 'holoprint', 'addons', 'textures', 'shaders', 'maps', 'skins', 'mash-up'].includes(category)) {
+    if (!['all', 'bedrock', 'java'].includes(category)) {
       return errorResponse('Invalid catalog category.', 400);
     }
     const sorts = {

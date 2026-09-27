@@ -8,8 +8,9 @@ export type CatalogExportRow = {
 };
 
 const categories: Record<string, string> = {
-  addons: 'Add-ons', maps: 'Maps', textures: 'Textures', skins: 'Skins',
-  shaders: 'Shaders', holoprint: 'Holoprint', 'mash-up': 'Mash-up',
+  bedrock: 'Minecraft Bedrock', java: 'Minecraft Java', holoprint: 'Holoprint',
+  mcstructure: 'MCStructure', mcaddon: 'MCAddon', mcworld: 'MCWorld',
+  litematic: 'Litematic', schematic: 'Schematic', world: 'World', mcfunction: 'MC Function',
 };
 const publicationDate = new Intl.DateTimeFormat('pt-BR', {
   timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'medium',

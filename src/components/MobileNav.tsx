@@ -1,14 +1,14 @@
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Search, Heart, Settings, Crown } from 'lucide-react';
+import { Home, Search, Heart, Settings, Gamepad2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 const MOBILE_ITEMS = [
   { id: "home", icon: Home, href: "/" },
   { id: "search", icon: Search, href: "/search" },
-  { id: "vip", icon: Crown, href: "/vip" },
+  { id: "bedrock", icon: Gamepad2, href: "/category/bedrock" },
   { id: "favorites", icon: Heart, href: "/favorites" },
   { id: "settings", icon: Settings, href: "/settings" },
 ];
@@ -56,7 +56,7 @@ export function MobileNav() {
           <Link key={item.id} href={finalHref} aria-current={isActive ? 'page' : undefined} className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 transition-colors">
             <Icon size={24} className={isActive ? "text-[#2563EB]" : "text-[#94A3B8]"} />
             <span className={`text-[10px] font-medium ${isActive ? "text-[#2563EB]" : "text-[#94A3B8]"}`}>
-              {item.id === 'vip' ? 'VIP' : t(item.id)}
+              {item.id === 'bedrock' ? 'Bedrock' : t(item.id)}
             </span>
           </Link>
         );

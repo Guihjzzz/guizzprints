@@ -7,7 +7,7 @@ export function sitePageMetadata(locale: string, page: SitePage): Metadata {
   const path = `/${safeLocale}/${page}`;
 
   return {
-    title: `${content.title} | GuizzMods`,
+    title: `${content.title} | Guizzprints`,
     description: content.description,
     alternates: {
       canonical: path,

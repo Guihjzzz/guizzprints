@@ -5,7 +5,7 @@ export function SiteInfoPage({ locale, content }: { locale: string; content: Sit
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-8 sm:py-14">
       <header className="mb-8 border-b border-[#1D2433] pb-8">
-        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-blue-400">GuizzMods</p>
+        <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-blue-400">Guizzprints</p>
         <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">{content.title}</h1>
         <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-300">{content.intro}</p>
         {content.updated && <p className="mt-4 text-xs font-medium text-zinc-500">{content.updated}</p>}
@@ -32,7 +32,7 @@ export function SiteInfoPage({ locale, content }: { locale: string; content: Sit
       </div>
 
       <div className="mt-8 text-center">
-        <Link href={`/${locale}`} className="text-sm font-bold text-blue-400 hover:text-blue-300">← GuizzMods</Link>
+        <Link href={`/${locale}`} className="text-sm font-bold text-blue-400 hover:text-blue-300">← Guizzprints</Link>
       </div>
     </div>
   );

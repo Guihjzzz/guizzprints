@@ -6,21 +6,28 @@ import { collectCatalogCsv } from '@/lib/catalog-csv';
 import { supabase } from '@/lib/supabase';
 import { 
   Upload, Link2, FileText, Tag, ArrowLeft, Loader2, 
-  Box, PlusCircle, Layers, Sun, Map as MapIcon, Video, UserRound,
-  Trash2, Edit3, Settings, Database, Save, Search, Puzzle, Download, AlertTriangle
+  Gamepad2, Coffee, Layers, Video,
+  Trash2, Edit3, Settings, Database, Save, Search, Download, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation'; // <-- Atualizado
 
 const CATEGORIES = [
-  { id: 'holoprint', label: 'Holoprint', icon: Box },
-  { id: 'addons', label: 'Add-ons', icon: PlusCircle },
-  { id: 'textures', label: 'Textures', icon: Layers },
-  { id: 'shaders', label: 'Shaders', icon: Sun },
-  { id: 'maps', label: 'Maps', icon: MapIcon },
-  { id: 'skins', label: 'Skins', icon: UserRound },
-  { id: 'mash-up', label: 'Mash-up', icon: Puzzle },
+  { id: 'bedrock', label: 'Minecraft Bedrock', icon: Gamepad2 },
+  { id: 'java', label: 'Minecraft Java', icon: Coffee },
 ];
+
+const FORMAT_OPTIONS = {
+  bedrock: [
+    { id: 'holoprint', label: 'Holoprint' }, { id: 'mcstructure', label: '.mcstructure' },
+    { id: 'mcaddon', label: '.mcaddon' }, { id: 'mcworld', label: '.mcworld' },
+  ],
+  java: [
+    { id: 'litematic', label: '.litematic' }, { id: 'schematic', label: '.schematic / .schem' },
+    { id: 'world', label: 'World' }, { id: 'mcfunction', label: '.mcfunction' },
+  ],
+} as const;
+const ALL_FORMATS = [...FORMAT_OPTIONS.bedrock, ...FORMAT_OPTIONS.java];
 
 const INITIAL_FORM = {
   id: '',
@@ -150,7 +157,7 @@ export default function AdminUploadPage() {
       const url = URL.createObjectURL(new Blob(parts, { type: 'text/csv;charset=utf-8' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `guizzmods-catalogo-completo-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `guizzprints-catalogo-completo-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -272,7 +279,7 @@ export default function AdminUploadPage() {
   };
 
   const setCategory = (categoryId: string) => {
-    setFormData((prev) => ({ ...prev, category: categoryId }));
+    setFormData((prev) => ({ ...prev, category: categoryId, subcategory: '' }));
   };
 
   const handleEditInit = async (modId: string) => {
@@ -552,7 +559,7 @@ export default function AdminUploadPage() {
                             {mod.source_sync_status === 'error' && <span className="mt-2 inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-300"><AlertTriangle size={12} /> Atenção manual</span>}
                             <div className="md:hidden mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-400">
                               <span>{CATEGORIES.find(category => category.id === mod.category)?.label || mod.category}</span>
-                              {mod.subcategory?.trim() && <span className="text-blue-300 break-words [overflow-wrap:anywhere]">Subcategoria: {CATEGORIES.find(category => category.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</span>}
+                              {mod.subcategory?.trim() && <span className="text-blue-300 break-words [overflow-wrap:anywhere]">Formato: {ALL_FORMATS.find(format => format.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</span>}
                               <span className="break-all">Versão: {mod.version ? `# v${normalizeModVersion(mod.version)}` : 'Não informada'}</span>
                               <span>Tamanho: {mod.file_size || 'Não informado'}</span>
                             </div>
@@ -563,7 +570,7 @@ export default function AdminUploadPage() {
                             <span className="text-[10px] uppercase tracking-wider font-black px-2 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">
                               {mod.category}
                             </span>
-                            {mod.subcategory?.trim() && <p className="mt-2 text-xs text-blue-300 break-words [overflow-wrap:anywhere]">Subcategoria: {CATEGORIES.find(category => category.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</p>}
+                            {mod.subcategory?.trim() && <p className="mt-2 text-xs text-blue-300 break-words [overflow-wrap:anywhere]">Formato: {ALL_FORMATS.find(format => format.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</p>}
                           </td>
                           <td className="p-4 hidden md:table-cell text-xs text-blue-300 break-all">{mod.version ? `# v${normalizeModVersion(mod.version)}` : 'Não informada'}</td>
                           <td className="p-4 hidden md:table-cell text-xs text-zinc-300">{mod.file_size || 'Não informado'}</td>
@@ -668,18 +675,18 @@ export default function AdminUploadPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase text-zinc-400 flex items-center gap-2"><Tag size={14}/> Subcategoria (Opcional)</label>
+              <label className="text-xs font-black uppercase text-zinc-400 flex items-center gap-2"><Tag size={14}/> Formato do arquivo *</label>
               <select name="subcategory" value={formData.subcategory} onChange={handleChange} className="w-full bg-[#07090D] border border-[#1D2433] rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition text-white">
-                <option value="">Nenhuma</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                <option value="">Selecione o formato</option>
+                {(FORMAT_OPTIONS[formData.category as keyof typeof FORMAT_OPTIONS] || []).map((format) => (
+                  <option key={format.id} value={format.id}>{format.label}</option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase text-zinc-400 flex items-center gap-2"><Link2 size={14}/> Link Terabox *</label>
-              <input type="url" name="terabox_url" value={formData.terabox_url} onChange={handleChange} placeholder="https://terabox.com/..." className="w-full bg-[#07090D] border border-[#1D2433] rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition text-white" />
+              <label className="text-xs font-black uppercase text-zinc-400 flex items-center gap-2"><Link2 size={14}/> Link direto do arquivo *</label>
+              <input type="url" name="terabox_url" value={formData.terabox_url} onChange={handleChange} placeholder="https://arquivos.exemplo.com/construcao.mcstructure" className="w-full bg-[#07090D] border border-[#1D2433] rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition text-white" />
             </div>
 
             <div className="space-y-2">

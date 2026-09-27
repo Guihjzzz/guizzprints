@@ -3,9 +3,9 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'GuizzMods',
-    short_name: 'Guizz',
-    description: 'Explore the GuizzMods catalog.',
+    name: 'Guizzprints',
+    short_name: 'Guizzprints',
+    description: 'Construções Minecraft para Bedrock e Java com download direto.',
     start_url: '/',
     scope: '/',
     display: 'standalone',

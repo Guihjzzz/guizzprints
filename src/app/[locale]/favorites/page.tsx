@@ -101,6 +101,8 @@ export default function FavoritesPage({ params }: Props) {
           {mods.map((mod) => (
             <Link 
               href={`/${locale}/mod/${mod.id}`} 
+              target="_blank"
+              rel="noopener noreferrer"
               key={mod.id} 
               className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl sm:rounded-2xl overflow-hidden hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]"
             >

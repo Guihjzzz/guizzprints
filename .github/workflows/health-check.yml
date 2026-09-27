@@ -1,4 +1,4 @@
-name: GuizzMods health check
+name: Guizzprints health check
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: guizzmods-health-check
+  group: guizzprints-health-check
   cancel-in-progress: true
 
 jobs:

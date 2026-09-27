@@ -4,11 +4,9 @@ import {
   createDownloadAccessToken,
   downloadAccessCookie,
   DOWNLOAD_ACCESS_TTL_SECONDS,
-  DOWNLOAD_WAIT_MS,
   readDownloadAccessToken,
 } from '@/lib/download-access';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { getActiveVipEntitlement, getUserFromBearer } from '@/lib/vip-entitlement';
 import { logServerFailure } from '@/lib/server-observability';
 
 export const dynamic = 'force-dynamic';
@@ -81,17 +79,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Mod not found.' }, { status: 404, headers: noStoreHeaders });
     }
 
-    stage = 'auth';
     const now = Date.now();
-    const user = await getUserFromBearer(request, supabase);
-    const entitlement = user ? await getActiveVipEntitlement(supabase, user.id) : null;
-    const vip = Boolean(entitlement);
-    // VIP sessions are deliberately short-lived so a revocation takes effect
-    // quickly, while normal visitors keep the ten-minute signed session.
-    const entitlementExpiry = entitlement ? Date.parse(entitlement.expiresAt) : NaN;
-    const expiresAt = vip && Number.isFinite(entitlementExpiry)
-      ? Math.min(now + 120_000, entitlementExpiry)
-      : now + DOWNLOAD_ACCESS_TTL_SECONDS * 1000;
+    const vip = false;
+    const expiresAt = now + DOWNLOAD_ACCESS_TTL_SECONDS * 1000;
     stage = 'existing-session';
     const existingCookie = request.cookies.get(downloadAccessCookie(modId))?.value;
     const existingAccess = readDownloadAccessToken(existingCookie);
@@ -109,9 +99,7 @@ export async function POST(request: NextRequest) {
         && typeof existingSession.vip === 'boolean') {
         const existingReadyAt = Date.parse(existingSession.ready_at);
         const existingExpiresAt = Date.parse(existingSession.expires_at);
-        // Do not carry a stale non-VIP wait into a newly entitled account, or
-        // preserve a no-wait session after an entitlement was revoked.
-        if (existingSession.vip === vip
+        if (existingSession.vip === false
           && Number.isFinite(existingReadyAt) && Number.isFinite(existingExpiresAt) && existingExpiresAt > now) {
           return NextResponse.json(
             { readyAt: existingReadyAt, expiresAt: existingExpiresAt, serverTime: now, vip: existingSession.vip },
@@ -121,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
     }
     const cookieMaxAge = Math.max(1, Math.ceil((expiresAt - now) / 1000));
-    const readyAt = vip ? now : now + DOWNLOAD_WAIT_MS;
+    const readyAt = now;
     const nonce = randomUUID();
     stage = 'persist';
     const { error: sessionError } = await supabase.from('download_access_sessions').insert({

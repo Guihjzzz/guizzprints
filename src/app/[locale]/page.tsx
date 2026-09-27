@@ -4,10 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Download, Zap, Map as MapIcon, Layers, PlusCircle, User, ChevronRight, ChevronLeft, Star, Box, Puzzle, type LucideIcon } from "lucide-react";
+import { Download, ChevronRight, ChevronLeft, Star, Gamepad2, Coffee, type LucideIcon } from "lucide-react";
 import { useTranslations } from 'next-intl';
 import { InstallAppButton } from '@/components/InstallAppButton';
-import { AdPlaceholder } from '@/components/AdPlaceholder';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { categoryFilter } from '@/lib/mod-categories';
 import { FavoriteButton } from '@/components/FavoriteButton';
@@ -51,13 +50,8 @@ export default function Home() {
   const [topMods, setTopMods] = useState<ModSummary[]>([]);
   const [mostDownloaded, setMostDownloaded] = useState<ModSummary[]>([]);
   
-  const [latestAddons, setLatestAddons] = useState<ModSummary[]>([]);
-  const [latestTextures, setLatestTextures] = useState<ModSummary[]>([]);
-  const [latestMaps, setLatestMaps] = useState<ModSummary[]>([]);
-  const [latestSkins, setLatestSkins] = useState<ModSummary[]>([]);
-  const [latestShaders, setLatestShaders] = useState<ModSummary[]>([]);
-  const [latestHoloprint, setLatestHoloprint] = useState<ModSummary[]>([]);
-  const [latestMashUp, setLatestMashUp] = useState<ModSummary[]>([]);
+  const [latestBedrock, setLatestBedrock] = useState<ModSummary[]>([]);
+  const [latestJava, setLatestJava] = useState<ModSummary[]>([]);
   // Keep the server/first render deterministic. The home is a client component,
   // so discovering the viewport in an effect avoids a hydration mismatch while
   // still allowing mobile to request/render a smaller initial rail.
@@ -65,11 +59,8 @@ export default function Home() {
 
   const getCategoryColor = (category: string) => {
     const cat = category?.toLowerCase();
-    if (cat === "addons" || cat === "add-ons") return "text-red-300 bg-red-600/20 border-red-500/30";
-    if (cat === "textures") return "text-green-300 bg-green-600/20 border-green-500/30";
-    if (cat === "maps") return "text-orange-300 bg-orange-600/20 border-orange-500/30";
-    if (cat === "skins") return "text-purple-300 bg-purple-600/20 border-purple-500/30";
-    if (cat === "holoprint") return "text-cyan-300 bg-cyan-600/20 border-cyan-500/30";
+    if (cat === "bedrock") return "text-emerald-300 bg-emerald-600/20 border-emerald-500/30";
+    if (cat === "java") return "text-orange-300 bg-orange-600/20 border-orange-500/30";
     return "text-blue-300 bg-blue-600/20 border-blue-500/30";
   };
 
@@ -106,7 +97,7 @@ export default function Home() {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const railLimit = isMobileViewport ? 6 : 8;
 
-      const categoryNames = ['addons', 'textures', 'maps', 'skins', 'shaders', 'holoprint', 'mash-up'] as const;
+      const categoryNames = ['bedrock', 'java'] as const;
       const [latestResult, trendingResult, ...categoryResults] = await Promise.all([
         supabase.from('public_mods').select(HOME_MOD_FIELDS).order('created_at', { ascending: false }).limit(50),
         supabase
@@ -151,13 +142,8 @@ export default function Home() {
 
       setTopMods(trending || []);
       setMostDownloaded([...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, railLimit));
-      setLatestAddons(categoryItems.addons);
-      setLatestTextures(categoryItems.textures);
-      setLatestMaps(categoryItems.maps);
-      setLatestSkins(categoryItems.skins);
-      setLatestShaders(categoryItems.shaders);
-      setLatestHoloprint(categoryItems.holoprint);
-      setLatestMashUp(categoryItems['mash-up']);
+      setLatestBedrock(categoryItems.bedrock);
+      setLatestJava(categoryItems.java);
       
       setLoading(false);
     };
@@ -171,49 +157,27 @@ export default function Home() {
   return (
     <div className="max-w-[1800px] mx-auto p-3 sm:p-6 lg:p-8 min-h-screen flex gap-6 lg:gap-8 items-start">
       
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        Ad Slot Vertical (Esquerda)
-      </AdPlaceholder>
-
       <main className="flex-1 min-w-0 space-y-8 pb-20">
         
-        <AdPlaceholder format="mobile" className="xl:hidden w-full min-w-0">
-          Ad Slot Mobile
-        </AdPlaceholder>
-
         {!loading && topMods.length > 0 && <HeroCarousel mods={topMods} locale={locale} />}
         {loading && <div className="w-full aspect-[16/9] md:aspect-[3/1] bg-[#111318] rounded-2xl animate-pulse" />}
 
         <section>
           <h2 className="text-xl font-black uppercase tracking-tighter mb-4 text-white">{t('marketplace')}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 md:gap-3">
-            <CategoryBtn name={t('addons')} icon={PlusCircle} color="text-red-400" border="border-red-500/30" bg="from-red-500/10" href={`/${locale}/category/addons`} />
-            <CategoryBtn name={t('maps')} icon={MapIcon} color="text-orange-400" border="border-orange-500/30" bg="from-orange-500/10" href={`/${locale}/category/maps`} />
-            <CategoryBtn name={t('textures')} icon={Layers} color="text-green-400" border="border-green-500/30" bg="from-green-500/10" href={`/${locale}/category/textures`} />
-            <CategoryBtn name={t('skins')} icon={User} color="text-purple-400" border="border-purple-500/30" bg="from-purple-500/10" href={`/${locale}/category/skins`} />
-            <CategoryBtn name={t('holoprint')} icon={Box} color="text-cyan-400" border="border-cyan-500/30" bg="from-cyan-500/10" href={`/${locale}/category/holoprint`} />
-            <CategoryBtn name={t('mash-up')} icon={Puzzle} color="text-pink-400" border="border-pink-500/30" bg="from-pink-500/10" href={`/${locale}/category/mash-up`} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <CategoryBtn name="Minecraft Bedrock" icon={Gamepad2} color="text-emerald-400" border="border-emerald-500/30" bg="from-emerald-500/10" href={`/${locale}/category/bedrock`} />
+            <CategoryBtn name="Minecraft Java" icon={Coffee} color="text-orange-400" border="border-orange-500/30" bg="from-orange-500/10" href={`/${locale}/category/java`} />
           </div>
         </section>
 
         <ModList title={t('mostDownloaded')} icon={Download} iconColor="text-blue-500" indicatorColor="bg-blue-600" mods={mostDownloaded} loading={loading} reserveWhileLoading locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/search`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestAddons')} icon={Zap} iconColor="text-red-500" indicatorColor="bg-red-600" mods={latestAddons} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/addons`} viewAllLabel={t('viewAll')} />
-        
-        <AdPlaceholder format="mobile" className="xl:hidden w-full min-w-0">
-          Ad Slot Mobile In-Feed
-        </AdPlaceholder>
-
-        <ModList title={t('latestTextures')} icon={Layers} iconColor="text-green-500" indicatorColor="bg-green-600" mods={latestTextures} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/textures`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestMaps')} icon={MapIcon} iconColor="text-orange-500" indicatorColor="bg-orange-600" mods={latestMaps} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/maps`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestSkins')} icon={User} iconColor="text-purple-500" indicatorColor="bg-purple-600" mods={latestSkins} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/skins`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestShaders')} icon={Zap} iconColor="text-yellow-500" indicatorColor="bg-yellow-600" mods={latestShaders} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/shaders`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestHoloprint')} icon={Box} iconColor="text-cyan-500" indicatorColor="bg-cyan-600" mods={latestHoloprint} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/holoprint`} viewAllLabel={t('viewAll')} />
-        <ModList title={t('latestMashUp')} icon={Puzzle} iconColor="text-pink-500" indicatorColor="bg-pink-600" mods={latestMashUp} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/mash-up`} viewAllLabel={t('viewAll')} />
+        <ModList title="Construções Bedrock" icon={Gamepad2} iconColor="text-emerald-500" indicatorColor="bg-emerald-600" mods={latestBedrock} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/bedrock`} viewAllLabel={t('viewAll')} />
+        <ModList title="Construções Java" icon={Coffee} iconColor="text-orange-500" indicatorColor="bg-orange-600" mods={latestJava} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/java`} viewAllLabel={t('viewAll')} />
 
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)]">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0 relative">
-              <OptimizedImage src="/logo.jpg" optimizeWidth={64} alt="GuizzMods" fill className="rounded-lg object-cover" sizes="48px" />
+              <OptimizedImage src="/logo.jpg" optimizeWidth={64} alt="Guizzprints" fill className="rounded-lg object-cover" sizes="48px" />
             </div>
             <div>
               <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
@@ -235,10 +199,6 @@ export default function Home() {
 
       </main>
 
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        Ad Slot Vertical (Direita)
-      </AdPlaceholder>
-      
     </div>
   );
 }
@@ -275,7 +235,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
         className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {mods.map((mod, index) => (
-          <Link href={`/${locale}/mod/${mod.id}`} key={`hero-${mod.id}`} className="w-full h-full flex-shrink-0 snap-center relative block">
+          <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" key={`hero-${mod.id}`} className="w-full h-full flex-shrink-0 snap-center relative block">
             <OptimizedImage
               src={mod.image_url_1 || "https://picsum.photos/seed/hero2/1200/600"}
               optimizeWidth={1280}
@@ -413,7 +373,7 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
 
       <div ref={scrollRef} className="flex gap-2 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
         {mods.map((mod) => (
-          <Link href={`/${locale}/mod/${mod.id}`} key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
+          <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
             
             <div className="relative w-full h-[89px] md:h-[124px] bg-zinc-900 overflow-hidden flex-shrink-0">
               <OptimizedImage

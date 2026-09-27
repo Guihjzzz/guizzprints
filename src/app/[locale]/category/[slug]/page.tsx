@@ -5,14 +5,12 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Download, Star, Loader2, ArrowLeft, Layers } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { AdPlaceholder } from '@/components/AdPlaceholder';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryFilter } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
 
 const ITEMS_PER_PAGE = 20;
-const AD_INTERVAL = 10; 
 
 type Props = {
   params: Promise<{ slug: string; locale: string }>;
@@ -146,11 +144,6 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
   return (
     <div className="w-full flex justify-center gap-6 p-4 sm:p-6 lg:p-8 min-h-screen max-w-[1800px] mx-auto">
       
-      {/* AD SLOT - LEFT SIDEBAR (PC APENAS) */}
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        AD SLOT - LEFT SIDEBAR
-      </AdPlaceholder>
-
       {/* CONTEÚDO PRINCIPAL (CENTRALIZADO) */}
       <main className="flex-1 max-w-[1200px] min-w-0 flex flex-col">
         
@@ -187,21 +180,15 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-              {mods.map((mod, index) => {
-                const showInlineAd = index > 0 && index % AD_INTERVAL === 0;
+              {mods.map((mod) => {
 
                 return (
                   <React.Fragment key={mod.id}>
-                    {/* INLINE AD: faixa horizontal responsiva */}
-                    {showInlineAd && (
-                      <AdPlaceholder format="leaderboard" className="col-span-full w-full min-w-0 my-1 md:my-2">
-                        [{t('advertisement')}]
-                      </AdPlaceholder>
-                    )}
-
                     {/* CARD DO MOD */}
                     <Link 
                       href={`/${locale}/mod/${mod.id}`} 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl overflow-hidden hover:border-blue-500 shadow-lg flex-shrink-0"
                     >
                       <div className="relative w-full h-[89px] md:h-[124px] bg-zinc-900 overflow-hidden flex-shrink-0">
@@ -259,11 +246,6 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
           </>
         )}
       </main>
-
-      {/* AD SLOT - RIGHT SIDEBAR (PC APENAS) */}
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        AD SLOT - RIGHT SIDEBAR
-      </AdPlaceholder>
 
     </div>
   );

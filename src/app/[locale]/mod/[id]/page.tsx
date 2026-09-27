@@ -19,17 +19,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .single();
 
   if (!data) {
-    return { title: `${t('notFound')} | GuizzMods` };
+    return { title: `${t('notFound')} | Guizzprints` };
   }
 
   return {
-    title: `${data.title} | GuizzMods`,
+    title: `${data.title} | Guizzprints`,
     description: data.description?.substring(0, 160) || t('metadataDescription'),
-    authors: [{ name: 'GuizzMods' }],
+    authors: [{ name: 'Guizzprints' }],
     openGraph: {
       title: data.title,
       description: data.description?.substring(0, 160),
-      siteName: 'GuizzMods',
+      siteName: 'Guizzprints',
       type: 'article',
       images: [{ url: data.image_url_1 || '/logo.jpg', alt: data.title }],
     },

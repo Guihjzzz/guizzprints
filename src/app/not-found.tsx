@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <main className="min-h-screen bg-[#07090D] px-6 py-24 text-center text-[#F8FAFC]">
       <div className="mx-auto max-w-xl rounded-3xl border border-[#1D2433] bg-[#111318] p-10 shadow-2xl">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-blue-300">GuizzMods</p>
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-blue-300">Guizzprints</p>
         <h1 className="text-5xl font-black tracking-tight">404</h1>
         <p className="mt-4 text-zinc-300">This page could not be found. Explore the catalog from one of these entrances.</p>
         <nav aria-label="404 navigation" className="mt-8 flex flex-wrap justify-center gap-3">

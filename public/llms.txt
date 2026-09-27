@@ -1,25 +1,19 @@
-# GuizzMods
+# Guizzprints
 
-> GuizzMods is a multilingual catalog for discovering and downloading Minecraft mods, add-ons, textures, shaders, maps, skins, and other community content.
+> Guizzprints is a multilingual catalog for Minecraft Bedrock and Java builds with previews, direct downloads and 3D guide links.
 
 ## Main pages
 
-- [Home](https://guizz.xyz/en/): featured and latest community content.
-- [About](https://guizz.xyz/en/about/): information about GuizzMods.
+- [Home](https://guizz.xyz/en/): featured and latest community builds.
+- [About](https://guizz.xyz/en/about/): information about Guizzprints.
 - [Contact](https://guizz.xyz/en/contact/): public contact channels.
 - [Privacy](https://guizz.xyz/en/privacy/): privacy policy.
 - [Terms](https://guizz.xyz/en/terms/): terms of use.
-- [VIP](https://guizz.xyz/en/vip/): optional supporter benefits and availability.
 
 ## Catalog
 
-- [Add-ons](https://guizz.xyz/en/category/addons/)
-- [Textures](https://guizz.xyz/en/category/textures/)
-- [Shaders](https://guizz.xyz/en/category/shaders/)
-- [Maps](https://guizz.xyz/en/category/maps/)
-- [Skins](https://guizz.xyz/en/category/skins/)
-- [Holoprint](https://guizz.xyz/en/category/holoprint/)
-- [Mash-up](https://guizz.xyz/en/category/mash-up/)
+- [Minecraft Bedrock](https://guizz.xyz/en/category/bedrock/): Holoprint, MCStructure, MCAddon and MCWorld.
+- [Minecraft Java](https://guizz.xyz/en/category/java/): Litematic, Schematic, World and MC Function.
 
 ## Languages
 

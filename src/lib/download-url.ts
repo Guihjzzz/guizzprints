@@ -1,14 +1,12 @@
-const ALLOWED_DOWNLOAD_HOSTS = ['terabox.com', 'terabox.app', '1024terabox.com'] as const;
-
 export function parseAllowedDownloadUrl(value: string) {
   const url = new URL(value);
   const hostname = url.hostname.toLowerCase();
-  const isAllowedHost = ALLOWED_DOWNLOAD_HOSTS.some(
-    (host) => hostname === host || hostname.endsWith(`.${host}`),
-  );
+  const isLocal = hostname === 'localhost' || hostname === '::1' || hostname === '0.0.0.0'
+    || hostname.endsWith('.local') || /^(127\.|10\.|192\.168\.|169\.254\.)/.test(hostname)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname);
 
-  if (url.protocol !== 'https:' || !isAllowedHost || url.username || url.password || url.port) {
-    throw new Error('Only secure Terabox links are allowed.');
+  if (url.protocol !== 'https:' || isLocal || url.username || url.password || url.port) {
+    throw new Error('Use a public HTTPS download link.');
   }
 
   return url;

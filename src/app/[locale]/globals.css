@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* GuizzMods is intentionally single-theme: ignore the browser preference. */
+  /* Guizzprints is intentionally single-theme: ignore the browser preference. */
   color-scheme: dark;
   --background: #07090D;
   --foreground: #F8FAFC;

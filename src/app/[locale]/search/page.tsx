@@ -6,13 +6,12 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Search, Download, Star, Loader2, SlidersHorizontal, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { AdPlaceholder } from '@/components/AdPlaceholder';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryFilter } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
 
-const CATEGORIES = ['all', 'addons', 'maps', 'textures', 'skins', 'shaders', 'holoprint', 'mash-up'];
+const CATEGORIES = ['all', 'bedrock', 'java', 'holoprint'];
 const ITEMS_PER_PAGE = 12;
 
 interface ModSummary {
@@ -171,6 +170,8 @@ function SearchContent() {
       elements.push(
         <Link 
           href={`/${locale}/mod/${mod.id}`} 
+          target="_blank"
+          rel="noopener noreferrer"
           key={mod.id} 
           className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl sm:rounded-2xl overflow-hidden hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] flex-shrink-0"
         >
@@ -206,13 +207,6 @@ function SearchContent() {
         </Link>
       );
 
-      if ((i + 1) % 8 === 0 && i !== mods.length - 1) {
-        elements.push(
-          <AdPlaceholder key={`ad-${i}`} format="mobile" className="col-span-2 sm:col-span-3 md:col-span-4 xl:hidden w-full min-w-0 my-2">
-            Ad Slot - In-Feed Mobile
-          </AdPlaceholder>
-        );
-      }
     }
     return elements;
   };
@@ -220,12 +214,6 @@ function SearchContent() {
   return (
     <div className="max-w-[1800px] mx-auto p-3 sm:p-6 lg:p-8 min-h-screen flex gap-6 lg:gap-8 items-start">
       
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        <div className="w-full flex-1 bg-[#111318] border border-dashed border-zinc-700 rounded-2xl flex items-center justify-center text-zinc-500 text-xs font-mono uppercase shadow-inner">
-          Ad Slot - Left Sidebar
-        </div>
-      </AdPlaceholder>
-
       <main className="flex-1 min-w-0 space-y-6">
         
         <div className="border-b border-[#1D2433] pb-6 space-y-4">
@@ -276,10 +264,6 @@ function SearchContent() {
           </div>
         </div>
 
-        <AdPlaceholder format="mobile" className="xl:hidden w-full min-w-0 mb-4">
-          Ad Slot - Top Mobile
-        </AdPlaceholder>
-
         {loading ? (
           <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
         ) : loadError && mods.length === 0 ? (
@@ -316,12 +300,6 @@ function SearchContent() {
           </>
         )}
       </main>
-
-      <AdPlaceholder as="aside" format="sidebar" className="hidden xl:block shrink-0">
-        <div className="w-full flex-1 bg-[#111318] border border-dashed border-zinc-700 rounded-2xl flex items-center justify-center text-zinc-500 text-xs font-mono uppercase shadow-inner">
-          Ad Slot - Right Sidebar
-        </div>
-      </AdPlaceholder>
 
     </div>
   );

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Crown, User, LogIn } from 'lucide-react';
+import { User, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
@@ -14,8 +14,6 @@ export function TopHeader() {
   const locale = pathname.split('/')[1] || 'en';
   const t = useTranslations('Header');
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const vipPath = `/${locale}/vip`;
-  const vipActive = pathname === vipPath || pathname.startsWith(`${vipPath}/`);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -37,19 +35,14 @@ export function TopHeader() {
       {/* Esquerda: Logo Mobile (Oculto no PC) */}
       <div className="md:hidden flex items-center">
         <Link href={`/${locale}`}>
-          <Image src="/logo.jpg" alt="GuizzMods" width={32} height={32} className="w-8 h-8 rounded-lg" />
+          <Image src="/logo.jpg" alt="Guizzprints" width={32} height={32} className="w-8 h-8 rounded-lg" />
         </Link>
       </div>
 
-      {/* Centro: Espaço vazio ou Botão centralizado */}
-      <div className="flex-1 flex justify-center">
-        <Link
-          href={vipPath}
-          aria-current={vipActive ? 'page' : undefined}
-          className={`vip-header-link ${vipActive ? 'vip-header-link-active' : ''}`}
-        >
-          <Crown size={16} aria-hidden="true" />
-          <span>{t('vip')}</span>
+      <div className="flex-1 px-4">
+        <Link href={`/${locale}`} className="inline-flex items-baseline gap-2 font-black tracking-tight text-white">
+          <span className="text-lg">Guizzprints</span>
+          <span className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 sm:inline">Bedrock + Java</span>
         </Link>
       </div>
 

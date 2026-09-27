@@ -6,9 +6,9 @@ type Props = {
 };
 
 const COPY: Record<string, { title: string; description: string }> = {
-  en: { title: 'Search Minecraft Mods | GuizzMods', description: 'Search Minecraft mods, add-ons, textures, maps, skins and more on GuizzMods.' },
-  pt: { title: 'Buscar Mods de Minecraft | GuizzMods', description: 'Busque mods, add-ons, texturas, mapas, skins e mais no GuizzMods.' },
-  es: { title: 'Buscar Mods de Minecraft | GuizzMods', description: 'Busca mods, add-ons, texturas, mapas, skins y más en GuizzMods.' },
+  en: { title: 'Search Minecraft Builds | Guizzprints', description: 'Search Bedrock and Java builds and download supported files directly.' },
+  pt: { title: 'Buscar Construções Minecraft | Guizzprints', description: 'Busque construções Bedrock e Java e baixe os arquivos compatíveis diretamente.' },
+  es: { title: 'Buscar Construcciones Minecraft | Guizzprints', description: 'Busca construcciones Bedrock y Java y descarga directamente los archivos compatibles.' },
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: copy.title,
     description: copy.description,
     alternates: { canonical: url },
-    openGraph: { title: copy.title, description: copy.description, url, type: 'website', images: [{ url: '/logo.jpg', alt: 'GuizzMods' }] },
+    openGraph: { title: copy.title, description: copy.description, url, type: 'website', images: [{ url: '/logo.jpg', alt: 'Guizzprints' }] },
     twitter: { card: 'summary', title: copy.title, description: copy.description, images: ['/logo.jpg'] },
   };
 }

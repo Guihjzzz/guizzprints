@@ -3,8 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { Settings, User, Mail, Lock, LogOut, Loader2, Save, Globe, AtSign, Crown, ArrowRight } from 'lucide-react';
+import { Settings, User, Mail, Lock, LogOut, Loader2, Save, Globe, AtSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isAppLocale } from '@/i18n/routing';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -19,7 +18,6 @@ export default function SettingsPage({ params }: Props) {
   
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [vipStatus, setVipStatus] = useState<{ expiresAt: string } | null>(null);
   
   const [username, setUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -40,14 +38,6 @@ export default function SettingsPage({ params }: Props) {
       } else {
         setUser(session.user);
         setUsername(session.user.user_metadata?.username || '');
-        try {
-          const response = await fetch('/api/vip/status', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            cache: 'no-store',
-          });
-          const data = await response.json() as { vip?: boolean; expiresAt?: string };
-          if (data.vip && typeof data.expiresAt === 'string') setVipStatus({ expiresAt: data.expiresAt });
-        } catch { /* A missing status fails closed to the regular account view. */ }
         setLoading(false);
       }
     };
@@ -103,7 +93,6 @@ export default function SettingsPage({ params }: Props) {
       return;
     }
     setUser(null);
-    setVipStatus(null);
     router.replace(`/${locale}/login`);
   };
 
@@ -129,13 +118,6 @@ export default function SettingsPage({ params }: Props) {
     setLanguageMessage({ type: 'success', text: t('languageSaved') });
     router.replace(newPath);
     router.refresh();
-  };
-
-  const formatVipExpiry = (value: string) => {
-    const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) return null;
-    const language = locale === 'pt' ? 'pt-BR' : locale === 'es' ? 'es-ES' : 'en-US';
-    return new Intl.DateTimeFormat(language, { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" size={32} /></div>;
@@ -219,24 +201,6 @@ export default function SettingsPage({ params }: Props) {
               </select>
               {languageMessage && <p className={`text-xs font-medium ${languageMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>{languageMessage.text}</p>}
             </div>
-          </div>
-
-          <div className={`rounded-2xl p-6 shadow-xl ${vipStatus ? 'border border-emerald-400/40 bg-gradient-to-br from-emerald-950/50 to-[#111318]' : 'border border-blue-500/30 bg-gradient-to-br from-blue-950/40 to-[#111318]'}`} role={vipStatus ? 'status' : undefined}>
-            <h2 className={`text-lg font-bold mb-2 flex items-center gap-2 ${vipStatus ? 'text-emerald-300' : 'text-blue-300'}`}>
-              <Crown size={20} /> {t('vipTitle')}
-            </h2>
-            {vipStatus ? <>
-              <p className="text-sm font-semibold text-emerald-100">{t('vipActive')}</p>
-              {formatVipExpiry(vipStatus.expiresAt) && <p className="text-xs text-emerald-200/75 mt-1">{t('vipValidUntil')} {formatVipExpiry(vipStatus.expiresAt)}</p>}
-              <Link href={`/${locale}/vip`} className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-emerald-300/40 bg-emerald-400/15 px-4 py-2 text-xs font-bold text-emerald-100 transition hover:bg-emerald-400/25">
-                {t('vipManage')} <ArrowRight size={15} />
-              </Link>
-            </> : <>
-              <p className="text-xs leading-relaxed text-zinc-400">{t('vipDescription')}</p>
-              <Link href={`/${locale}/vip?plan=monthly`} className="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-400/40 bg-blue-500/20 px-4 py-2 text-xs font-bold text-blue-100 transition hover:bg-blue-500/30">
-                {t('vipExplore')} <ArrowRight size={15} />
-              </Link>
-            </>}
           </div>
 
           <div className="bg-[#111318] border border-red-500/30 rounded-2xl p-6 shadow-xl">

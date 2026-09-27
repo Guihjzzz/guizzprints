@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getVipReturnPath } from './auth-return';
+import { getSafeReturnPath } from './auth-return';
 
 export type AuthMode = 'login' | 'register' | 'reset';
 export type AuthMessageKey = 'invalidCredentials' | 'emailNotConfirmed' | 'tooManyAttempts' |
@@ -45,11 +45,11 @@ export function authErrorKey(error: unknown): AuthMessageKey {
 
 export function authCallbackUrl(origin: string, locale: string, next: string | null, recovery = false): string {
   const language = safeLocale(locale);
-  const vip = getVipReturnPath(next);
+  const safeReturn = getSafeReturnPath(next);
   const url = new URL('/auth/callback', origin);
   url.searchParams.set('locale', language);
-  url.searchParams.set('next', recovery ? `/${language}/login/update-password` : vip ?? `/${language}`);
-  if (recovery && vip) url.searchParams.set('returnTo', vip);
+  url.searchParams.set('next', recovery ? `/${language}/login/update-password` : safeReturn ?? `/${language}`);
+  if (recovery && safeReturn) url.searchParams.set('returnTo', safeReturn);
   return url.toString();
 }
 
@@ -70,14 +70,14 @@ export async function submitEmailAuth(auth: AuthApi, input: AuthInput): Promise<
   if (input.mode === 'login') {
     const { error } = await auth.signInWithPassword({ email, password: input.password, options: { captchaToken } });
     return error ? { key: authErrorKey(error), success: false, confirmation: error.code === 'email_not_confirmed' }
-      : { redirect: getVipReturnPath(input.next) ?? `/${locale}` };
+      : { redirect: getSafeReturnPath(input.next) ?? `/${locale}` };
   }
   const { data, error } = await auth.signUp({ email, password: input.password, options: {
     data: { username, locale }, captchaToken,
     emailRedirectTo: authCallbackUrl(input.origin, locale, input.next),
   } });
   if (error && error.code !== 'user_already_exists') return { key: authErrorKey(error), success: false, emailAttempt: true };
-  if (data?.session) return { redirect: getVipReturnPath(input.next) ?? `/${locale}` };
+  if (data?.session) return { redirect: getSafeReturnPath(input.next) ?? `/${locale}` };
   return { key: 'confirmationSent', success: true, confirmation: true, emailAttempt: true };
 }
 

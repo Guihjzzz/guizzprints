@@ -2,7 +2,7 @@ import './globals.css';
 import './site-motion.css';
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Home, Search, Box, PlusCircle, Layers, Sun, Map, Heart, Settings, UserRound, Puzzle, Crown } from 'lucide-react';
+import { Home, Search, Box, Heart, Settings, Coffee, Gamepad2 } from 'lucide-react';
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
@@ -13,27 +13,26 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteMotion } from '@/components/SiteMotion';
-import { AdblockAccessGate } from '@/components/AdblockAccessGate';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.guizz.xyz'),
-  title: 'GuizzMods',
-  description: 'Discover and download Minecraft mods, add-ons, textures, shaders, maps, and skins.',
-  applicationName: 'GuizzMods',
+  title: 'Guizzprints',
+  description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
+  applicationName: 'Guizzprints',
   verification: {
     google: '8w5uX2MyeL_ZEPijl_nCVioi0ltATg2-t03VNMTVYH0',
   },
   openGraph: {
-    title: 'GuizzMods — Minecraft mods and add-ons',
-    description: 'Discover and download Minecraft mods, add-ons, textures, shaders, maps, and skins.',
-    siteName: 'GuizzMods',
+    title: 'Guizzprints — Construções Minecraft',
+    description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
+    siteName: 'Guizzprints',
     type: 'website',
-    images: [{ url: '/logo.jpg', alt: 'GuizzMods' }],
+    images: [{ url: '/logo.jpg', alt: 'Guizzprints' }],
   },
   twitter: {
     card: 'summary',
-    title: 'GuizzMods — Minecraft mods and add-ons',
-    description: 'Discover and download Minecraft mods, add-ons, textures, shaders, maps, and skins.',
+    title: 'Guizzprints — Construções Minecraft',
+    description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
     images: ['/logo.jpg'],
   },
   manifest: '/manifest.webmanifest',
@@ -49,14 +48,9 @@ export const metadata: Metadata = {
 const SIDEBAR_ITEMS = [
   { id: "home", icon: Home, label: "Home", href: "/" },
   { id: "search", icon: Search, label: "Search", href: "/search" },
-  { id: "vip", icon: Crown, label: "VIP", href: "/vip" },
-  { id: "holoprint", icon: Box, label: "Holoprint", href: "/category/holoprint" },
-  { id: "addons", icon: PlusCircle, label: "Add-ons", href: "/category/addons" },
-  { id: "textures", icon: Layers, label: "Textures", href: "/category/textures" },
-  { id: "shaders", icon: Sun, label: "Shaders", href: "/category/shaders" },
-  { id: "maps", icon: Map, label: "Maps", href: "/category/maps" },
-  { id: "skins", icon: UserRound, label: "Skins", href: "/category/skins" },
-  { id: "mash-up", icon: Puzzle, label: "Mash-up", href: "/category/mash-up" },
+  { id: "bedrock", icon: Gamepad2, label: "Bedrock", href: "/category/bedrock" },
+  { id: "java", icon: Coffee, label: "Java", href: "/category/java" },
+  { id: "holoprint", icon: Box, label: "Holoprint", href: "/search?category=holoprint" },
   { id: "favorites", icon: Heart, label: "Favorites", href: "/favorites" },
   { id: "settings", icon: Settings, label: "Settings", href: "/settings" },
 ];
@@ -82,11 +76,11 @@ export default async function RootLayout({
               <Link href={`/${locale}`} className="relative group cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#2563EB] to-[#60A5FA] rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300" />
                 <div className="relative bg-[#07090D] border border-[#1D2433] rounded-xl overflow-hidden motion-safe:group-hover:scale-105 transition-transform duration-300">
-                  <Image src="/logo.jpg" alt="GuizzMods" width={48} height={48} className="w-12 h-12 object-cover" />
+                  <Image src="/logo.jpg" alt="Guizzprints" width={48} height={48} className="w-12 h-12 object-cover" />
                 </div>
               </Link>
               <nav className="flex min-h-0 flex-col items-center gap-1 w-full px-2 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
-                {SIDEBAR_ITEMS.filter((item) => item.id !== 'favorites' && item.id !== 'settings').map((item) => <SidebarItem key={item.id} item={item} label={item.id === 'vip' ? 'VIP' : t(item.id)} locale={locale} />)}
+                {SIDEBAR_ITEMS.filter((item) => item.id !== 'favorites' && item.id !== 'settings').map((item) => <SidebarItem key={item.id} item={item} label={item.label} locale={locale} />)}
               </nav>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-1 w-full px-2 pt-2">
@@ -97,11 +91,9 @@ export default async function RootLayout({
 
           <TopHeader />
 
-          <AdblockAccessGate locale={locale}>
-            <main data-site-content className="md:pl-[90px] min-h-screen pt-16 pb-20 md:pb-0">
-              {children}
-            </main>
-          </AdblockAccessGate>
+          <main data-site-content className="md:pl-[90px] min-h-screen pt-16 pb-20 md:pb-0">
+            {children}
+          </main>
 
           <div className="md:pl-[90px] pb-20 md:pb-0">
             <SiteFooter locale={locale} />
@@ -119,15 +111,11 @@ export default async function RootLayout({
 function SidebarItem({ item, label, locale }: { item: typeof SIDEBAR_ITEMS[0], label: string, locale: string }) {
   const Icon = item.icon;
   const href = item.href === '/' ? `/${locale}` : `/${locale}${item.href}`;
-  const isVip = item.id === 'vip';
-
   return (
-    <Link href={href} title={label} aria-label={label} data-vip={isVip ? 'true' : undefined} className={`relative group w-full flex justify-center cursor-pointer ${isVip ? 'vip-nav-link' : ''}`}>
+    <Link href={href} title={label} aria-label={label} className="relative group w-full flex justify-center cursor-pointer">
       <div className="relative p-3 rounded-xl text-[#94A3B8] transition-[transform,color,background-color,border-color] duration-300 motion-safe:group-hover:scale-110 flex items-center justify-center border hover:text-[#F8FAFC] bg-transparent hover:bg-[#2563EB]/10 border-transparent hover:border-[#2563EB]/30">
-        {isVip && <span aria-hidden="true" className="vip-nav-halo" />}
         <Icon size={22} className="relative z-10 transition-transform duration-300 group-hover:drop-shadow-[0_0_8px_#2563EB]" />
       </div>
-      {isVip && <span className="vip-nav-label">VIP</span>}
     </Link>
   );
 }

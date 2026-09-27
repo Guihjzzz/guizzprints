@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { type EmailOtpType } from '@supabase/supabase-js';
-import { getAuthCallbackReturnPath, getAuthCallbackFailurePath, getVipReturnPath } from '@/lib/auth-return';
+import { getAuthCallbackReturnPath, getAuthCallbackFailurePath, getSafeReturnPath } from '@/lib/auth-return';
 import { logServerFailure } from '@/lib/server-observability';
 
 const emailTypes = new Set(['signup', 'invite', 'magiclink', 'recovery', 'email_change', 'email']);
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     ? localeParam : /^\/(en|pt|es)(?:\/|$)/.exec(nextParam ?? '')?.[1] ?? 'en';
   const recovery = type === 'recovery' || ['en', 'pt', 'es'].some(language => nextParam === `/${language}/login/update-password`);
   let next = getAuthCallbackReturnPath(nextParam, type, locale);
-  const returnTo = getVipReturnPath(searchParams.get('returnTo'));
+  const returnTo = getSafeReturnPath(searchParams.get('returnTo'));
   if (recovery && returnTo) next += `?next=${encodeURIComponent(returnTo)}`;
   const failure = getAuthCallbackFailurePath(returnTo ?? nextParam, locale, recovery);
   const redirect = (path: string) => {

@@ -6,22 +6,22 @@ type Props = {
 };
 
 const LABELS: Record<string, Record<string, string>> = {
-  en: { addons: 'Add-ons', maps: 'Maps', textures: 'Textures', skins: 'Skins', shaders: 'Shaders', holoprint: 'Holoprint', 'mash-up': 'Mash-up' },
-  pt: { addons: 'Add-ons', maps: 'Mapas', textures: 'Texturas', skins: 'Skins', shaders: 'Shaders', holoprint: 'Holoprint', 'mash-up': 'Mash-up' },
-  es: { addons: 'Add-ons', maps: 'Mapas', textures: 'Texturas', skins: 'Skins', shaders: 'Shaders', holoprint: 'Holoprint', 'mash-up': 'Mash-up' },
+  en: { bedrock: 'Minecraft Bedrock', java: 'Minecraft Java' },
+  pt: { bedrock: 'Minecraft Bedrock', java: 'Minecraft Java' },
+  es: { bedrock: 'Minecraft Bedrock', java: 'Minecraft Java' },
 };
 
 const DESCRIPTIONS: Record<string, string> = {
-  en: 'Browse Minecraft {category} and discover your next GuizzMods download.',
-  pt: 'Explore {category} de Minecraft e encontre seu próximo download no GuizzMods.',
-  es: 'Explora {category} de Minecraft y encuentra tu próxima descarga en GuizzMods.',
+  en: 'Browse Minecraft {category} builds and download them directly from Guizzprints.',
+  pt: 'Explore construções {category} de Minecraft e baixe diretamente no Guizzprints.',
+  es: 'Explora construcciones {category} de Minecraft y descárgalas directamente en Guizzprints.',
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const language = LABELS[locale] ? locale : 'en';
   const category = LABELS[language][slug] ?? slug.replace(/-/g, ' ');
-  const title = `${category} Minecraft | GuizzMods`;
+  const title = `${category} | Guizzprints`;
   const description = DESCRIPTIONS[language].replace('{category}', category);
   const url = `/${locale}/category/${slug}`;
 
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, type: 'website', images: [{ url: '/logo.jpg', alt: 'GuizzMods' }] },
+    openGraph: { title, description, url, type: 'website', images: [{ url: '/logo.jpg', alt: 'Guizzprints' }] },
     twitter: { card: 'summary', title, description, images: ['/logo.jpg'] },
   };
 }

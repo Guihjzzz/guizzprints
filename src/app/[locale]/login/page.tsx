@@ -6,7 +6,7 @@ import { Mail, Lock, LogIn, UserPlus, ArrowLeft, Loader2, AtSign, KeyRound } fro
 import { useParams, useSearchParams } from 'next/navigation';
 import { defaultLocale, isAppLocale } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { getVipReturnPath } from '@/lib/auth-return';
+import { getSafeReturnPath } from '@/lib/auth-return';
 import { googleAuthUrl, resendConfirmation, submitEmailAuth, type AuthMode, type AuthOutcome } from '@/lib/auth-actions';
 import AuthCaptcha from '@/components/AuthCaptcha';
 
@@ -59,7 +59,7 @@ function LoginForm() {
     focusEmailRef.current = false;
   }, [mode]);
 
-  const next = () => getVipReturnPath(new URLSearchParams(window.location.search).get('next'));
+  const next = () => getSafeReturnPath(new URLSearchParams(window.location.search).get('next'));
   const changeMode = (value: AuthMode) => {
     if (busy.current) return;
     setMode(value); focusEmailRef.current = true; setConfirmation(false); setShowPassword(false); setMessage(null); setCaptchaToken(''); setCaptchaReset(value => value + 1);

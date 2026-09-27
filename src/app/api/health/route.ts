@@ -14,7 +14,7 @@ const headers = {
  */
 export function GET() {
   return NextResponse.json(
-    { ok: true, service: 'guizzmods' },
+    { ok: true, service: 'guizzprints' },
     { headers },
   );
 }

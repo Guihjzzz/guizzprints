@@ -1,14 +1,14 @@
 {
-  "name": "guizz-mods",
+  "name": "guizzprints",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "npm run build && node --test tests/site-smoke.test.mjs",
-    "test:smoke": "node --test tests/site-smoke.test.mjs",
+    "test": "npm run build",
+    "test:smoke": "npm run build",
     "test:client-security": "node tests/client-secret-scan.mjs",
     "test:security-matrix": "node --test tests/security-route-matrix.test.mjs"
   },

@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guizzprints
 
-## Getting Started
+Catálogo profissional de construções Minecraft Bedrock e Java, derivado da interface completa do projeto original e adaptado para downloads diretos, sem anúncios e sem planos VIP.
 
-First, run the development server:
+## Catálogo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Bedrock:** Holoprint, `.mcstructure`, `.mcaddon` e `.mcworld`.
+- **Java:** `.litematic`, `.schematic`/`.schem`, world e `.mcfunction`.
+- Página própria para cada construção, galeria, vídeo, favoritos, avaliações, pesquisa e filtros.
+- Downloads diretos validados no servidor, sem contagem regressiva ou intermediários publicitários.
+
+## Configuração local
+
+Copie `.env.example` para `.env.local` e informe as credenciais do projeto Supabase:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
+SUPABASE_SECRET_KEY=sb_secret_sua-chave-do-servidor
+DOWNLOAD_TOKEN_SECRET=um-segredo-aleatorio-com-pelo-menos-32-caracteres
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Nunca coloque `SUPABASE_SECRET_KEY` ou `DOWNLOAD_TOKEN_SECRET` em variáveis `NEXT_PUBLIC_*`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Desenvolvimento
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Abra `http://localhost:3000/pt`.
 
-To learn more about Next.js, take a look at the following resources:
+## Validação de produção
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+O formulário administrativo em `/pt/upload` publica as duas plataformas e limita os formatos disponíveis conforme Bedrock ou Java. O campo de download aceita apenas links HTTPS públicos.
 
-## Deploy on Vercel
+## Banco de dados
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+As migrações existentes em `supabase/migrations` mantêm compatibilidade com o banco original. A aplicação usa a view `public_mods`; para preencher o catálogo, publique as construções pelo painel administrativo com `category` igual a `bedrock` ou `java` e o formato em `subcategory`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O histórico do projeto original foi preservado no Git antes da adaptação.

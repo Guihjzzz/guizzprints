@@ -24,7 +24,7 @@ export type MinecraftMarketplaceMetadata = {
   youtubeTrailerUrl: string | null;
   imageUrls: string[];
   categorySuggestion: string | null;
-  /** Official Marketplace metadata kept separate from GuizzMods pricing. */
+  /** Official Marketplace metadata kept separate from Guizzprints pricing. */
   creator: string | null;
   tags: string[];
   publishedAt: string | null;
