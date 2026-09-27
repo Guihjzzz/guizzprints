@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Guia 3D runtime is copied byte-for-byte from the working app.
+    "public/guide3d/**",
   ]),
 ]);
 

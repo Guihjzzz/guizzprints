@@ -11,6 +11,7 @@ import { CategoryBadges } from '@/components/CategoryBadges';
 import { categoryFilter } from '@/lib/mod-categories';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { DEMO_BUILD_SUMMARY } from '@/lib/demo-build';
 
 type SocialIcon = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -139,16 +140,28 @@ export default function Home() {
       // window. A busy category should not hide its latest skins just because
       // newer items from other categories filled that window first.
       const categoryItems = Object.fromEntries(categoryNames.map((category, index) => [category, categoryResults[index].data || []]));
+      const demo = DEMO_BUILD_SUMMARY as ModSummary;
+      const topItems = trending && trending.length > 0 ? trending : [demo];
+      const downloadedItems = all.length > 0 ? [...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, railLimit) : [demo];
+      const bedrockItems = categoryItems.bedrock.length > 0 ? categoryItems.bedrock : [demo];
 
-      setTopMods(trending || []);
-      setMostDownloaded([...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, railLimit));
-      setLatestBedrock(categoryItems.bedrock);
+      setTopMods(topItems);
+      setMostDownloaded(downloadedItems);
+      setLatestBedrock(bedrockItems);
       setLatestJava(categoryItems.java);
       
       setLoading(false);
     };
 
-    void fetchHomeData();
+    void fetchHomeData().catch(() => {
+      if (cancelled) return;
+      const demo = DEMO_BUILD_SUMMARY as ModSummary;
+      setTopMods([demo]);
+      setMostDownloaded([demo]);
+      setLatestBedrock([demo]);
+      setLatestJava([]);
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };

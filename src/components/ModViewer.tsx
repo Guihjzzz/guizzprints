@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Play, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
+import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Play, Tag, Gamepad2, Coffee, Search, TrendingUp, Layers3, type LucideIcon } from "lucide-react";
 import DownloadFlow from './DownloadFlow';
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from 'next-intl';
@@ -12,6 +12,7 @@ import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryLabel } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { Guide3DPreview } from '@/components/Guide3DPreview';
 
 type SocialIcon = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -60,6 +61,10 @@ interface ModData {
   image_url_5?: string | null;
   downloads?: number;
   rating?: number;
+  spin_video_url?: string;
+  guide_schem_url?: string;
+  direct_download_url?: string;
+  is_demo?: boolean;
 }
 
 interface ModViewerProps {
@@ -106,6 +111,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   // Busca mods sugeridos
   useEffect(() => {
+    if (mod.is_demo) return;
     const fetchSuggested = async () => {
       const { data } = await supabase
         .from('public_mods')
@@ -129,12 +135,13 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
       }
     };
     fetchSuggested();
-  }, [mod.id, mod.category]);
+  }, [mod.id, mod.category, mod.is_demo]);
 
   // Imported Marketplace items refresh on first open, with a server-side
   // cooldown so repeated visitors cannot hammer the official catalog API.
   // A successful refresh re-renders this detail page with the new media.
   useEffect(() => {
+    if (mod.is_demo) return;
     const controller = new AbortController();
     const refreshSource = async () => {
       try {
@@ -152,10 +159,11 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     };
     void refreshSource();
     return () => controller.abort();
-  }, [mod.id, router]);
+  }, [mod.id, mod.is_demo, router]);
 
   // Checa Sessão, Favorito e Avaliação Atual
   useEffect(() => {
+    if (mod.is_demo) return;
     const checkAuthData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -181,10 +189,11 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
       if (ratData) setUserRating(ratData.score);
     };
     checkAuthData();
-  }, [mod.id]);
+  }, [mod.id, mod.is_demo]);
 
   // Handler de Favoritos com Alertas de Erro
   const toggleFavorite = async () => {
+    if (mod.is_demo) return;
     if (!userId) {
       alert(t('loginToFavorite'));
       return;
@@ -229,6 +238,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   // Handler de Avaliação
   const handleRate = async (val: number) => {
+    if (mod.is_demo) return;
     if (!userId) {
       alert(t('loginToRate'));
       return;
@@ -265,6 +275,8 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   const ytThumbUrl = extractYtThumb(mod.youtube_trailer_url) || modData.imageUrl;
 
   const rawMediaList = [
+    mod.guide_schem_url ? { type: 'guide', url: mod.guide_schem_url, thumb: mod.image_url_1 || modData.imageUrl } : null,
+    mod.spin_video_url ? { type: 'video-file', url: mod.spin_video_url, thumb: mod.image_url_2 || modData.imageUrl } : null,
     mod.youtube_trailer_url ? { type: 'video', url: getEmbedUrl(mod.youtube_trailer_url), thumb: ytThumbUrl } : null,
     mod.image_url_1 ? { type: 'image', url: mod.image_url_1 } : null,
     mod.image_url_2 ? { type: 'image', url: mod.image_url_2 } : null,
@@ -310,7 +322,11 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_112px] gap-2 w-full md:h-[400px]">
               <div className="relative w-full aspect-video md:aspect-auto md:h-full bg-black rounded-2xl border border-[#1D2433] overflow-hidden z-10 min-w-0">
-                {mediaList[activeMedia]?.type === 'video' ? (
+                {mediaList[activeMedia]?.type === 'guide' ? (
+                  <Guide3DPreview schemUrl={mediaList[activeMedia].url} title={modData.title} />
+                ) : mediaList[activeMedia]?.type === 'video-file' ? (
+                  <video src={mediaList[activeMedia].url} className="absolute inset-0 h-full w-full object-contain" autoPlay muted loop playsInline controls />
+                ) : mediaList[activeMedia]?.type === 'video' ? (
                   !isModalOpen ? (
                     <iframe title={modData.title} src={mediaList[activeMedia].url} className="absolute inset-0 w-full h-full border-0" allowFullScreen />
                   ) : (
@@ -328,7 +344,12 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                     onClick={() => setActiveMedia(idx)}
                     className={`relative shrink-0 w-28 aspect-video md:w-full md:aspect-video rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${activeMedia === idx ? 'border-blue-500 scale-[1.02] shadow-lg z-10' : 'border-transparent md:border-[#1D2433] opacity-60 hover:opacity-100'}`}
                   >
-                    {media.type === 'video' ? (
+                    {media.type === 'guide' ? (
+                      <>
+                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-cover opacity-60" alt={`${modData.title} Guia 3D`} />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/35"><Layers3 size={25} className="text-red-400 drop-shadow-lg" /></div>
+                      </>
+                    ) : media.type === 'video' || media.type === 'video-file' ? (
                       <>
                         <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-cover opacity-60 mix-blend-luminosity" alt={`${modData.title} video preview`} />
                         <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20">
@@ -365,7 +386,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
             <div className="w-full rounded-2xl border border-[#1D2433] bg-[#111318] p-3 shadow-xl">
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={toggleFavorite} className="flex items-center justify-center gap-2 rounded-xl border border-[#1D2433] bg-[#07090D] px-3 py-2 text-xs font-bold text-zinc-300 transition-colors group cursor-pointer hover:bg-zinc-800">
+                <button onClick={toggleFavorite} disabled={mod.is_demo} title={mod.is_demo ? 'Disponível quando este item for publicado no catálogo' : undefined} className="flex items-center justify-center gap-2 rounded-xl border border-[#1D2433] bg-[#07090D] px-3 py-2 text-xs font-bold text-zinc-300 transition-colors group cursor-pointer hover:bg-zinc-800 disabled:cursor-default disabled:opacity-45">
                   <Heart size={15} className={`transition-colors ${isFavorited ? 'text-red-500 fill-red-500' : 'group-hover:text-red-500'}`} /> {t('favorite')}
                 </button>
                 <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-xl border border-[#1D2433] bg-[#07090D] px-3 py-2 text-xs font-bold text-zinc-300 transition-colors group cursor-pointer hover:bg-zinc-800">
@@ -379,6 +400,8 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 modTitle={modData.title}
                 modImage={modData.imageUrl}
                 onModalStateChange={setIsModalOpen}
+                directUrl={mod.direct_download_url}
+                fileName="warden-guizzprints.mcstructure"
               />
 
 
@@ -460,7 +483,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                       <Star
                         key={star}
                         size={18}
-                        className={`cursor-pointer transition-all ${star <= (hoverRating || userRating) ? 'text-yellow-500 fill-yellow-500 scale-110 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-zinc-700 hover:text-yellow-500/50'}`}
+                        className={`${mod.is_demo ? 'cursor-default' : 'cursor-pointer'} transition-all ${star <= (hoverRating || userRating || (mod.is_demo ? liveRating : 0)) ? 'text-yellow-500 fill-yellow-500 scale-110 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-zinc-700 hover:text-yellow-500/50'}`}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
                         onClick={() => handleRate(star)}

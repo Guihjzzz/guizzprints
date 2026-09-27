@@ -10,10 +10,12 @@ interface DownloadFlowProps {
   modTitle?: string;
   modImage?: string;
   onModalStateChange?: (isOpen: boolean) => void;
+  directUrl?: string;
+  fileName?: string;
 }
 
 /** One-click download with the original server-side validation and counter. */
-export default function DownloadFlow({ modId }: DownloadFlowProps) {
+export default function DownloadFlow({ modId, directUrl, fileName }: DownloadFlowProps) {
   const t = useTranslations('Download');
   const router = useRouter();
   const [isPreparing, setIsPreparing] = useState(false);
@@ -46,11 +48,17 @@ export default function DownloadFlow({ modId }: DownloadFlowProps) {
           <p className="mt-1 text-xs leading-5 text-zinc-400">Sem anúncios, contagem regressiva ou página intermediária.</p>
         </div>
       </div>
-      <button type="button" disabled={isPreparing} onClick={download}
-        className="flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 px-4 py-4 font-bold text-white shadow-[0_6px_28px_#2563eb35] transition hover:bg-blue-500 active:translate-y-px disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400">
-        {isPreparing ? <Loader2 size={19} className="motion-safe:animate-spin" /> : <Download size={19} />}
-        {isPreparing ? t('preparing') : t('download')}
-      </button>
+      {directUrl ? (
+        <a href={directUrl} download={fileName} className="flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 px-4 py-4 font-bold text-white shadow-[0_6px_28px_#2563eb35] transition hover:bg-blue-500 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400">
+          <Download size={19} /> {t('download')}
+        </a>
+      ) : (
+        <button type="button" disabled={isPreparing} onClick={download}
+          className="flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 px-4 py-4 font-bold text-white shadow-[0_6px_28px_#2563eb35] transition hover:bg-blue-500 active:translate-y-px disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-400">
+          {isPreparing ? <Loader2 size={19} className="motion-safe:animate-spin" /> : <Download size={19} />}
+          {isPreparing ? t('preparing') : t('download')}
+        </button>
+      )}
       {error && <p role="alert" className="mt-3 text-center text-sm text-red-400">{error}</p>}
     </div>
   );

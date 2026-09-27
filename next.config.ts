@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin();
 const securityHeaders = [
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'",
+    value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
   },
   {
     key: 'Strict-Transport-Security',
@@ -18,7 +18,7 @@ const securityHeaders = [
   },
   {
     key: 'X-Frame-Options',
-    value: 'DENY',
+    value: 'SAMEORIGIN',
   },
   {
     key: 'Referrer-Policy',

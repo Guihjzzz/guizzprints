@@ -9,6 +9,7 @@ import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryFilter } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { DEMO_BUILD_SUMMARY } from '@/lib/demo-build';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -60,7 +61,8 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
 
       if (error) throw error;
 
-      const nextItems = data || [];
+      const supportsDemo = pageIndex === 0 && (slug.toLowerCase() === 'bedrock' || slug.toLowerCase() === 'mcstructure');
+      const nextItems = data && data.length > 0 ? data : (supportsDemo ? [DEMO_BUILD_SUMMARY as ModSummary] : []);
       if (isInitial) {
         setMods(nextItems);
       } else {
@@ -74,6 +76,13 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
       setLoadError(false);
       return true;
     } catch {
+      const supportsDemo = pageIndex === 0 && (slug.toLowerCase() === 'bedrock' || slug.toLowerCase() === 'mcstructure');
+      if (supportsDemo) {
+        setMods([DEMO_BUILD_SUMMARY as ModSummary]);
+        setHasMore(false);
+        setLoadError(false);
+        return true;
+      }
       setLoadError(true);
       return false;
     } finally {
