@@ -63,6 +63,7 @@ interface ModData {
   rating?: number;
   spin_video_url?: string;
   guide_schem_url?: string;
+  studio_board_url?: string;
   direct_download_url?: string;
   is_demo?: boolean;
 }
@@ -440,6 +441,34 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 )}
               </div>
             </div>
+
+        {mod.studio_board_url && (
+          <section className="site-motion-panel overflow-hidden rounded-2xl border border-[#1D2433] bg-[#111318] shadow-xl">
+            <div className="border-b border-[#1D2433] px-5 py-5 sm:px-7">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">Guizz Studio</p>
+                  <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">Prancha completa da construção</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">Role pela página para consultar todos os ângulos da construção em uma única prancha.</p>
+                </div>
+                <a href={mod.studio_board_url} download="warden-guizzprints-prancha.png" className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-red-200 transition hover:bg-red-500/20">
+                  <Download size={16} /> Baixar prancha
+                </a>
+              </div>
+            </div>
+            <div className="bg-white p-2 sm:p-4">
+              <OptimizedImage
+                src={mod.studio_board_url}
+                optimizeWidth={1800}
+                optimizeQuality={88}
+                width={1800}
+                height={1125}
+                alt={`Prancha completa do Guizz Studio para ${modData.title}`}
+                className="h-auto w-full object-contain"
+              />
+            </div>
+          </section>
+        )}
 
 <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 shadow-xl">
