@@ -334,7 +334,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                     <div className="absolute inset-0 w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-500 font-medium">{t('videoPaused')}</div>
                   )
                 ) : (
-                  <OptimizedImage src={mediaList[activeMedia]?.url || modData.imageUrl} optimizeWidth={1440} optimizeHeight={810} optimizeQuality={78} alt={modData.title} fill sizes="(max-width: 1024px) 100vw, 66vw" className="object-cover transition-opacity duration-300" />
+                  <OptimizedImage src={mediaList[activeMedia]?.url || modData.imageUrl} optimizeWidth={1440} optimizeHeight={810} optimizeQuality={78} alt={modData.title} fill sizes="(max-width: 1024px) 100vw, 66vw" className="object-contain transition-opacity duration-300" />
                 )}
               </div>
 
