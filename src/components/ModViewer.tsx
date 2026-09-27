@@ -347,18 +347,18 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                   >
                     {media.type === 'guide' ? (
                       <>
-                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-cover opacity-60" alt={`${modData.title} Guia 3D`} />
+                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain opacity-60" alt={`${modData.title} Guia 3D`} />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/35"><Layers3 size={25} className="text-red-400 drop-shadow-lg" /></div>
                       </>
                     ) : media.type === 'video' || media.type === 'video-file' ? (
                       <>
-                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-cover opacity-60 mix-blend-luminosity" alt={`${modData.title} video preview`} />
+                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain opacity-60 mix-blend-luminosity" alt={`${modData.title} video preview`} />
                         <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20">
                           <Play size={24} className="text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] fill-current"/>
                         </div>
                       </>
                     ) : (
-                      <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-cover" alt={`${modData.title} preview ${idx + 1}`} />
+                      <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain" alt={`${modData.title} preview ${idx + 1}`} />
                     )}
                   </button>
                 ))}
