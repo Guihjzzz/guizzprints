@@ -17,7 +17,7 @@ export const DEMO_BUILD = {
   image_url_5: '/demo/warden/view-2.png',
   youtube_trailer_url: '',
   spin_video_url: '/demo/warden/spin.webm',
-  guide_schem_url: '/demo/warden/warden.schem?v=bedrock-state-1',
+  guide_schem_url: '/demo/warden/warden.schem?v=original-converter-2',
   studio_board_url: '/demo/warden/board.png',
   direct_download_url: '/demo/warden/warden.mcstructure',
   downloads: 0,
