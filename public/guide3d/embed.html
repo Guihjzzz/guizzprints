@@ -46,7 +46,7 @@
           send('gate', { on: false });
           send('studioPanel', { open: false });
           send('bg', { mode: 'dark' });
-          send('loadSchem', { url: model, name: model.split('/').pop(), title });
+          send('loadSchem', { url: model, name: model.split('/').pop().split('?')[0], title });
         }
         if (data.cmd === 'buildLoaded' && data.painted) {
           status.textContent = 'Zoom e camadas ativos';

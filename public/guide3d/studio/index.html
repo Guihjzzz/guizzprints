@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090b" />
+    <title>Guizz — Guia 3D de construções</title>
+    <link rel="stylesheet" href="./app.css?v=8" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Página inicial do Guizz">
+          <img class="brand-wordmark" src="./assets/brand/guizz-logo-cat.png" alt="Guizz" />
+          <span>
+            <small>Guia 3D de construções</small>
+          </span>
+        </a>
+
+        <div class="engine-state" role="status" aria-live="polite">
+          <span class="state-dot" id="stateDot"></span>
+          <span id="engineStatus">Carregando motor 3D…</span>
+        </div>
+
+        <button class="studio-mode-button" id="studioModeButton" type="button" aria-pressed="false" title="Abrir todas as ferramentas do motor original">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>
+          <span class="studio-mode-label">Estúdio completo</span>
+        </button>
+
+        <button class="icon-button" id="fullscreenButton" type="button" title="Abrir o guia em tela cheia" aria-label="Tela cheia">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+        </button>
+      </header>
+
+      <main class="workspace">
+        <section class="viewer-card" id="viewerCard" aria-label="Visualizador da construção">
+          <iframe
+            id="engineFrame"
+          data-src="./engine/viewer.html?guizz=1&amp;demo=1&amp;bridge=46"
+            title="Guia de montagem 3D"
+            allow="fullscreen"
+          ></iframe>
+          <div class="loading-screen" id="loadingScreen">
+            <div class="loader-cube" aria-hidden="true"></div>
+            <strong id="loadingTitle">Preparando o guia 3D</strong>
+            <span id="loadingCopy">Carregando texturas, geometrias e etapas</span>
+          </div>
+        </section>
+
+        <aside class="control-panel" aria-label="Ferramentas do guia">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Construção atual</span>
+              <h1 id="modelTitle">Guia de montagem</h1>
+            </div>
+            <span class="version-badge" id="formatBadge">SCHEM</span>
+          </div>
+
+          <nav class="studio-nav" aria-label="Ferramentas do estúdio">
+            <span class="eyebrow">Estúdio completo</span>
+            <p>As opções nativas ficam à direita do modelo. Abertura, conversão e exportações permanecem aqui.</p>
+            <div class="studio-nav-buttons">
+              <button type="button" data-studio-view="build">Construção</button>
+              <button type="button" data-studio-view="style">Estilo e blocos</button>
+              <button type="button" data-studio-view="advanced">Avançado</button>
+            </div>
+          </nav>
+
+          <div class="model-stats" id="modelStats">
+            <div><strong id="statBlocks">—</strong><span>blocos</span></div>
+            <div><strong id="statSteps">—</strong><span>etapas</span></div>
+            <div><strong id="statDims">—</strong><span>dimensões</span></div>
+          </div>
+
+          <section class="tool-section import-section">
+            <div class="section-title">
+              <span class="section-icon section-icon-red" aria-hidden="true">＋</span>
+              <div><h2>Abrir e converter</h2><p>O formato é detectado e convertido automaticamente para .schem.</p></div>
+            </div>
+            <button class="native-converter-button" id="nativeConverterButton" type="button" title="Escolher um arquivo e converter automaticamente">
+              <span class="native-converter-icon" aria-hidden="true">↥</span>
+              <span><strong>Escolher e converter arquivo</strong><small>Detecção nativa e abertura automática no guia 3D</small></span>
+            </button>
+            <p class="native-converter-note">Aceita .mcstructure, .litematic, .schem, .schematic, .nbt e .bp. Arquivos .schem são abertos diretamente.</p>
+            <input id="schemInput" type="file" accept=".mcstructure,.litematic,.schem,.schematic,.nbt,.bp,.mcstructurezip,.zip,application/octet-stream" hidden />
+            <div class="schem-dropzone" id="schemDropzone" role="button" tabindex="0" aria-controls="schemInput">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4L8 8M5 14v5h14v-5"/></svg>
+              <span><strong>Clique ou arraste a construção</strong><small>O conversor nativo prepara o .schem automaticamente</small></span>
+            </div>
+            <a class="native-converter-note more-formats-link" href="./conversor.html">Abrir ferramentas completas do conversor ↗</a>
+            <div class="file-status" id="fileStatus">
+              <span class="file-status-dot" aria-hidden="true"></span>
+              <span id="loadedFileName">Amostra do motor carregada</span>
+            </div>
+          </section>
+
+          <section class="tool-section">
+            <div class="section-title">
+              <span class="section-icon section-icon-red" aria-hidden="true">▶</span>
+              <div><h2>Reprodução</h2><p>Acompanhe a construção surgindo etapa por etapa.</p></div>
+            </div>
+            <button class="primary-button" id="timelapseButton" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              Reproduzir timelapse
+            </button>
+            <label class="switch-row">
+              <span><strong>Rotação automática</strong><small>Gira a construção continuamente</small></span>
+              <input id="spinToggle" type="checkbox" />
+              <i aria-hidden="true"></i>
+            </label>
+            <label class="switch-row">
+              <span><strong>Mostrar grade</strong><small>Exibe a referência do terreno</small></span>
+              <input id="gridToggle" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+          </section>
+
+          <section class="tool-section">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">▧</span>
+              <div><h2>Informações</h2><p>Consulte materiais e dados do tutorial.</p></div>
+            </div>
+            <div class="button-grid">
+              <button class="secondary-button" id="materialsButton" type="button" disabled>Lista de materiais</button>
+              <button class="secondary-button" id="configButton" type="button" disabled>Configuração JSON</button>
+            </div>
+          </section>
+
+          <section class="tool-section">
+            <div class="section-title">
+              <span class="section-icon" aria-hidden="true">◉</span>
+              <div><h2>Imagens e vídeo</h2><p>Gere arquivos usando a câmera e o estilo atuais.</p></div>
+            </div>
+            <button class="secondary-button wide" id="coverButton" type="button" disabled>Capa isométrica PNG</button>
+            <button class="secondary-button wide" id="shotsButton" type="button" disabled>8 vistas em PNG</button>
+            <button class="secondary-button wide" id="videoButton" type="button" disabled>Vídeo giratório WebM</button>
+            <button class="secondary-button wide media-feature" id="timelapseVideoButton" type="button" disabled>
+              <span>Timelapse por camadas WebM</span>
+              <small>Monta, pausa e desmonta a construção em um loop adaptado ao arquivo</small>
+            </button>
+          </section>
+
+          <section class="tool-section compact-section">
+            <div class="export-row">
+              <label class="sr-only" for="exportFormat">Formato de exportação</label>
+              <select id="exportFormat" class="export-format" disabled>
+                <option value="schem">Sponge .schem</option>
+              </select>
+              <button class="outline-button" id="exportButton" type="button" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16"/></svg>
+                Baixar construção
+              </button>
+            </div>
+            <a class="native-converter-note more-formats-link" href="./conversor.html">Converter para outros formatos ↗</a>
+          </section>
+
+          <section class="tool-section studio-section">
+            <div class="section-title">
+              <span class="section-icon section-icon-red" aria-hidden="true">⌘</span>
+              <div><h2>Motor original completo</h2><p>Abra todas as ferramentas nativas sem sair deste projeto.</p></div>
+            </div>
+            <button class="primary-button" id="openStudioButton" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>
+              Abrir estúdio completo
+            </button>
+            <p class="studio-feature-copy">Etapas, materiais, estilos, substituição e exclusão de blocos, pacote de texturas, fantasma, shaders, iluminação, cenário, modo jogador, medidas, capítulos, câmeras e controles avançados.</p>
+          </section>
+
+          <div class="next-step-note">
+            <img class="author-cat" src="./assets/brand/guizz-cat-avatar.png" alt="" />
+            <div><span>Conversor e guia</span><p>O conversor completo aceita Bedrock, Java, Litematica, modelos 3D e imagens. O guia Guizz recebe o .schem original e mantém etapas, materiais, imagens e vídeo.</p></div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="modal" id="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <header>
+          <div><span class="eyebrow" id="modalEyebrow">Resultado</span><h2 id="modalTitle">Arquivos gerados</h2></div>
+          <button class="modal-close" type="button" data-close-modal aria-label="Fechar">×</button>
+        </header>
+        <div class="modal-content" id="modalContent"></div>
+        <footer id="modalFooter"></footer>
+      </section>
+    </div>
+
+    <script src="./cdn/cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="./cdn/pako.min.js"></script>
+    <script type="module" src="./app.js?v=37"></script>
+  </body>
+</html>
