@@ -51,10 +51,10 @@
         if (data.cmd === 'buildLoaded' && data.painted) {
           status.textContent = 'Zoom e camadas ativos';
           const steps = Number(data.steps || 0);
-          if (steps > 0) send('rgoto', { n: steps });
           setTimeout(() => {
             send('relayout');
-            send('thumbAim', { rot: 45, el: 35.264, zoom: 1, shadow: .22, ao: true });
+            if (steps > 0) send('rgoto', { n: steps });
+            send('fitBuild', { rot: 45, elevation: 28 });
           }, 180);
         }
         if (data.cmd === 'buildFailed') status.textContent = 'Falha ao abrir a amostra';

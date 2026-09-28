@@ -19158,6 +19158,27 @@ body.biHero #stage{position:fixed;inset:0}
           (e.source||parent).postMessage({bi:1,cmd:'relayoutDone',
             w:cvv.width, h:cvv.height},'*'); }catch(_e){}
       }catch(_e){} }
+      /* Fit the complete build for an interactive embed. Thumbnail capture keeps
+         its narrow 20-degree product lens; the live viewer uses the normal lens
+         and validates all eight build corners against the current aspect ratio. */
+      if(d.cmd==='fitBuild'){ try{
+        camTween=null; spin=false;
+        camera.fov=50; window.__biThumbFree=false; window.__biFitBaseR=null;
+        camera.updateProjectionMatrix();
+        if(typeof d.rot==='number'&&isFinite(d.rot)) theta=d.rot*Math.PI/180;
+        if(typeof d.elevation==='number'&&isFinite(d.elevation))
+          phi=(90-Math.max(8,Math.min(70,d.elevation)))*Math.PI/180;
+        var fb=visibleStageBounds(NSTAGES);
+        if(fb){
+          panOff.set(fb.cx-center.x,fb.cy-center.y,fb.cz-center.z);
+          /* cameraFitRadiusForBounds already uses the real horizontal FOV.  The
+             orbit path applies portraitFit() afterwards, so cancel that second
+             portrait correction here or narrow embeds become needlessly tiny. */
+          radius=cameraFitRadiusForBounds(fb,.96)/portraitFit();
+        }
+        applyCamera(); enforceProjectedBounds(fb,.86); render();
+        try{ renderer.render(scene,camera); }catch(_e){}
+      }catch(_e){} }
       if(d.cmd==='bg'){ var want=d.mode==='light'; var lt=$('lightToggle');
         if(lt&&lt.checked!==want) lt.click();
         document.body.classList.toggle('biLight', want);
