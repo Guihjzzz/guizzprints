@@ -20,6 +20,7 @@ interface ModSummary {
   category: string;
   subcategory: string | null;
   image_url_1: string | null;
+  showcase_cover_url?: string | null;
   rating: number | null;
   downloads: number | null;
 }
@@ -48,13 +49,26 @@ function SearchContent() {
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const pageRef = useRef(0);
   const requestVersionRef = useRef(0);
+  const activeRequest = useRef<AbortController | null>(null);
+
+  // Keep the visible filters aligned when a visitor follows a shared search
+  // URL or uses the browser history controls.
+  useEffect(() => {
+    const nextQuery = searchParams.get('q') || '';
+    const nextCategory = searchParams.get('category') || 'all';
+    setQuery((current) => current === nextQuery ? current : nextQuery);
+    setCategory((current) => current === nextCategory ? current : nextCategory);
+  }, [searchParams]);
 
   const fetchFilteredMods = useCallback(async (searchQ: string, catQ: string, pageIndex: number, isInitial = false, requestVersion = requestVersionRef.current) => {
     const from = pageIndex * ITEMS_PER_PAGE;
     const to = from + ITEMS_PER_PAGE - 1;
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
 
     try {
-      let req = supabase.from('public_mods').select('id, title, category, subcategory, image_url_1, rating, downloads');
+      let req = supabase.from('public_mods').select('id, title, category, subcategory, image_url_1, showcase_cover_url, rating, downloads');
 
       if (searchQ.trim()) {
         req = req.ilike('title', `%${searchQ.trim()}%`);
@@ -64,7 +78,7 @@ function SearchContent() {
         req = req.or(categoryFilter(catQ));
       }
 
-      const { data, error } = await req.order('created_at', { ascending: false }).order('id', { ascending: false }).range(from, to);
+      const { data, error } = await req.abortSignal(controller.signal).order('created_at', { ascending: false }).order('id', { ascending: false }).range(from, to);
       if (error) throw error;
 
       // A slower response from a previous query must never replace the
@@ -82,6 +96,7 @@ function SearchContent() {
         setHasMore(false);
       }
     } catch {
+      if (controller.signal.aborted) return;
       if (requestVersion !== requestVersionRef.current) return;
       setLoadError(true);
     } finally {
@@ -91,6 +106,8 @@ function SearchContent() {
       }
     }
   }, []);
+
+  useEffect(() => () => activeRequest.current?.abort(), []);
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -170,21 +187,21 @@ function SearchContent() {
       elements.push(
         <Link 
           href={`/${locale}/mod/${mod.id}`} 
+          prefetch={false}
           target="_blank"
           rel="noopener noreferrer"
           key={mod.id} 
           className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl sm:rounded-2xl overflow-hidden hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] flex-shrink-0"
         >
-          <div className="relative w-full h-[89px] md:h-[124px] bg-zinc-900 overflow-hidden flex-shrink-0 border-b border-[#1D2433]">
+          <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0 border-b border-[#1D2433]">
             <OptimizedImage
-              src={mod.image_url_1 || "https://picsum.photos/seed/1/400/225"} 
-              optimizeWidth={480}
-              optimizeHeight={270}
-              optimizeQuality={70}
+              src={mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/400/225"}
+              optimizeWidth={640}
+              optimizeQuality={78}
               alt={mod.title} 
               fill
               loading="lazy"
-              className="site-motion-image object-cover opacity-90 group-hover:opacity-100"
+              className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
               sizes="(max-width: 768px) 160px, 220px"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
@@ -222,11 +239,12 @@ function SearchContent() {
             {t('title')}
           </h1>
           
-          <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-2xl">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-2xl" aria-busy={loading}>
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
               <input 
                 type="text" 
+                aria-label={t('placeholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('placeholder')}

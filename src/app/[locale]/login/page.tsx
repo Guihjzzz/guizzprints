@@ -8,6 +8,10 @@ import { defaultLocale, isAppLocale } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { getSafeReturnPath } from '@/lib/auth-return';
 import { googleAuthUrl, resendConfirmation, submitEmailAuth, type AuthMode, type AuthOutcome } from '@/lib/auth-actions';
+import { isFirebaseConfigured } from '@/lib/firebase-client';
+import { getFirebaseAuth } from '@/lib/firebase-client';
+import { getRedirectResult } from 'firebase/auth';
+import { resendFirebaseConfirmation, signInWithFirebaseGoogle, submitFirebaseEmailAuth } from '@/lib/firebase-auth-actions';
 import AuthCaptcha from '@/components/AuthCaptcha';
 
 const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
@@ -36,6 +40,8 @@ function LoginForm() {
   const [clock, setClock] = useState(0);
   const cooldowns = useRef(new Map<string, number>());
   const [cooldownView, setCooldownView] = useState<Record<string, number>>({});
+  const firebaseEnabled = isFirebaseConfigured();
+  const captchaEnabled = Boolean(siteKey && !firebaseEnabled);
   const onToken = useCallback((token: string) => setCaptchaToken(token), []);
   const email = form.email.trim().toLowerCase();
   const wait = Math.max(0, Math.ceil(((cooldownView[email] ?? 0) - clock) / 1000));
@@ -52,6 +58,24 @@ function LoginForm() {
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  React.useEffect(() => {
+    if (!firebaseEnabled) return;
+    const auth = getFirebaseAuth();
+    if (!auth) return;
+    let active = true;
+    void getRedirectResult(auth).then((result) => {
+      if (!active || !result?.user) return;
+      window.location.assign(next() ?? `/${locale}`);
+    }).catch((error: unknown) => {
+      if (!active) return;
+      const code = (error as { code?: string } | null)?.code || '';
+      setMessage({ success: false, text: code === 'auth/unauthorized-domain'
+        ? 'Este domínio ainda não está autorizado no Firebase.'
+        : t('googleUnavailable') });
+    });
+    return () => { active = false; };
+  }, [firebaseEnabled, locale, t]);
 
   React.useEffect(() => {
     if (!focusEmailRef.current) return;
@@ -81,7 +105,7 @@ function LoginForm() {
       setMessage({ success: false, text: t('passwordTooShort') }); return;
     }
     if (sendsEmail && (cooldowns.current.get(email) ?? 0) > Date.now()) return;
-    if (siteKey && !captchaToken) { setMessage({ success: false, text: t('captchaRequired') }); return; }
+    if (captchaEnabled && !captchaToken) { setMessage({ success: false, text: t('captchaRequired') }); return; }
     busy.current = true; setLoading(true); setMessage(null);
     // UX cooldown only. Supabase rate limits and CAPTCHA enforce protection on the server.
     if (sendsEmail) {
@@ -91,8 +115,14 @@ function LoginForm() {
     let navigating = false;
     try {
       const input = { ...form, locale, origin: window.location.origin, next: next(), captchaToken: captchaToken || undefined };
-      const outcome = action === 'resend' ? await resendConfirmation(supabase.auth, input)
-        : await submitEmailAuth(supabase.auth, { ...input, mode });
+      let outcome = action === 'resend'
+        ? firebaseEnabled ? await resendFirebaseConfirmation(input) : await resendConfirmation(supabase.auth, input)
+        : firebaseEnabled ? await submitFirebaseEmailAuth({ ...input, mode }) : await submitEmailAuth(supabase.auth, { ...input, mode });
+      // Existing Guizzprints accounts were created in Supabase before Firebase
+      // was enabled. Keep those accounts usable while users migrate.
+      if (firebaseEnabled && action === 'submit' && mode !== 'reset' && !('redirect' in outcome)) {
+        outcome = await submitEmailAuth(supabase.auth, { ...input, mode });
+      }
       navigating = 'redirect' in outcome;
       applyOutcome(outcome);
     } catch { setMessage({ success: false, text: t('authUnavailable') }); }
@@ -106,6 +136,10 @@ function LoginForm() {
     busy.current = true; setLoading(true); setMessage(null);
     let navigating = false;
     try {
+      if (firebaseEnabled) {
+        const outcome = await signInWithFirebaseGoogle({ locale, next: next() });
+        if ('redirect' in outcome) { navigating = true; applyOutcome(outcome); return; }
+      }
       const url = await googleAuthUrl(supabase.auth, { origin: window.location.origin, locale, next: next(),
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! });
       if (url) { navigating = true; window.location.assign(url); return; }
@@ -113,7 +147,7 @@ function LoginForm() {
     } catch { setMessage({ success: false, text: t('googleUnavailable') }); }
     finally { if (!navigating) { busy.current = false; setLoading(false); } }
   };
-  const blocked = loading || Boolean(siteKey && !captchaToken) || (emailAction && wait > 0);
+  const blocked = loading || Boolean(captchaEnabled && !captchaToken) || (emailAction && wait > 0);
   return <div className="min-h-screen bg-[#07090D] flex items-center justify-center p-4">
     <div className="w-full max-w-md bg-[#111318] border border-[#1D2433] rounded-2xl p-6 sm:p-8 shadow-2xl">
       <div className="flex items-center gap-4 mb-6 border-b border-[#1D2433] pb-6">
@@ -165,14 +199,14 @@ function LoginForm() {
           </div>
           {mode === 'register' && <p className="text-xs text-zinc-500">{t('passwordHint')}</p>}
         </div>}
-        {siteKey && <AuthCaptcha siteKey={siteKey} locale={locale} resetKey={captchaReset} onToken={onToken}
+        {captchaEnabled && <AuthCaptcha siteKey={siteKey} locale={locale} resetKey={captchaReset} onToken={onToken}
           unavailable={t('captchaUnavailable')} retry={t('retry')}/>}
         <button type="submit" disabled={blocked} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 disabled:cursor-not-allowed">
           {loading ? <><Loader2 className="animate-spin" size={18}/>{t('working')}</> : emailAction && wait > 0 ? t('resendIn', { seconds: wait })
             : mode === 'login' ? <><LogIn size={18}/>{t('signIn')}</> : mode === 'register' ? <><UserPlus size={18}/>{t('register')}</>
             : <><KeyRound size={18}/>{t('sendResetLink')}</>}
         </button>
-        {confirmation && mode !== 'reset' && <button type="button" disabled={loading || wait > 0 || Boolean(siteKey && !captchaToken)}
+        {confirmation && mode !== 'reset' && <button type="button" disabled={loading || wait > 0 || Boolean(captchaEnabled && !captchaToken)}
           onClick={() => void run('resend')} className="w-full bg-[#1A2230] border border-[#334155] text-zinc-200 py-3 rounded-xl text-sm disabled:opacity-50">
           {wait > 0 ? t('resendIn', { seconds: wait }) : t('resendConfirmation')}
         </button>}

@@ -101,6 +101,7 @@ export default function FavoritesPage({ params }: Props) {
           {mods.map((mod) => (
             <Link 
               href={`/${locale}/mod/${mod.id}`} 
+              prefetch={false}
               target="_blank"
               rel="noopener noreferrer"
               key={mod.id} 

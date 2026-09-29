@@ -49,7 +49,7 @@ export function optimizedImageUrl(
 ) {
   const value = source?.trim();
   if (!value || value.startsWith('/') || value.startsWith('data:')) {
-    return value || '/logo.jpg';
+    return value || '/guizz-cover.jpg';
   }
 
   try {

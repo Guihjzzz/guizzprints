@@ -216,7 +216,7 @@ export async function GET(request: NextRequest) {
     if (search.length > 100) return errorResponse('Search is too long.', 400);
 
     let query = admin.supabase.from('mods')
-      .select('id, title, category, subcategory, version, file_size, downloads, rating, created_at, source_provider, source_sync_status, source_sync_error, source_sync_failed_at, source_creator, source_tags, source_published_at');
+      .select('id, title, category, subcategory, version, file_size, downloads, rating, created_at, guide_mcstructure_url, guide_schem_url, source_provider, source_sync_status, source_sync_error, source_sync_failed_at, source_creator, source_tags, source_published_at');
     // Category is validated against the whitelist above before interpolation.
     if (category !== 'all') query = query.or(`category.ilike.${category},subcategory.ilike.${category}`);
     if (search) {
@@ -308,7 +308,18 @@ export async function DELETE(request: NextRequest) {
     const id = request.nextUrl.searchParams.get('id')?.trim();
     if (!id) return errorResponse('Mod ID is required.', 400);
 
-    const { error } = await admin.supabase.from('mods').delete().eq('id', id);
+    const { data: current, error: currentError } = await admin.supabase.from('mods')
+      .select('guide_mcstructure_url, guide_schem_url')
+      .eq('id', id)
+      .maybeSingle();
+    if (currentError) return databaseErrorResponse('Unable to delete the mod.', 'read-before-delete', currentError);
+    if (!current) return errorResponse('Mod not found.', 404);
+
+    let deleteQuery = admin.supabase.from('mods').delete();
+    const groupKey = (typeof current.guide_mcstructure_url === 'string' ? current.guide_mcstructure_url.trim() : '')
+      || (typeof current.guide_schem_url === 'string' ? current.guide_schem_url.trim() : '');
+    deleteQuery = groupKey ? deleteQuery.eq('guide_mcstructure_url', groupKey) : deleteQuery.eq('id', id);
+    const { error } = await deleteQuery;
     if (error) return databaseErrorResponse('Unable to delete the mod.', 'delete', error);
 
     return NextResponse.json({ success: true }, { headers: noStoreHeaders });

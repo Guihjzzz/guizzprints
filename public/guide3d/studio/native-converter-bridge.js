@@ -1,4 +1,4 @@
-import { convertFileToSchem } from "./converter/formatBridge.js";
+const NATIVE_CONVERTER_URL = "/converter?guizz_bridge=1";
 const SUPPORTED_INPUT = /\.(?:mcstructure|litematic|schem|schematic|nbt|bp|mcstructurezip|zip)$/i;
 
 function delay(milliseconds) {
@@ -116,9 +116,57 @@ export function supportsNativeConversion(file) {
 
 export async function convertWithNativeEngine(file, onProgress = () => {}) {
   if (!supportsNativeConversion(file)) throw new Error(`Formato não suportado: ${file?.name || "arquivo sem nome"}`);
-  onProgress("Lendo o arquivo com o conversor original…");
-  const result = await convertFileToSchem(file);
-  const baseName = file.name.replace(/\.[^.]+$/u, "") || "conversao";
-  onProgress("Conversão para Sponge .schem concluída.");
-  return new File([result.bytes], `${baseName}.schem`, { type: "application/octet-stream" });
+  const frame = createConverterFrame();
+  try {
+    onProgress("Iniciando o conversor nativo…");
+    const converterWindow = await waitForFrame(frame);
+    const converterDocument = converterWindow.document;
+    const capture = installDownloadCapture(converterWindow);
+
+    onProgress("Carregando os recursos originais…");
+    const fileInput = await waitFor(
+      () => [...converterDocument.querySelectorAll('input[type="file"]')]
+        .find((input) => input.multiple && !String(input.accept || "").includes(".jar")),
+      120000,
+      "O campo de importação do conversor"
+    );
+
+    const nativeFile = new converterWindow.File([await file.arrayBuffer()], file.name, {
+      type: file.type || "application/octet-stream",
+      lastModified: file.lastModified || Date.now(),
+    });
+    const transfer = new converterWindow.DataTransfer();
+    transfer.items.add(nativeFile);
+    fileInput.files = transfer.files;
+    fileInput.dispatchEvent(new converterWindow.Event("input", { bubbles: true }));
+    fileInput.dispatchEvent(new converterWindow.Event("change", { bubbles: true }));
+    onProgress(`Identificando ${file.name}…`);
+
+    const formatSelect = await waitFor(
+      () => converterDocument.querySelector("#export-format"),
+      180000,
+      "A leitura nativa do arquivo"
+    );
+    onProgress("Convertendo para Sponge .schem…");
+    setNativeValue(formatSelect, "schem");
+    await waitFor(() => formatSelect.value === "schem", 10000, "A seleção do formato .schem");
+
+    const exportButton = await waitFor(
+      () => [...converterDocument.querySelectorAll("button")]
+        .find((button) => button.textContent.trim() === "Export" && !button.disabled),
+      30000,
+      "O botão de exportação nativo"
+    );
+    capture.start();
+    exportButton.click();
+
+    const converted = await Promise.race([
+      capture.result,
+      delay(180000).then(() => { throw new Error("A exportação nativa não terminou dentro do limite de tempo."); }),
+    ]);
+    const baseName = file.name.replace(/\.[^.]+$/u, "") || "conversao";
+    return new File([converted.blob], `${baseName}.schem`, { type: "application/octet-stream" });
+  } finally {
+    frame.remove();
+  }
 }

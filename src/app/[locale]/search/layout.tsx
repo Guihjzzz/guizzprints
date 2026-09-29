@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: copy.title,
     description: copy.description,
     alternates: { canonical: url },
-    openGraph: { title: copy.title, description: copy.description, url, type: 'website', images: [{ url: '/logo.jpg', alt: 'Guizzprints' }] },
-    twitter: { card: 'summary', title: copy.title, description: copy.description, images: ['/logo.jpg'] },
+    openGraph: { title: copy.title, description: copy.description, url, type: 'website', images: [{ url: '/guizz-cover.jpg', alt: 'Guizzprints' }] },
+    twitter: { card: 'summary', title: copy.title, description: copy.description, images: ['/guizz-cover.jpg'] },
   };
 }
 

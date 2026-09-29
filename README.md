@@ -22,6 +22,8 @@ DOWNLOAD_TOKEN_SECRET=um-segredo-aleatorio-com-pelo-menos-32-caracteres
 
 Nunca coloque `SUPABASE_SECRET_KEY` ou `DOWNLOAD_TOKEN_SECRET` em variáveis `NEXT_PUBLIC_*`.
 
+O login do site está configurado no Firebase `ghuizz-hololab` (`.firebaserc`) com e-mail/senha e Google. Para produção, copie os identificadores `NEXT_PUBLIC_FIREBASE_*` do `.env.local` para as variáveis públicas da hospedagem e mantenha `FIREBASE_ADMIN_EMAILS` somente no servidor.
+
 ## Desenvolvimento
 
 ```bash

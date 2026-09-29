@@ -444,7 +444,7 @@ async function downloadShotsCollage() {
     context.fillStyle = "#1f2937";
     context.font = "700 34px system-ui, sans-serif";
     context.fillText(displayBuildName(activeSchemName || modelTitle.textContent), 32, 48);
-    context.fillStyle = "#b91c1c";
+    context.fillStyle = "#1d4ed8";
     context.font = "700 22px system-ui, sans-serif";
     context.fillText("www.guizz.xyz", 32, 80);
 

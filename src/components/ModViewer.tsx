@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Play, Tag, Gamepad2, Coffee, Search, TrendingUp, Layers3, type LucideIcon } from "lucide-react";
-import DownloadFlow from './DownloadFlow';
+import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
+import DownloadFlow, { type DownloadFormat } from './DownloadFlow';
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from 'next-intl';
 import { InstallAppButton } from '@/components/InstallAppButton';
@@ -43,6 +43,15 @@ function SocialBtn({ icon: Icon, label, hoverColor, href }: { icon: SocialIcon; 
   );
 }
 
+function SpecItem({ icon: Icon, label, value, valueClassName = 'text-zinc-100' }: { icon: LucideIcon; label: string; value: string; valueClassName?: string }) {
+  return (
+    <div className="flex min-h-20 flex-col justify-between gap-2 rounded-xl border border-[#263247] bg-[#090d15] px-4 py-3">
+      <dt className="flex items-center gap-2 text-xs font-medium text-zinc-500"><Icon size={15} aria-hidden="true" /> {label}</dt>
+      <dd className={`break-words text-sm font-black ${valueClassName}`}>{value}</dd>
+    </div>
+  );
+}
+
 interface ModData {
   version?: string | null;
   id: string;
@@ -59,12 +68,18 @@ interface ModData {
   image_url_3?: string | null;
   image_url_4?: string | null;
   image_url_5?: string | null;
+  image_url_6?: string | null;
+  image_url_7?: string | null;
+  image_url_8?: string | null;
+  showcase_cover_url?: string | null;
+  guide_mcstructure_url?: string | null;
   downloads?: number;
   rating?: number;
-  spin_video_url?: string;
   guide_schem_url?: string;
   studio_board_url?: string;
   direct_download_url?: string;
+  download_formats?: readonly DownloadFormat[];
+  available_formats?: readonly string[] | null;
   is_demo?: boolean;
 }
 
@@ -96,7 +111,8 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   const [activeMedia, setActiveMedia] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'install'>('overview');
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const galleryStripRef = useRef<HTMLDivElement>(null);
+  const galleryDragRef = useRef({ pointerId: -1, startX: 0, startY: 0, startScrollLeft: 0, didDrag: false });
 
   // Estado para Avaliação e Mods Sugeridos
   const [hoverRating, setHoverRating] = useState(0);
@@ -109,6 +125,52 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   const [liveDownloads] = useState(mod.downloads || 0);
   const [liveRating, setLiveRating] = useState(mod.rating || 0);
   const [userRating, setUserRating] = useState(0);
+
+  function startGalleryDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const strip = galleryStripRef.current;
+    if (!strip) return;
+
+    galleryDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: strip.scrollLeft,
+      didDrag: false,
+    };
+  }
+
+  function moveGalleryDrag(event: React.PointerEvent<HTMLDivElement>) {
+    const strip = galleryStripRef.current;
+    const drag = galleryDragRef.current;
+    if (!strip || drag.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.didDrag && Math.abs(deltaX) <= 4) return;
+    if (!drag.didDrag && Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+    drag.didDrag = true;
+    // Capturing only after horizontal movement preserves a regular button
+    // click. Capturing on pointer-down retargets the release to the strip in
+    // some browsers, which prevents the thumbnail button from receiving it.
+    if (!strip.hasPointerCapture(event.pointerId)) strip.setPointerCapture(event.pointerId);
+    strip.scrollLeft = drag.startScrollLeft - deltaX;
+    event.preventDefault();
+  }
+
+  function stopGalleryDrag(event: React.PointerEvent<HTMLDivElement>) {
+    const strip = galleryStripRef.current;
+    const drag = galleryDragRef.current;
+    if (!strip || drag.pointerId !== event.pointerId) return;
+
+    if (strip.hasPointerCapture(event.pointerId)) strip.releasePointerCapture(event.pointerId);
+    galleryDragRef.current.pointerId = -1;
+  }
+
+  function selectGalleryMedia(index: number) {
+    setActiveMedia(index);
+  }
 
   // Busca mods sugeridos
   useEffect(() => {
@@ -261,29 +323,29 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     id: mod.id,
     title: mod.title || t('untitled'),
     category: mod.category || t('general'),
-    imageUrl: mod.image_url_1 || "https://picsum.photos/seed/1/800/450",
+    imageUrl: mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/800/450",
     description: mod.description || t('noDescription'),
     size: mod.file_size || "N/A",
     updatedAt: mod.created_at ? new Intl.DateTimeFormat(locale).format(new Date(mod.created_at)) : "N/A",
   };
 
-  const getEmbedUrl = (url?: string) => {
-    if (!url) return '';
-    const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-    return `https://www.youtube.com/embed/${videoId}?autoplay=0&controls=1`;
-  };
 
-  const ytThumbUrl = extractYtThumb(mod.youtube_trailer_url) || modData.imageUrl;
+  // The public gallery always starts with the Guizz Studio four-view cover.
+  // The generated board appears only in its dedicated lower section.
+  const guideViewUrls = [
+    mod.image_url_1,
+    mod.image_url_2,
+    mod.image_url_3,
+    mod.image_url_4,
+    mod.image_url_5,
+    mod.image_url_6,
+    mod.image_url_7,
+    mod.image_url_8,
+  ].filter((url): url is string => Boolean(url));
 
   const rawMediaList = [
-    mod.guide_schem_url ? { type: 'guide', url: mod.guide_schem_url, thumb: mod.image_url_1 || modData.imageUrl } : null,
-    mod.spin_video_url ? { type: 'video-file', url: mod.spin_video_url, thumb: mod.image_url_2 || modData.imageUrl } : null,
-    mod.youtube_trailer_url ? { type: 'video', url: getEmbedUrl(mod.youtube_trailer_url), thumb: ytThumbUrl } : null,
-    mod.image_url_1 ? { type: 'image', url: mod.image_url_1 } : null,
-    mod.image_url_2 ? { type: 'image', url: mod.image_url_2 } : null,
-    mod.image_url_3 ? { type: 'image', url: mod.image_url_3 } : null,
-    mod.image_url_4 ? { type: 'image', url: mod.image_url_4 } : null,
-    mod.image_url_5 ? { type: 'image', url: mod.image_url_5 } : null,
+    mod.showcase_cover_url ? { type: 'image', url: mod.showcase_cover_url } : null,
+    ...guideViewUrls.map((url) => ({ type: 'image', url })),
   ];
 
   const mediaList = rawMediaList.filter((item): item is { type: string; url: string; thumb?: string } => item !== null);
@@ -316,98 +378,84 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
           <span className="text-zinc-300 truncate max-w-[200px]">{modData.title}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-start">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(310px,360px)] lg:gap-7 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="min-w-0">
+            <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090d15] shadow-2xl">
+              <OptimizedImage
+                src={mediaList[activeMedia]?.url || modData.imageUrl}
+                optimizeWidth={1440}
+                optimizeQuality={84}
+                alt={modData.title}
+                fill
+                priority
+                sizes="(max-width: 640px) calc(100vw - 24px), (max-width: 1024px) calc(100vw - 48px), 760px"
+                className="object-contain p-1.5 transition-opacity duration-300 sm:p-2"
+              />
+            </div>
 
-          {/* COLUNA ESQUERDA: MÍDIA E DESCRIÇÃO */}
-          <div className="lg:col-span-8 min-w-0 space-y-6">
-
-            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_112px] gap-2 w-full md:h-[400px]">
-              <div className="relative w-full aspect-video md:aspect-auto md:h-full bg-black rounded-2xl border border-[#1D2433] overflow-hidden z-10 min-w-0">
-                {mediaList[activeMedia]?.type === 'guide' ? (
-                  <Guide3DPreview schemUrl={mediaList[activeMedia].url} title={modData.title} />
-                ) : mediaList[activeMedia]?.type === 'video-file' ? (
-                  <video src={mediaList[activeMedia].url} className="absolute inset-0 h-full w-full object-contain" autoPlay muted loop playsInline controls />
-                ) : mediaList[activeMedia]?.type === 'video' ? (
-                  !isModalOpen ? (
-                    <iframe title={modData.title} src={mediaList[activeMedia].url} className="absolute inset-0 w-full h-full border-0" allowFullScreen />
-                  ) : (
-                    <div className="absolute inset-0 w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-500 font-medium">{t('videoPaused')}</div>
-                  )
-                ) : (
-                  <OptimizedImage src={mediaList[activeMedia]?.url || modData.imageUrl} optimizeWidth={1440} optimizeHeight={810} optimizeQuality={78} alt={modData.title} fill sizes="(max-width: 1024px) 100vw, 66vw" className="object-contain transition-opacity duration-300" />
-                )}
-              </div>
-
-              <div className="flex flex-row md:flex-col gap-2 w-full md:h-full overflow-x-auto md:overflow-y-auto [scrollbar-width:none] shrink-0 pb-2 md:pb-0">
+            {mediaList.length > 1 && (
+              <div
+                ref={galleryStripRef}
+                onPointerDown={startGalleryDrag}
+                onPointerMove={moveGalleryDrag}
+                onPointerUp={stopGalleryDrag}
+                onPointerCancel={stopGalleryDrag}
+                onDragStart={(event) => event.preventDefault()}
+                className="mt-3 flex touch-pan-y select-none gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing"
+                role="tablist"
+                aria-label={`Galeria de ${modData.title}. Arraste para ver mais imagens.`}
+              >
                 {mediaList.map((media, idx) => (
                   <button
-                    key={idx}
-                    onClick={() => setActiveMedia(idx)}
-                    className={`relative shrink-0 w-28 aspect-video md:w-full md:aspect-video rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${activeMedia === idx ? 'border-blue-500 scale-[1.02] shadow-lg z-10' : 'border-transparent md:border-[#1D2433] opacity-60 hover:opacity-100'}`}
+                    key={media.url}
+                    type="button"
+                    role="tab"
+                    onClick={() => selectGalleryMedia(idx)}
+                    aria-label={`Mostrar imagem ${idx + 1} de ${mediaList.length} de ${modData.title}`}
+                    aria-selected={activeMedia === idx}
+                    className={`relative aspect-square w-16 shrink-0 overflow-hidden rounded-xl border-2 transition sm:w-[72px] ${activeMedia === idx ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_0_2px_rgba(37,99,235,.12)]' : 'border-[#1D2433] bg-[#090d15] opacity-65 hover:border-zinc-500 hover:opacity-100'}`}
                   >
-                    {media.type === 'guide' ? (
-                      <>
-                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain opacity-60" alt={`${modData.title} Guia 3D`} />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/35"><Layers3 size={25} className="text-red-400 drop-shadow-lg" /></div>
-                      </>
-                    ) : media.type === 'video' || media.type === 'video-file' ? (
-                      <>
-                        <OptimizedImage src={media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain opacity-60 mix-blend-luminosity" alt={`${modData.title} video preview`} />
-                        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20">
-                          <Play size={24} className="text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] fill-current"/>
-                        </div>
-                      </>
-                    ) : (
-                      <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={224} optimizeHeight={126} optimizeQuality={68} fill sizes="112px" className="object-contain" alt={`${modData.title} preview ${idx + 1}`} />
-                    )}
+                    <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={192} optimizeQuality={72} fill loading="lazy" sizes="72px" className="object-contain p-1" alt={`${modData.title} preview ${idx + 1}`} />
                   </button>
                 ))}
               </div>
-            </div>
+            )}
+          </section>
 
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-6">
+            <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-4 shadow-xl sm:p-5">
+              <div className="mb-3"><CategoryBadges category={modData.category} subcategory={mod.subcategory} /></div>
+              <h1 className="break-words text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">{modData.title}</h1>
 
-          </div>
-
-          {/* COLUNA DIREITA: DOWNLOAD E SPECS */}
-          <div className="lg:col-span-4 min-w-0 space-y-5 flex flex-col items-center text-center">
-            <div className="w-full space-y-4">
-              <h1 className="w-full text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">{modData.title}</h1>
-
-              <div className="mx-auto flex w-fit flex-wrap items-center gap-4 text-sm text-zinc-400 bg-[#111318] p-3 rounded-xl shadow-[0_0_10px_rgba(59,130,246,0.5)] border border-blue-500/30">
-                <span className="font-bold text-zinc-200 flex items-center gap-2">
-                  <OptimizedImage src="/logo.jpg" optimizeWidth={48} optimizeHeight={48} alt="Guizzprints" width={24} height={24} className="w-6 h-6 rounded-full object-cover border border-zinc-700" />
-                  <span className="text-white">Guizzprints</span>
+              <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[#252c3a] py-3 text-sm">
+                <span className="flex items-center gap-2 font-bold text-zinc-200">
+                  <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={48} optimizeHeight={48} alt="Guizzprints" width={24} height={24} className="h-6 w-6 rounded-full border border-zinc-700 object-cover" />
+                  Guizzprints
                 </span>
-                <div className="w-1 h-1 rounded-full bg-zinc-700"></div>
-                <span className="flex items-center gap-1.5"><Star size={16} className="text-yellow-500 fill-current" /> {Number(liveRating).toFixed(1)}</span>
-                <div className="w-1 h-1 rounded-full bg-zinc-700"></div>
-                <span className="flex items-center gap-1.5"><Download size={16} className="text-blue-500" /> {liveDownloads}</span>
+                <span className="hidden h-1 w-1 rounded-full bg-zinc-700 sm:block" />
+                <span className="flex items-center gap-1.5 text-zinc-300"><Star size={16} className="fill-yellow-500 text-yellow-500" aria-hidden="true" /> {Number(liveRating).toFixed(1)}</span>
+                <span className="hidden h-1 w-1 rounded-full bg-zinc-700 sm:block" />
+                <span className="flex items-center gap-1.5 text-zinc-300"><Download size={16} className="text-blue-400" aria-hidden="true" /> {liveDownloads}</span>
               </div>
-            </div>
 
-            <div className="w-full rounded-2xl border border-[#1D2433] bg-[#111318] p-3 shadow-xl">
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={toggleFavorite} disabled={mod.is_demo} title={mod.is_demo ? 'Disponível quando este item for publicado no catálogo' : undefined} className="flex items-center justify-center gap-2 rounded-xl border border-[#1D2433] bg-[#07090D] px-3 py-2 text-xs font-bold text-zinc-300 transition-colors group cursor-pointer hover:bg-zinc-800 disabled:cursor-default disabled:opacity-45">
-                  <Heart size={15} className={`transition-colors ${isFavorited ? 'text-red-500 fill-red-500' : 'group-hover:text-red-500'}`} /> {t('favorite')}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button onClick={toggleFavorite} disabled={mod.is_demo} title={mod.is_demo ? 'Disponível quando este item for publicado no catálogo' : undefined} className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-[#090d15] px-3 py-2.5 text-xs font-black text-zinc-200 transition hover:border-red-400/50 hover:bg-red-500/10 disabled:cursor-default disabled:opacity-45">
+                  <Heart size={16} className={`transition-colors ${isFavorited ? 'fill-red-500 text-red-500' : 'group-hover:text-red-400'}`} aria-hidden="true" /> {t('favorite')}
                 </button>
-                <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-xl border border-[#1D2433] bg-[#07090D] px-3 py-2 text-xs font-bold text-zinc-300 transition-colors group cursor-pointer hover:bg-zinc-800">
-                  <Share2 size={15} className="transition-colors group-hover:text-blue-400" /> {t('share')}
+                <button onClick={handleShare} className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-[#090d15] px-3 py-2.5 text-xs font-black text-zinc-200 transition hover:border-blue-400/50 hover:bg-blue-500/10">
+                  <Share2 size={16} className="transition-colors group-hover:text-blue-300" aria-hidden="true" /> {t('share')}
                 </button>
               </div>
-            </div>
+            </section>
 
             <DownloadFlow
-                modId={mod.id}
-                modTitle={modData.title}
-                modImage={modData.imageUrl}
-                onModalStateChange={setIsModalOpen}
-                directUrl={mod.direct_download_url}
-                fileName="warden-guizzprints.mcstructure"
-              />
-
-
-
-          </div>
+              modId={mod.id}
+              directUrl={mod.direct_download_url}
+              fileName={`${modData.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'guizzprints'}.mcstructure`}
+              formats={mod.download_formats}
+              availableFormatIds={mod.available_formats?.length ? mod.available_formats : (mod.subcategory ? [mod.subcategory] : [])}
+            />
+          </aside>
         </div>
 
             <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 sm:p-8 shadow-xl">
@@ -442,92 +490,59 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
               </div>
             </div>
 
-        {mod.studio_board_url && (
+        {mod.guide_mcstructure_url && (
           <section className="site-motion-panel overflow-hidden rounded-2xl border border-[#1D2433] bg-[#111318] shadow-xl">
             <div className="border-b border-[#1D2433] px-5 py-5 sm:px-7">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">Guizz Studio</p>
-                  <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">Prancha completa da construção</h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">Role pela página para consultar todos os ângulos da construção em uma única prancha.</p>
-                </div>
-                <a href={mod.studio_board_url} download="warden-guizzprints-prancha.png" className="inline-flex items-center gap-2 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-red-200 transition hover:bg-red-500/20">
-                  <Download size={16} /> Baixar prancha
-                </a>
-              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-400">Guia 3D Guizz</p>
+              <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">Explore a construção em 3D</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">Abra quando quiser girar, aplicar zoom e avançar pelas camadas da construção publicada.</p>
             </div>
-            <div className="bg-white p-2 sm:p-4">
-              <OptimizedImage
-                src={mod.studio_board_url}
-                optimizeWidth={1800}
-                optimizeQuality={88}
-                width={1800}
-                height={1125}
-                alt={`Prancha completa do Guizz Studio para ${modData.title}`}
-                className="h-auto w-full object-contain"
+            <div className="relative">
+              <Guide3DPreview
+                modelUrl={mod.guide_mcstructure_url}
+                schemUrl={mod.guide_schem_url}
+                title={modData.title}
               />
             </div>
           </section>
         )}
 
-<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 shadow-xl">
-              <h3 className="font-black text-sm uppercase text-white mb-5 flex items-center gap-2">
-                <Shield size={16} className="text-blue-500" /> {t('technicalSpecs')}
-              </h3>
+        <section className="site-motion-panel rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl sm:p-6">
+          <h3 className="mb-5 flex items-center gap-2 text-sm font-black uppercase text-white">
+            <Shield size={17} className="text-blue-400" aria-hidden="true" /> {t('technicalSpecs')}
+          </h3>
 
-              <div className="space-y-4 text-sm">
-                <div className="flex justify-between items-start gap-3 border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2 shrink-0"><Tag size={16}/> {t('category')}</span>
-                  <span className="min-w-0 break-words text-right font-bold text-blue-300">{categoryLabel(modData.category)}</span>
-                </div>
-                {mod.subcategory?.trim() && (
-                  <div className="flex justify-between items-start gap-3 border-b border-[#1D2433] pb-3">
-                    <span className="text-zinc-500 flex items-center gap-2 shrink-0"><Tag size={16}/> {t('subcategory')}</span>
-                    <span className="min-w-0 break-words text-right font-bold text-violet-300">{categoryLabel(mod.subcategory)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center gap-3 border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2 shrink-0"><Tag size={16}/> {t('version')}</span>
-                  <span className="min-w-0 break-all text-right font-bold text-blue-300">{mod.version ? `# v${mod.version.replace(/^(?:#\s*v\s*|v(?=\d))/i, '')}` : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2"><HardDrive size={16}/> {t('size')}</span>
-                  <span className="font-bold text-zinc-200 bg-[#07090D] px-2 py-1 rounded-md border border-[#1D2433]">{modData.size}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2"><Tag size={16}/> {t('price')}</span>
-                  <span className="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md">{t('free')}</span>
-                </div>
-                <div className="flex justify-between items-center border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2"><Clock size={16}/> {t('updated')}</span>
-                  <span className="font-bold text-zinc-200">{modData.updatedAt}</span>
-                </div>
-
-                {/* SISTEMA DE AVALIAÇÃO VISUAL */}
-                <div className="flex justify-between items-center border-b border-[#1D2433] pb-3">
-                  <span className="text-zinc-500 flex items-center gap-2"><Star size={16}/> {t('rate')}</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        size={18}
-                        className={`${mod.is_demo ? 'cursor-default' : 'cursor-pointer'} transition-all ${star <= (hoverRating || userRating || (mod.is_demo ? liveRating : 0)) ? 'text-yellow-500 fill-yellow-500 scale-110 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-zinc-700 hover:text-yellow-500/50'}`}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        onClick={() => handleRate(star)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-zinc-500 flex items-center gap-2"><Shield size={16}/> {t('anticheat')}</span>
-                  <span className="font-bold text-emerald-400 text-xs px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-md uppercase tracking-wider">{t('safe')}</span>
-                </div>
-              </div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+            <SpecItem icon={Tag} label={t('category')} value={categoryLabel(modData.category)} valueClassName="text-blue-300" />
+            {mod.subcategory?.trim() && <SpecItem icon={Tag} label={t('subcategory')} value={categoryLabel(mod.subcategory)} valueClassName="text-violet-300" />}
+            <SpecItem icon={Tag} label={t('version')} value={mod.version ? `# v${mod.version.replace(/^(?:#\s*v\s*|v(?=\d))/i, '')}` : 'N/A'} valueClassName="break-all text-blue-300" />
+            <SpecItem icon={HardDrive} label={t('size')} value={modData.size} />
+            <SpecItem icon={Tag} label={t('price')} value={t('free')} valueClassName="text-emerald-300" />
+            <SpecItem icon={Clock} label={t('updated')} value={modData.updatedAt} />
+            <div className="flex min-h-20 items-center justify-between gap-3 rounded-xl border border-[#263247] bg-[#090d15] px-4 py-3 sm:col-span-2 xl:col-span-2">
+              <dt className="flex items-center gap-2 text-zinc-400"><Star size={16} className="text-yellow-500" aria-hidden="true" /> {t('rate')}</dt>
+              <dd className="flex items-center gap-1" role="radiogroup" aria-label={t('rate')}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    role="radio"
+                    aria-checked={star === (userRating || 0)}
+                    aria-label={`${t('rate')}: ${star}/5`}
+                    disabled={mod.is_demo}
+                    className={`${mod.is_demo ? 'cursor-default' : 'cursor-pointer'} rounded p-0.5 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 disabled:opacity-80 ${star <= (hoverRating || userRating || (mod.is_demo ? liveRating : 0)) ? 'scale-110 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'text-zinc-700 hover:text-yellow-500/50'}`}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => handleRate(star)}
+                  >
+                    <Star size={18} className={star <= (hoverRating || userRating || (mod.is_demo ? liveRating : 0)) ? 'fill-current' : ''} aria-hidden="true" />
+                  </button>
+                ))}
+              </dd>
             </div>
-</div>
+            <SpecItem icon={Shield} label={t('anticheat')} value={t('safe')} valueClassName="text-emerald-300" />
+          </dl>
+        </section>
 
         {/* --- MODS SUGERIDOS --- */}
         {suggestedMods.length > 0 && (
@@ -616,7 +631,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] mt-8">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0">
-              <OptimizedImage src="/logo.jpg" optimizeWidth={96} optimizeHeight={96} alt="Guizzprints" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
+              <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={96} optimizeHeight={96} alt="Guizzprints" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
             </div>
             <div>
               <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
@@ -645,9 +660,9 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
 function RecommendationCard({ mod, locale }: { mod: ModSuggestion; locale: string }) {
   return (
-    <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
+    <Link href={`/${locale}/mod/${mod.id}`} prefetch={false} target="_blank" rel="noopener noreferrer" className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
       <div className="relative aspect-video overflow-hidden bg-[#07090D]">
-        <OptimizedImage src={mod.image_url_1 || '/logo.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-cover opacity-90 group-hover:opacity-100" />
+        <OptimizedImage src={mod.image_url_1 || '/guizz-cover.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-cover opacity-90 group-hover:opacity-100" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <FavoriteButton modId={mod.id} className="absolute left-2 top-2" />
       </div>

@@ -39,8 +39,19 @@
     "scrollLeft": "Desplazar a la izquierda",
     "scrollRight": "Desplazar a la derecha",
     "featuredWeek": "Destacado de la semana",
+    "featuredView": "Vista {number}",
     "viewDetails": "Ver detalles",
-    "goToSlide": "Ir a la diapositiva {number}"
+    "goToSlide": "Ir a la diapositiva {number}",
+    "quickStart": {
+      "title": "Encuentra y usa una construcción en minutos",
+      "description": "Cada publicación reúne Bedrock y Java, con archivos propios para cada edición.",
+      "chooseTitle": "1. Elige tu edición",
+      "chooseDescription": "Abre Bedrock o Java y encuentra la construcción que quieres.",
+      "guideTitle": "2. Consulta la Guía 3D",
+      "guideDescription": "Abre el holograma para girar, acercar e inspeccionar sus capas.",
+      "downloadTitle": "3. Descarga el formato correcto",
+      "downloadDescription": "Elige solo los formatos publicados para tu edición."
+    }
   },
   "Promotion": {
     "appTitle": "Guizz en tu pantalla de inicio",
@@ -194,6 +205,16 @@
     "installStep3": "Abre el archivo para importarlo en Minecraft."
   },
   "Download": {
+    "title": "Descarga directa y gratuita",
+    "description": "Elige un formato publicado para esta edición. Sin anuncios, cuenta regresiva ni páginas intermedias.",
+    "formatAvailable": "Formato disponible",
+    "chooseFormat": "Elige un formato",
+    "formatsFor": "Formatos {family}",
+    "available": "Disponible",
+    "comingSoon": "Próximamente",
+    "downloadFormat": "Descargar {format}",
+    "formatInPreparation": "Formato en preparación",
+    "formatUnavailable": "Este elemento todavía no tiene un archivo publicado en este formato.",
     "readyLink": "Enlace de descarga listo",
     "sessionError": "No se pudo iniciar la descarga protegida. Inténtalo de nuevo.",
     "preparing": "Preparando...",

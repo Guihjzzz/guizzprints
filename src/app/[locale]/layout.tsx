@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
     siteName: 'Guizzprints',
     type: 'website',
-    images: [{ url: '/logo.jpg', alt: 'Guizzprints' }],
+    images: [{ url: '/guizz-cover.jpg', alt: 'Guizzprints' }],
   },
   twitter: {
     card: 'summary',
     title: 'Guizzprints — Construções Minecraft',
     description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
-    images: ['/logo.jpg'],
+    images: ['/guizz-cover.jpg'],
   },
   manifest: '/manifest.webmanifest',
   // Pin every browser surface to the same stable logo. Without an explicit
@@ -76,7 +76,7 @@ export default async function RootLayout({
               <Link href={`/${locale}`} className="relative group cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#2563EB] to-[#60A5FA] rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300" />
                 <div className="relative bg-[#07090D] border border-[#1D2433] rounded-xl overflow-hidden motion-safe:group-hover:scale-105 transition-transform duration-300">
-                  <Image src="/logo.jpg" alt="Guizzprints" width={48} height={48} className="w-12 h-12 object-cover" />
+                  <Image src="/guizz-cover.jpg" alt="Guizzprints" width={48} height={48} className="w-12 h-12 object-cover" />
                 </div>
               </Link>
               <nav className="flex min-h-0 flex-col items-center gap-1 w-full px-2 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">

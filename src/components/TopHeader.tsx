@@ -3,30 +3,23 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { getClientAuthUser, listenToClientAuth } from '@/lib/client-auth';
 import { User, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 export function TopHeader() {
   const pathname = usePathname();
   const locale = pathname.split('/')[1] || 'en';
   const t = useTranslations('Header');
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<{ email: string | null; displayName: string | null } | null>(null);
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-    };
-    fetchSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => authListener.subscription.unsubscribe();
+    let active = true;
+    const refresh = () => { void getClientAuthUser().then((nextUser) => { if (active) setUser(nextUser); }); };
+    refresh();
+    const unsubscribe = listenToClientAuth(refresh);
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   return (
@@ -35,7 +28,7 @@ export function TopHeader() {
       {/* Esquerda: Logo Mobile (Oculto no PC) */}
       <div className="md:hidden flex items-center">
         <Link href={`/${locale}`}>
-          <Image src="/logo.jpg" alt="Guizzprints" width={32} height={32} className="w-8 h-8 rounded-lg" />
+          <Image src="/guizz-cover.jpg" alt="Guizzprints" width={32} height={32} className="w-8 h-8 rounded-lg" />
         </Link>
       </div>
 
@@ -51,7 +44,7 @@ export function TopHeader() {
         {user ? (
           <Link href={`/${locale}/settings`} className="flex items-center gap-2 hover:bg-[#111318] p-2 rounded-xl border border-transparent hover:border-[#1D2433] transition-all cursor-pointer group">
             <span className="text-sm font-bold text-zinc-300 group-hover:text-white">
-              {user.user_metadata?.username || t('user')}
+              {user.displayName || user.email?.split('@')[0] || t('user')}
             </span>
             <div className="w-8 h-8 bg-[#111318] border border-[#1D2433] rounded-full flex items-center justify-center group-hover:border-blue-500 transition-colors">
               <User size={14} className="text-blue-500" />

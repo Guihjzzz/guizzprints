@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import { supabase } from '@/lib/supabase';
+import { signOut, updatePassword, updateProfile, type User as FirebaseUser } from 'firebase/auth';
+import { getFirebaseAuth, getFirebaseUser } from '@/lib/firebase-client';
 import { useRouter, usePathname } from 'next/navigation';
 import { Settings, User, Mail, Lock, LogOut, Loader2, Save, Globe, AtSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isAppLocale } from '@/i18n/routing';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -17,7 +17,7 @@ export default function SettingsPage({ params }: Props) {
   const t = useTranslations('Settings');
   
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   
   const [username, setUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -32,12 +32,12 @@ export default function SettingsPage({ params }: Props) {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const currentUser = await getFirebaseUser();
+      if (!currentUser) {
         router.replace(`/${locale}/login`);
       } else {
-        setUser(session.user);
-        setUsername(session.user.user_metadata?.username || '');
+        setUser(currentUser);
+        setUsername(currentUser.displayName || '');
         setLoading(false);
       }
     };
@@ -51,12 +51,15 @@ export default function SettingsPage({ params }: Props) {
     setSavingProfile(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.updateUser({
-      data: { username: username.trim() }
-    });
-
-    if (error) setMessage({ type: 'error', text: t('profileError'), context: 'profile' });
-    else setMessage({ type: 'success', text: t('profileSaved'), context: 'profile' });
+    try {
+      const auth = getFirebaseAuth();
+      if (!auth?.currentUser) throw new Error('missing-user');
+      await updateProfile(auth.currentUser, { displayName: username.trim() });
+      setUser(auth.currentUser);
+      setMessage({ type: 'success', text: t('profileSaved'), context: 'profile' });
+    } catch {
+      setMessage({ type: 'error', text: t('profileError'), context: 'profile' });
+    }
     
     setSavingProfile(false);
   };
@@ -70,12 +73,14 @@ export default function SettingsPage({ params }: Props) {
     setSavingPassword(true);
     setMessage(null);
     
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    
-    if (error) setMessage({ type: 'error', text: t('passwordError'), context: 'password' });
-    else {
+    try {
+      const auth = getFirebaseAuth();
+      if (!auth?.currentUser) throw new Error('missing-user');
+      await updatePassword(auth.currentUser, newPassword);
       setMessage({ type: 'success', text: t('passwordSaved'), context: 'password' });
       setNewPassword('');
+    } catch {
+      setMessage({ type: 'error', text: t('passwordError'), context: 'password' });
     }
     setSavingPassword(false);
   };
@@ -85,8 +90,9 @@ export default function SettingsPage({ params }: Props) {
     setSigningOut(true);
     setMessage(null);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      const auth = getFirebaseAuth();
+      if (!auth) throw new Error('missing-auth');
+      await signOut(auth);
     } catch {
       setSigningOut(false);
       setMessage({ type: 'error', text: t('signOutError'), context: 'account' });
@@ -104,15 +110,6 @@ export default function SettingsPage({ params }: Props) {
     setSelectedLanguage(newLocale);
     setSavingLanguage(true);
     setLanguageMessage(null);
-
-    const { error } = await supabase.auth.updateUser({ data: { locale: newLocale } });
-
-    if (error) {
-      setSelectedLanguage(locale);
-      setLanguageMessage({ type: 'error', text: t('languageError') });
-      setSavingLanguage(false);
-      return;
-    }
 
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     setLanguageMessage({ type: 'success', text: t('languageSaved') });

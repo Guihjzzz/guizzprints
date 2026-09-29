@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { getFirebaseAuth } from '@/lib/firebase-client';
 import { Lock, Save, Loader2, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { defaultLocale, isAppLocale } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { getSafeReturnPath } from '@/lib/auth-return';
-import { authErrorKey } from '@/lib/auth-actions';
 
 export default function UpdatePasswordPage() {
   const params = useParams();
@@ -21,12 +21,15 @@ export default function UpdatePasswordPage() {
   const [message, setMessage] = useState<{ success: boolean; text: string } | null>(null);
   const busy = useRef(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchParams = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search);
+  const resetCode = searchParams.get('oobCode') || '';
   useEffect(() => {
     let live = true;
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (!live) return;
-      setValidity(!error && data.user ? 'valid' : 'invalid');
-      if (error || !data.user) setMessage({ success: false, text: t('sessionExpired') });
+    const auth = getFirebaseAuth();
+    if (!auth || !resetCode) {
+      setValidity('invalid'); setMessage({ success: false, text: t('sessionExpired') });
+    } else verifyPasswordResetCode(auth, resetCode).then(() => {
+      if (live) setValidity('valid');
     }).catch(() => {
       if (live) { setValidity('invalid'); setMessage({ success: false, text: t('sessionExpired') }); }
     });
@@ -41,17 +44,13 @@ export default function UpdatePasswordPage() {
     if (password !== confirmation) { setMessage({ success: false, text: t('passwordMismatch') }); return; }
     busy.current = true; setLoading(true); setMessage(null);
     try {
-      // Revalidate on submit, not just on initial page load.
-      const { data, error: sessionError } = await supabase.auth.getUser();
-      if (sessionError || !data.user) {
-        setValidity('invalid'); setMessage({ success: false, text: t('sessionExpired') }); return;
-      }
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) { setMessage({ success: false, text: t(authErrorKey(error)) }); return; }
+      const auth = getFirebaseAuth();
+      if (!auth || !resetCode) { setValidity('invalid'); setMessage({ success: false, text: t('sessionExpired') }); return; }
+      await confirmPasswordReset(auth, resetCode, password);
       setMessage({ success: true, text: t('passwordUpdated') });
       setPassword(''); setConfirmation('');
-      redirectTimer.current = setTimeout(() => window.location.assign(returnPath() ?? `/${locale}`), 1500);
-    } catch { setMessage({ success: false, text: t('authUnavailable') }); }
+      redirectTimer.current = setTimeout(() => window.location.assign(returnPath() ?? `/${locale}/login`), 1500);
+    } catch { setValidity('invalid'); setMessage({ success: false, text: t('sessionExpired') }); }
     finally {
       if (!redirectTimer.current) { busy.current = false; setLoading(false); }
     }

@@ -31,6 +31,10 @@ function isAllowedRemoteUrl(value: URL) {
   return (value.protocol === 'http:' || value.protocol === 'https:') && !isPrivateHostname(value.hostname);
 }
 
+function hasImageFileExtension(value: URL) {
+  return /\.(?:avif|gif|jpe?g|png|webp)$/iu.test(value.pathname);
+}
+
 async function readBoundedBody(response: Response) {
   const contentLength = Number(response.headers.get('content-length'));
   if (Number.isFinite(contentLength) && contentLength > MAX_SOURCE_BYTES) throw new Error('image-too-large');
@@ -97,7 +101,12 @@ export async function GET(request: NextRequest) {
     if (!upstream.ok) return errorResponse(502, 'Image source unavailable');
 
     const contentType = upstream.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() || '';
-    if (!contentType.startsWith('image/')) return errorResponse(415, 'Image source is not an image');
+    // GitHub Releases returns uploaded PNGs as `application/octet-stream`,
+    // even when the asset has a valid image extension. Let Sharp verify those
+    // bounded assets instead of hiding valid covers, views and boards.
+    if (!contentType.startsWith('image/') && !hasImageFileExtension(parsed) && !hasImageFileExtension(currentUrl)) {
+      return errorResponse(415, 'Image source is not an image');
+    }
 
     const input = await readBoundedBody(upstream);
     const output = await sharp(input, { failOn: 'none' })

@@ -8,47 +8,47 @@
   --chakra-colors-bg-overlay: rgba(0,0,0,.76) !important;
   --chakra-colors-bg-slot: #29292f !important;
   --chakra-colors-bg-track: #34343b !important;
-  --chakra-colors-bg-readout: rgba(220,38,38,.12) !important;
+  --chakra-colors-bg-readout: rgba(37,99,235,.12) !important;
   --chakra-colors-bg-accent-subtle: rgba(251,146,60,.12) !important;
   --chakra-colors-border-card: #29292f !important;
   --chakra-colors-border-default: #303037 !important;
   --chakra-colors-border-subtle: rgba(255,255,255,.08) !important;
-  --chakra-colors-border-hover: #f87171 !important;
+  --chakra-colors-border-hover: #60a5fa !important;
   --chakra-colors-chakra-border-color: #303037 !important;
   --chakra-colors-text-primary: #f4f4f5 !important;
   --chakra-colors-text-secondary: #b4b4bd !important;
   --chakra-colors-text-tertiary: #8b8b96 !important;
   --chakra-colors-text-muted: #a1a1aa !important;
-  --chakra-colors-text-accent: #fb923c !important;
-  --chakra-colors-brand-50: #fff7ed !important;
-  --chakra-colors-brand-100: #ffedd5 !important;
-  --chakra-colors-brand-200: #fed7aa !important;
-  --chakra-colors-brand-300: #fdba74 !important;
-  --chakra-colors-brand-400: #fb923c !important;
-  --chakra-colors-brand-500: #dc2626 !important;
-  --chakra-colors-brand-600: #b91c1c !important;
-  --chakra-colors-brand-700: #991b1b !important;
-  --chakra-colors-brand-800: #7f1d1d !important;
-  --chakra-colors-brand-900: #450a0a !important;
-  --chakra-colors-brand-primary: #dc2626 !important;
+  --chakra-colors-text-accent: #93c5fd !important;
+  --chakra-colors-brand-50: #eff6ff !important;
+  --chakra-colors-brand-100: #dbeafe !important;
+  --chakra-colors-brand-200: #bfdbfe !important;
+  --chakra-colors-brand-300: #93c5fd !important;
+  --chakra-colors-brand-400: #60a5fa !important;
+  --chakra-colors-brand-500: #2563eb !important;
+  --chakra-colors-brand-600: #1d4ed8 !important;
+  --chakra-colors-brand-700: #1d4ed8 !important;
+  --chakra-colors-brand-800: #1e3a8a !important;
+  --chakra-colors-brand-900: #172554 !important;
+  --chakra-colors-brand-primary: #2563eb !important;
 }
 html, body, #__next { background:#09090b !important; color:#f4f4f5 !important; }
 body {
   background-image:
-    radial-gradient(circle at 8% 0%,rgba(220,38,38,.13),transparent 28rem),
+    radial-gradient(circle at 8% 0%,rgba(37,99,235,.13),transparent 28rem),
     radial-gradient(circle at 94% 12%,rgba(251,146,60,.08),transparent 24rem) !important;
 }
 header { border-bottom-color:rgba(255,255,255,.09) !important; box-shadow:0 10px 35px rgba(0,0,0,.3) !important; backdrop-filter:blur(20px) !important; }
 /* A marca do conversor é apresentada pelo cabeçalho Guizz externo. */
 header a[href="index.html"] { display:none !important; }
 button, a, input, select, [role="button"] { transition:border-color .16s ease,background-color .16s ease,transform .16s ease,box-shadow .16s ease !important; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [role="button"]:focus-visible { outline:2px solid #f87171 !important; outline-offset:2px !important; }
-button:not(:disabled):hover { border-color:rgba(248,113,113,.68) !important; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [role="button"]:focus-visible { outline:2px solid #60a5fa !important; outline-offset:2px !important; }
+button:not(:disabled):hover { border-color:rgba(96,165,250,.68) !important; }
 button, [role="button"] { color:#f4f4f5 !important; }
 button:disabled, [role="button"][aria-disabled="true"] { color:#71717a !important; }
 input, select, textarea { background-color:#111114 !important; color:#f4f4f5 !important; }
-::selection { background:rgba(220,38,38,.42); color:white; }
+::selection { background:rgba(37,99,235,.42); color:white; }
 ::-webkit-scrollbar { width:10px; height:10px; }
 ::-webkit-scrollbar-track { background:#0c0c0f; }
 ::-webkit-scrollbar-thumb { background:#3f3f46; border:2px solid #0c0c0f; border-radius:99px; }
-::-webkit-scrollbar-thumb:hover { background:#dc2626; }
+::-webkit-scrollbar-thumb:hover { background:#2563eb; }

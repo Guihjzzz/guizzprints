@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
-import type { Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { getClientAuthToken, listenToClientAuth } from '@/lib/client-auth';
 
 interface AdminSidebarItemProps {
   locale: string;
@@ -17,15 +16,16 @@ export function AdminSidebarItem({ locale, label }: AdminSidebarItemProps) {
   useEffect(() => {
     let active = true;
 
-    const verifySession = async (session: Session | null) => {
-      if (!session) {
+    const verifySession = async () => {
+      const token = await getClientAuthToken();
+      if (!token) {
         if (active) setIsAdmin(false);
         return;
       }
 
       try {
         const response = await fetch('/api/admin/status', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
 
@@ -35,28 +35,19 @@ export function AdminSidebarItem({ locale, label }: AdminSidebarItemProps) {
       }
     };
 
-    const checkCurrentSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      await verifySession(session);
-    };
-
-    void checkCurrentSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && active) setIsAdmin(false);
-      void verifySession(session);
-    });
+    void verifySession();
+    const unsubscribe = listenToClientAuth(() => { void verifySession(); });
 
     return () => {
       active = false;
-      authListener.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
   if (!isAdmin) return null;
 
   return (
-    <Link href={`/${locale}/upload`} className="relative group w-full flex justify-center cursor-pointer">
+    <Link href={`/${locale}/admin/publisher`} className="relative group w-full flex justify-center cursor-pointer">
       <div className="relative p-3.5 rounded-xl text-[#94A3B8] transition-all duration-300 group-hover:scale-110 flex items-center justify-center border hover:text-[#F8FAFC] bg-transparent hover:bg-amber-500/10 border-transparent hover:border-amber-500/30">
         <Shield size={22} className="relative z-10 transition-transform duration-300 text-amber-500/70 group-hover:text-amber-400 group-hover:drop-shadow-[0_0_8px_#F59E0B]" />
       </div>

@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next';
+import { getCatalogSitemapUrls, SITE_URL } from '@/lib/catalog-sitemap';
 
-export default function robots(): MetadataRoute.Robots {
+export const revalidate = 3600;
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
   return {
     rules: {
       userAgent: '*',
@@ -17,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
         '/en/search/', '/es/search/', '/pt/search/',
       ],
     },
-    sitemap: 'https://www.guizz.xyz/sitemap.xml',
-    host: 'https://www.guizz.xyz',
+    sitemap: await getCatalogSitemapUrls(),
+    host: SITE_URL,
   };
 }

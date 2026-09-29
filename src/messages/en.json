@@ -39,8 +39,19 @@
     "scrollLeft": "Scroll left",
     "scrollRight": "Scroll right",
     "featuredWeek": "Featured this week",
+    "featuredView": "View {number}",
     "viewDetails": "View details",
-    "goToSlide": "Go to slide {number}"
+    "goToSlide": "Go to slide {number}",
+    "quickStart": {
+      "title": "Find and use a build in minutes",
+      "description": "Each publication brings Bedrock and Java together, with files for each edition.",
+      "chooseTitle": "1. Choose your edition",
+      "chooseDescription": "Open Bedrock or Java and find the build you want.",
+      "guideTitle": "2. Check the 3D Guide",
+      "guideDescription": "Open the hologram to rotate, zoom, and inspect its layers.",
+      "downloadTitle": "3. Download the right format",
+      "downloadDescription": "Choose only the formats published for your edition."
+    }
   },
   "Promotion": {
     "appTitle": "Guizz on your home screen",
@@ -194,6 +205,16 @@
     "installStep3": "Open the file to import it into Minecraft."
   },
   "Download": {
+    "title": "Direct, free download",
+    "description": "Choose a format published for this edition. No ads, countdowns, or intermediate pages.",
+    "formatAvailable": "Available format",
+    "chooseFormat": "Choose a format",
+    "formatsFor": "{family} formats",
+    "available": "Available",
+    "comingSoon": "Coming soon",
+    "downloadFormat": "Download {format}",
+    "formatInPreparation": "Format in preparation",
+    "formatUnavailable": "This item does not have a file published in this format yet.",
     "readyLink": "Download link ready",
     "sessionError": "Unable to start the protected download. Please try again.",
     "preparing": "Preparing...",

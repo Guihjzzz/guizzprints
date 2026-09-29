@@ -1,7 +1,7 @@
 'use client';
 
 import Image, { type ImageProps } from 'next/image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { optimizedImageSrcSet, optimizedImageUrl } from '@/lib/media-image';
 
 type OptimizedImageProps = Omit<ImageProps, 'src'> & {
@@ -26,7 +26,7 @@ export function OptimizedImage({
   onError,
   ...props
 }: OptimizedImageProps) {
-  const originalSrc = src || '/logo.jpg';
+  const originalSrc = src || '/guizz-cover.jpg';
   const transformedSrc = useMemo(
     () => optimizedImageUrl(originalSrc, optimizeWidth, optimizeHeight, optimizeQuality),
     [originalSrc, optimizeHeight, optimizeQuality, optimizeWidth],
@@ -35,24 +35,37 @@ export function OptimizedImage({
     () => optimizedImageSrcSet(originalSrc, optimizeWidth, optimizeHeight, optimizeQuality),
     [originalSrc, optimizeHeight, optimizeQuality, optimizeWidth],
   );
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-  const useOriginal = failedSource === transformedSrc;
+  const [sourceStage, setSourceStage] = useState<'optimized' | 'original' | 'fallback'>('optimized');
+  const useOriginal = sourceStage === 'original';
+  const useFallback = sourceStage === 'fallback';
+  const usesFill = Boolean(props.fill);
+
+  // A card can be reused for a different construction during client-side
+  // navigation. Reset the fallback ladder as soon as its source changes.
+  useEffect(() => setSourceStage('optimized'), [originalSrc, transformedSrc]);
+
+  const renderedSrc = useFallback ? '/guizz-cover.jpg' : useOriginal ? originalSrc : transformedSrc;
 
   const image = (
     <Image
       {...props}
       alt={alt || ''}
       sizes={sizes}
-      src={useOriginal ? originalSrc : transformedSrc}
+      src={renderedSrc}
       onError={(event) => {
-        if (!useOriginal && transformedSrc !== originalSrc) setFailedSource(transformedSrc);
+        if (sourceStage === 'optimized' && transformedSrc !== originalSrc) setSourceStage('original');
+        else if (!useFallback && originalSrc !== '/guizz-cover.jpg') setSourceStage('fallback');
         onError?.(event);
       }}
     />
   );
 
-  return transformedSrcSet && !useOriginal ? (
-    <picture>
+  // Next's fill implementation requires its immediate parent to establish the
+  // positioning context. A `<picture>` would become that parent, so for fill
+  // images keep the optimized source and let the caller's positioned wrapper
+  // remain the direct parent.
+  return transformedSrcSet && sourceStage === 'optimized' && !usesFill ? (
+    <picture className="relative block h-full w-full">
       <source srcSet={transformedSrcSet} sizes={sizes} />
       {image}
     </picture>

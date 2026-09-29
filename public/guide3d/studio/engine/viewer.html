@@ -166,7 +166,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
     /* dark gray, not the old brown — this palette is only ever seen in ADMIN
        mode (the member skin redefines every var on body.biMember) */
     --bg:#131313; --panel:#1a1a1a; --panel2:#222222; --line:#2e2e2e;
-    --text:#ececec; --muted:#909090; --red:#d64541; --red-dk:#a83230;
+    --text:#ececec; --muted:#909090; --red:#2563eb; --red-dk:#1d4ed8;
     --grass:#7cb352; --gold:#d9a62b;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -284,15 +284,15 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
     border-radius:16px;width:min(400px,calc(100% - 32px));padding:28px 26px;text-align:center;
     box-shadow:0 16px 40px rgba(0,0,0,.35)}
   .lockCard .crown{width:64px;height:64px;display:flex;align-items:center;justify-content:center;
-    margin:0 auto 14px;border-radius:16px;border:1.5px solid rgba(214,56,55,.45);
-    background:rgba(214,56,55,.12);color:#d63837}
+    margin:0 auto 14px;border-radius:16px;border:1.5px solid rgba(37,99,235,.45);
+    background:rgba(37,99,235,.12);color:#2563eb}
   .lockCard h2{margin:0 0 8px;font-size:19px;font-weight:800;color:#fff}
   .lockCard p{margin:0 0 18px;font-size:14px;line-height:1.55;color:#a0a0a0}
-  .lockCard .btnPro{background:linear-gradient(135deg,#d63837,#a01f22);
-    box-shadow:0 2px 14px rgba(214,56,55,.35);color:#fff;border:0;border-radius:10px;
+  .lockCard .btnPro{background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    box-shadow:0 2px 14px rgba(37,99,235,.35);color:#fff;border:0;border-radius:10px;
     padding:11px 20px;font-weight:800;font-size:13.5px;letter-spacing:.55px;cursor:pointer;
     display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin:0 auto}
-  .lockCard .btnPro:hover{background:linear-gradient(135deg,#b52e2d,#8c1b1e)}
+  .lockCard .btnPro:hover{background:linear-gradient(135deg,#1d4ed8,#1e40af)}
   aside{grid-row:2;grid-column:2;background:var(--panel);border-left:2px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
   aside section{padding:14px 16px;border-bottom:1px solid var(--line)}
   aside h3{font-family:'Silkscreen',monospace;font-size:11px;letter-spacing:.5px;color:var(--gold);text-transform:uppercase;margin-bottom:9px}
@@ -343,7 +343,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
     display:flex;align-items:center;gap:6px}
   .chap:hover{border-color:var(--muted);color:var(--text)}
   .chap.done{border-color:#4d6238;color:#cde3b3}
-  .chap.cur{background:var(--red);border-color:#e8807d;color:#fff}
+  .chap.cur{background:var(--red);border-color:#93c5fd;color:#fff}
   .chap.cur .cnum{opacity:.85}
 
   /* --- 2: TRACK — segments stretch to the step count, so three chapters
@@ -358,7 +358,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
   .ctSeg .nm{overflow:hidden;text-overflow:ellipsis;min-width:0}
   .ctSeg:hover{border-color:var(--muted);color:var(--text)}
   .ctSeg.done{background:#3a4a2e;border-color:#4d6238;color:#cde3b3}
-  .ctSeg.cur{background:var(--red);border-color:#e8807d;color:#fff}
+  .ctSeg.cur{background:var(--red);border-color:#93c5fd;color:#fff}
 
   /* --- 3: MENU — a single button; the list pops upward --- */
   body.hasChapters[data-chap="3"] #chapMenuWrap{display:block;position:relative;flex:0 0 auto}
@@ -397,7 +397,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
   .crItem:hover .nm,.crItem.cur .nm{display:inline}
   .crItem:hover{border-color:var(--muted);color:var(--text)}
   .crItem.done{border-color:#4d6238;color:#cde3b3}
-  .crItem.cur{background:var(--red);border-color:#e8807d;color:#fff}
+  .crItem.cur{background:var(--red);border-color:#93c5fd;color:#fff}
 
   /* only the two footer-row styles need the taller footer */
   body.hasChapters[data-chap="1"] #app,
@@ -420,7 +420,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
   .step{flex:1;height:46px;border-radius:6px;border:2px solid var(--line);background:var(--panel2);cursor:pointer;position:relative;font-family:'Silkscreen',monospace;font-size:12px;color:var(--muted);transition:all .12s}
   .step:hover{border-color:var(--muted)}
   .step.done{background:#3a4a2e;border-color:#4d6238;color:#cde3b3}
-  .step.cur{background:var(--red);border-color:#e8807d;color:#fff;box-shadow:inset 0 -4px 0 var(--red-dk);transform:translateY(-2px)}
+  .step.cur{background:var(--red);border-color:#93c5fd;color:#fff;box-shadow:inset 0 -4px 0 var(--red-dk);transform:translateY(-2px)}
   .step.locked{color:#6b6357}
   .step.locked::after{content:"🔒";position:absolute;top:-7px;right:-3px;font-size:11px}
   #stepInput{width:58px;height:42px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;
@@ -453,7 +453,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
   #dropOverlay .card{border:3px dashed var(--gold);border-radius:14px;padding:34px 50px;font-family:'Silkscreen',monospace;font-size:15px;color:var(--gold);background:rgba(28,26,23,.9)}
   #toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:60;background:var(--panel);border:1px solid var(--gold);color:var(--text);font-size:12.5px;padding:9px 16px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .25s}
   #toast.on{opacity:1;pointer-events:auto}   /* a toast can carry a link (the save toast's My Builds) */
-  #toast a{color:var(--red,#d63837);font-weight:800;text-decoration:underline;text-underline-offset:2px}
+  #toast a{color:var(--red,#2563eb);font-weight:800;text-decoration:underline;text-underline-offset:2px}
   @media (max-width:760px){
     #app{grid-template-columns:1fr;grid-template-rows:auto 1fr 200px 92px}
     aside{grid-column:1;grid-row:3;border-left:none;border-top:2px solid var(--line);flex-direction:row}
@@ -463,7 +463,7 @@ if(/(?:^|[?&])guizz=1(?:&|$)/.test(location.search)){
     #sunPanel{display:none}
   }
 </style>
-<style>.biDrAd{position:relative;display:block;aspect-ratio:19/9;margin:10px 12px 2px;border-radius:12px;overflow:hidden;text-decoration:none;border:1px solid var(--line,#2c2c2c);background:var(--panel2,#221c17);opacity:0;transition:opacity .45s}.biDrAd.on{opacity:1}.biDrAd__in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:12px 16px}.biDrAd__cr{width:15px;height:15px;color:#d63837}.biDrAd__ln{font-size:13px;font-weight:700;line-height:1.4;color:var(--text,#e8e2d8);max-width:30ch;text-wrap:balance}.biDrAd__ln.hasbr{text-wrap:auto;max-width:none}.biDrAd__ln b{color:#d63837}.biDrAd__go{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;background:linear-gradient(135deg,#d63837,#a01f22);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.5px;line-height:1;box-shadow:0 2px 10px rgba(214,56,55,.3);transition:transform .15s,filter .15s,box-shadow .15s}.biDrAd__go:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 4px 16px rgba(214,56,55,.45)}.biDrAd--accent .biDrAd__go:hover{filter:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}.biDrAd__go svg{width:13px;height:13px}.biDrAd__go svg.biDrAd__cr{color:#fff}.biDrAd__ad{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.8px;color:#888;background:rgba(255,255,255,.10);border-radius:5px;padding:3px 6px;line-height:1}.biDrAd--accent{background:linear-gradient(135deg,#d63837,#a01f22);border-color:transparent}.biDrAd--accent .biDrAd__cr{color:#fff}.biDrAd--accent .biDrAd__ln{color:#fff}.biDrAd--accent .biDrAd__ln b{color:#fff;text-decoration:underline;text-underline-offset:2px}.biDrAd--accent .biDrAd__go{background:#fff;color:#a01f22;box-shadow:none}.biDrAd--accent .biDrAd__go svg.biDrAd__cr{color:#a01f22}.biDrAd--accent .biDrAd__ad{background:rgba(0,0,0,.22);color:rgba(255,255,255,.85)}</style></head>
+<style>.biDrAd{position:relative;display:block;aspect-ratio:19/9;margin:10px 12px 2px;border-radius:12px;overflow:hidden;text-decoration:none;border:1px solid var(--line,#2c2c2c);background:var(--panel2,#221c17);opacity:0;transition:opacity .45s}.biDrAd.on{opacity:1}.biDrAd__in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:12px 16px}.biDrAd__cr{width:15px;height:15px;color:#2563eb}.biDrAd__ln{font-size:13px;font-weight:700;line-height:1.4;color:var(--text,#e8e2d8);max-width:30ch;text-wrap:balance}.biDrAd__ln.hasbr{text-wrap:auto;max-width:none}.biDrAd__ln b{color:#2563eb}.biDrAd__go{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.5px;line-height:1;box-shadow:0 2px 10px rgba(37,99,235,.3);transition:transform .15s,filter .15s,box-shadow .15s}.biDrAd__go:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 4px 16px rgba(37,99,235,.45)}.biDrAd--accent .biDrAd__go:hover{filter:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}.biDrAd__go svg{width:13px;height:13px}.biDrAd__go svg.biDrAd__cr{color:#fff}.biDrAd__ad{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.8px;color:#888;background:rgba(255,255,255,.10);border-radius:5px;padding:3px 6px;line-height:1}.biDrAd--accent{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:transparent}.biDrAd--accent .biDrAd__cr{color:#fff}.biDrAd--accent .biDrAd__ln{color:#fff}.biDrAd--accent .biDrAd__ln b{color:#fff;text-decoration:underline;text-underline-offset:2px}.biDrAd--accent .biDrAd__go{background:#fff;color:#1d4ed8;box-shadow:none}.biDrAd--accent .biDrAd__go svg.biDrAd__cr{color:#1d4ed8}.biDrAd--accent .biDrAd__ad{background:rgba(0,0,0,.22);color:rgba(255,255,255,.85)}</style></head>
 <body class="biMember biAuthed biPanelOpen editFold" data-chap="3" data-edit="2">
 <script>/* hero mode: hide everything until the hero styles are applied — kills the half-frame UI flash on (re)load */
 if(/mode=hero/.test(location.search)||location.hash.replace('#','')==='hero')document.documentElement.classList.add('biHeroRoot');
@@ -622,13 +622,13 @@ if(/[?&]admin=1/.test(location.search))document.body.classList.add('biAsideOff')
 <div id="biPaintRow" style="display:none;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px">
 <label style="display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;user-select:none">
 <span style="font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800">🖌 Paint mode</span>
-<input id="paintOn" style="accent-color:#d63837;margin:0" type="checkbox"/>
+<input id="paintOn" style="accent-color:#2563eb;margin:0" type="checkbox"/>
 </label>
 <p id="paintHint" style="font-size:10.5px;color:var(--muted);margin:5px 0 0;line-height:1.45">Pick one block, then every click in the 3D view swaps that block to it.</p>
 <div id="paintOpts" style="display:none;margin-top:8px">
 <!-- delete on click: the same per-click sweep, but every click removes
                  the block instead of swapping it (deleteCell, the picker's 🗑) -->
-<label class="toggle" style="display:flex;align-items:center;gap:6px;font-size:11px;margin:0 0 7px;cursor:pointer"><input id="paintDel" style="accent-color:#d63837;margin:0" type="checkbox"/> 🗑 Delete block on click</label>
+<label class="toggle" style="display:flex;align-items:center;gap:6px;font-size:11px;margin:0 0 7px;cursor:pointer"><input id="paintDel" style="accent-color:#2563eb;margin:0" type="checkbox"/> 🗑 Delete block on click</label>
 <div id="paintBlockOpts">
 <button id="paintPick" style="width:100%;display:flex;align-items:center;gap:8px;text-align:left;background:var(--panel);color:var(--ink,var(--text));border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12px;padding:7px 9px;cursor:pointer" type="button">
 <img alt="" id="paintIco" style="width:20px;height:20px;border-radius:4px;border:1px solid var(--line);display:none;flex:none"/>
@@ -652,7 +652,7 @@ if(/[?&]admin=1/.test(location.search))document.body.classList.add('biAsideOff')
 <option value="east">Facing east</option>
 <option value="west">Facing west</option>
 </select>
-<label class="toggle" style="display:flex;align-items:center;gap:6px;font-size:11px;margin-top:6px;cursor:pointer"><input id="paintTopHalf" style="accent-color:#d63837;margin:0" type="checkbox"/> Upside-down (top half)</label>
+<label class="toggle" style="display:flex;align-items:center;gap:6px;font-size:11px;margin-top:6px;cursor:pointer"><input id="paintTopHalf" style="accent-color:#2563eb;margin:0" type="checkbox"/> Upside-down (top half)</label>
 </div>
 </div>
 </div>
@@ -9526,7 +9526,7 @@ function flashRun(run){
   }
   if(x1<x0) return;
   const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0+.04,y1-y0+.04,z1-z0+.04),
-    new THREE.MeshBasicMaterial({color:0xff5348,transparent:true,opacity:.35,depthWrite:false}));
+    new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:.35,depthWrite:false}));
   m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);
   m.raycast=()=>{}; m.renderOrder=998;
   flashGroup.add(m);
@@ -9575,8 +9575,8 @@ function buildFootprint(){
   footGroup=new THREE.Group();
   /* convertSRGBToLinear on every one of these. The renderer's outputEncoding is
      sRGB, so a raw hex is taken as a LINEAR value and comes back out lightened —
-     brand red #d63837 was rendering as a washed-out pink. Converting first lands
-     it on the exact hex, which is what makes the plan read RED and match the
+     brand blue #2563eb was rendering as a washed-out lavender. Converting first lands
+     it on the exact hex, which is what makes the plan read BLUE and match the
      number plates sitting on it. (Same trap the measurement tape hit.) */
   const PLAN_RED=new THREE.Color(0xd63837).convertSRGBToLinear();
   const plM=new THREE.MeshBasicMaterial({color:PLAN_RED.clone(),transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false});
@@ -9596,8 +9596,8 @@ function buildFootprint(){
        faint red wash the footprint rectangle uses, a solid red outline, red digits,
        no drop shadow. It reads as part of the drawing. */
     const t=new THREE.CanvasTexture(measPlateCanvas(text,{
-      face:'rgba(214,56,55,.16)', stroke:'#d63837', strokeW:3,
-      text:'#d63837', shadow:false }));
+      face:'rgba(37,99,235,.16)', stroke:'#2563eb', strokeW:3,
+      text:'#2563eb', shadow:false }));
     t.magFilter=THREE.LinearFilter; t.minFilter=THREE.LinearMipmapLinearFilter;
     t.generateMipmaps=true; t.encoding=THREE.sRGBEncoding;
     try{ t.anisotropy=renderer.capabilities.getMaxAnisotropy(); }catch(_e){}
@@ -9662,7 +9662,7 @@ function footTipEl(){
   if(!footTip){
     footTip=document.createElement('div');
     footTip.id='footTip';
-    footTip.style.cssText='position:absolute;left:50%;transform:translateX(-50%);bottom:84px;background:rgba(18,18,18,.88);color:#fff;font-size:13px;line-height:1.45;padding:9px 16px;border-radius:9px;border:1px solid rgba(214,56,55,.55);pointer-events:none;z-index:8;text-align:center;opacity:0;transition:opacity .25s';
+    footTip.style.cssText='position:absolute;left:50%;transform:translateX(-50%);bottom:84px;background:rgba(18,18,18,.88);color:#fff;font-size:13px;line-height:1.45;padding:9px 16px;border-radius:9px;border:1px solid rgba(37,99,235,.55);pointer-events:none;z-index:8;text-align:center;opacity:0;transition:opacity .25s';
     document.getElementById('stage').appendChild(footTip);
   }
   return footTip;
@@ -9701,7 +9701,7 @@ function syncFootprint(now){
   if(area){
     const u=footGroup.userData;
     footTipEl().innerHTML='<b>This is the area you need for the build</b><br>'
-      +'<b style="color:#d63837">'+u.w+' × '+u.d+' blocks</b> of clear, flat ground'
+      +'<b style="color:#2563eb">'+u.w+' × '+u.d+' blocks</b> of clear, flat ground'
       +(u.doors?'<br><span style="opacity:.75">door swing'+(u.doors>1?'s':'')+' marked on the plan</span>':'');
     footTipEl().style.opacity=1;
   } else if(footTip) footTip.style.opacity=0;
@@ -14098,12 +14098,12 @@ function initLayerBar(){
     st.textContent='#biLayerBar{display:none;position:absolute;left:12px;bottom:12px;z-index:40;align-items:center;gap:9px;'
       +'background:rgba(18,18,18,.88);border:1px solid #333;border-radius:12px;padding:9px 13px;'
       +"font:700 11px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#ddd;letter-spacing:.5px;}"
-      +'#biLayerBar input{width:150px;accent-color:#d63837;margin:0;}'
+      +'#biLayerBar input{width:150px;accent-color:#2563eb;margin:0;}'
       +'#biLayerBar .lbT{color:#888;}'
       +'#biLayerLbl{min-width:78px;text-align:center;color:#fff;font-variant-numeric:tabular-nums;}'
       +'#biLayerBar button{background:#2a2a2a !important;color:#ddd !important;border:1px solid #3a3a3a;border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;}'
-      +'#biLayerBar button:hover{border-color:#d63837;color:#fff !important;background:#2a2a2a !important;}'
-      +'#biSimBtn.on{background:#d63837 !important;color:#fff !important;border-color:#d63837;}'
+      +'#biLayerBar button:hover{border-color:#2563eb;color:#fff !important;background:#2a2a2a !important;}'
+      +'#biSimBtn.on{background:#2563eb !important;color:#fff !important;border-color:#2563eb;}'
       +'body.biRedstone #biTabBtnE{display:none !important;}'
       +'body.biRedstone #biLayerBar{display:flex;}';
     document.head.appendChild(st);
@@ -15146,7 +15146,7 @@ function __adaptiveQuality(now){
 /* ============ Build It member skin ============ */
 /* the viewer chrome speaks the site's design language — dark and light */
 body.biMember{--bg:#141414;--panel:#181818;--panel2:#202020;--line:#2a2a2a;
-  --text:#ffffff;--muted:#a0a0a0;--red:#d63837;--red-dk:#b52e2d;--gold:#d63837}
+  --text:#ffffff;--muted:#a0a0a0;--red:#2563eb;--red-dk:#1d4ed8;--gold:#2563eb}
 body.biMember.biLight{--bg:#efefef;--panel:#f7f7f7;--panel2:#ececec;--line:#e0e0e0;
   --text:#111111;--muted:#666666}
 body.biMember #stylePreset,body.biMember #styleCode{
@@ -15197,7 +15197,7 @@ body.biPanelOpen #biPanelTab{bottom:calc(58vh + 104px)}
 .biTabs button{flex:1;background:transparent;border:0;border-bottom:2.5px solid transparent;color:var(--muted,#8f8779);
   font:800 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:1px;
   padding:13px 0 11px;cursor:pointer;display:flex;gap:7px;align-items:center;justify-content:center}
-.biTabs button.on{color:#d63837;border-bottom-color:#d63837;background:var(--panel,#171310)}
+.biTabs button.on{color:#2563eb;border-bottom-color:#2563eb;background:var(--panel,#171310)}
 .biTabs button svg{width:15px;height:15px;display:block;flex:none}
 /* overflow:auto stays — this is the real scroller. `contain` used to trap the wheel
    here even with nothing left to scroll; `auto` lets it hand over. No layout effect. */
@@ -15213,26 +15213,26 @@ body.biPanelOpen #biPanelTab{bottom:calc(58vh + 104px)}
   color:var(--muted,#8f8779);transition:border-color .13s,background .13s,color .13s}
 .biTgl .ic{font-size:19px;line-height:1;filter:grayscale(1);opacity:.7;transition:filter .13s,opacity .13s}
 .biTgl .lb{font-size:11px;font-weight:800;letter-spacing:.3px;text-align:center}
-.biTgl.on{border-color:#d63837;background:rgba(214,56,55,.10);color:var(--text,#e8e2d8)}
+.biTgl.on{border-color:#2563eb;background:rgba(37,99,235,.10);color:var(--text,#e8e2d8)}
 .biTgl.on .ic{filter:none;opacity:1}
 .biTgl input{display:none}
 
 /* --- switch rows: ghost / shaders / player --- */
 .biSwRow{border:1px solid var(--line,#2c2c2c);border-radius:10px;padding:10px 12px;cursor:pointer;
   display:flex;align-items:center;gap:10px;user-select:none;transition:border-color .15s}
-.biSwRow:hover{border-color:#d63837}
+.biSwRow:hover{border-color:#2563eb}
 .biSwRow .ic{color:var(--muted,#8f8779);display:flex;flex:none;transition:color .15s}
-.biSwRow.on .ic{color:#d63837}
+.biSwRow.on .ic{color:#2563eb}
 .biSwRow .ic svg{width:18px;height:18px;display:block}
 .biSwRow .lb{flex:1;font-size:12.5px;font-weight:800;letter-spacing:.3px;color:var(--text,#e8e2d8)}
 .biSwRow .sw{width:38px;height:22px;border-radius:11px;background:var(--line,#2c2c2c);flex:none;position:relative;transition:background .15s}
 .biSwRow .sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
-.biSwRow.on .sw{background:#d63837}
+.biSwRow.on .sw{background:#2563eb}
 .biSwRow.on .sw::after{left:18px}
 .biSwRow input{display:none}
-.biSwRow .rec{font-style:normal;font-weight:800;font-size:10px;letter-spacing:.4px;color:#d63837;margin-left:3px}
+.biSwRow .rec{font-style:normal;font-weight:800;font-size:10px;letter-spacing:.4px;color:#2563eb;margin-left:3px}
 /* BETA pill: red box, white text, stated explicitly */
-.biBeta{font-style:normal;font-weight:800;font-size:9px;letter-spacing:.6px;color:#fff;background:#d63837;border-radius:5px;padding:2px 5px;margin-left:6px;vertical-align:1px}
+.biBeta{font-style:normal;font-weight:800;font-size:9px;letter-spacing:.6px;color:#fff;background:#2563eb;border-radius:5px;padding:2px 5px;margin-left:6px;vertical-align:1px}
 /* a line docked INSIDE a toggle card's outline (Sun follow inside Shaders).
    Its switch is independent of the parent row's on-state, so the rules are
    restated here AFTER the row rules and win the tie. */
@@ -15241,8 +15241,8 @@ body.biPanelOpen #biPanelTab{bottom:calc(58vh + 104px)}
 .biSwRow .swExt .lb{font-size:12px}
 .biSwRow .swExt .sw{background:var(--line,#2c2c2c)}
 .biSwRow .swExt .sw::after{left:2px}
-.biSwRow .swExt.on .ic{color:#d63837}
-.biSwRow .swExt.on .sw{background:#d63837}
+.biSwRow .swExt.on .ic{color:#2563eb}
+.biSwRow .swExt.on .sw{background:#2563eb}
 .biSwRow .swExt.on .sw::after{left:18px}
 .biSwRow .swExt:not(.on) .ic{color:var(--muted,#8f8779)}
 
@@ -15263,10 +15263,10 @@ body.biMember #buildStats{display:none !important} /* the footer's step readout 
 #biMatHdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #biMatHdr #matTitle{margin:0}
 #biFullMatsLink{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;
-  letter-spacing:.2px;color:#fff;background:#d63837;border:0;border-radius:7px;padding:5px 9px;
+  letter-spacing:.2px;color:#fff;background:#2563eb;border:0;border-radius:7px;padding:5px 9px;
   cursor:pointer;user-select:none;font-family:inherit;white-space:nowrap;flex:none;transition:background .15s,transform .1s}
 #biFullMatsLink svg{width:13px;height:13px;flex:none}
-#biFullMatsLink:hover{background:#b52e2d}
+#biFullMatsLink:hover{background:#1d4ed8}
 #biFullMatsLink:active{transform:translateY(1px)}
 body.biMember #mats{display:none !important}
 body.biMember #matTitle{font-size:14px}
@@ -15280,7 +15280,7 @@ body.biMember #matTitle{font-size:14px}
    of the panel onto the build — scoped to #biPanel alone the icon lost its sizing
    there and rendered at its natural ~64px, tripling the card's height */
 #biPanel .nIco,#stage > #biNow .nIco{width:18px !important;height:18px !important;vertical-align:-4px;margin-right:4px;flex:none}
-#biNow .nl{display:block;font-size:9.5px;font-weight:800;letter-spacing:1px;color:#d63837;margin-bottom:3px}
+#biNow .nl{display:block;font-size:9.5px;font-weight:800;letter-spacing:1px;color:#2563eb;margin-bottom:3px}
 #biNow b{font-weight:800}
 #biNow .sep{margin:0 6px;color:var(--muted,#8f8779)}
 #biNow i{color:var(--muted,#8f8779);font-style:normal}
@@ -15296,7 +15296,7 @@ body.biMember #matTitle{font-size:14px}
 body.biMember #stylePreset{width:100%;padding:9px 10px !important;font-size:13px !important;border-radius:9px !important;margin-bottom:2px}
 body.biMember #biTabEdit .hbtn{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;
   background:var(--panel2,#202020);border:1px solid var(--line,#2a2c2c);color:var(--text,#fff);cursor:pointer}
-body.biMember #biTabEdit .hbtn:hover{border-color:#d63837}
+body.biMember #biTabEdit .hbtn:hover{border-color:#2563eb}
 /* the style section keeps its old sidebar flex sizing inline — neutralize it in the
    panel so the swap list flows normally instead of spilling over the pack section */
 body.biMember #biTabEdit section{flex:none !important;min-height:auto !important}
@@ -15311,7 +15311,7 @@ body.biMember #blockInfo .meta{display:none}
 #biStyleDDBtn{width:100%;display:flex;align-items:center;gap:8px;background:var(--panel2,#202020);
   color:var(--text,#e8e2d8);border:1px solid var(--line,#2c2c2c);border-radius:9px;padding:9px 11px;
   font:700 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;transition:border-color .15s}
-#biStyleDDBtn:hover{border-color:#d63837}
+#biStyleDDBtn:hover{border-color:#2563eb}
 #biStyleDDBtn .car{margin-left:auto;flex:none;color:var(--muted,#8f8779);display:flex;transition:transform .18s}
 #biStyleDD.open #biStyleDDBtn .car{transform:rotate(180deg)}
 #biStyleDDMenu{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:45;background:var(--panel,#171310);
@@ -15320,11 +15320,11 @@ body.biMember #blockInfo .meta{display:none}
 .biDDItem{display:flex;align-items:center;gap:8px;padding:10px 11px;font-size:12.5px;font-weight:600;
   color:var(--text,#e8e2d8);cursor:pointer}
 .biDDItem+.biDDItem{border-top:1px solid var(--line,#2c2c2c)}
-.biDDItem:hover{background:rgba(214,56,55,.12)}
-.biDDItem.set{color:#d63837;font-weight:800}
+.biDDItem:hover{background:rgba(37,99,235,.12)}
+.biDDItem.set{color:#2563eb;font-weight:800}
 /* the New-style row at the menu's foot: separated, red, its plus centred in
    the same slot the block icons use so the labels line up */
-.biDDItem.biDDNew{color:#d63837;font-weight:800;border-top:1px dashed var(--line,#2c2c2c)}
+.biDDItem.biDDNew{color:#2563eb;font-weight:800;border-top:1px dashed var(--line,#2c2c2c)}
 .biDDItem.biDDNew .biDDPlus{width:20px;text-align:center;flex:none;font-weight:800}
 /* member-only style, free viewer: visible but clearly out of reach */
 /* "> span:not(.proBadge)" — flex:1 on a bare `span` would stretch the badge across
@@ -15335,7 +15335,7 @@ body.biMember #blockInfo .meta{display:none}
   background:transparent;border:1px solid transparent;border-radius:6px;color:var(--muted,#8f8779);opacity:.65}
 .biRen svg{width:13px;height:13px;display:block}
 .biDDItem:hover .biRen{opacity:1}
-.biRen:hover{color:#d63837;border-color:var(--line,#2c2c2c);background:var(--panel2,#202020)}
+.biRen:hover{color:#2563eb;border-color:var(--line,#2c2c2c);background:var(--panel2,#202020)}
 /* the badge marks a style you can't use yet — to a member it's just noise */
 body.biAuthed .biCard .crown{display:none !important}
 .biDDItem .proBadge{margin-left:0}
@@ -15412,7 +15412,7 @@ body[data-edit="2"] #biTabEdit .swBtn{width:100%;aspect-ratio:1/1;flex:none !imp
   justify-content:center !important;padding:0 !important;border-radius:9px !important}
 body[data-edit="2"] #biTabEdit .swBtn img{width:30px !important;height:30px !important}
 body[data-edit="2"] #biTabEdit .swBtn span{display:none}
-body[data-edit="2"] #biTabEdit .swapRow.changed .swBtn{box-shadow:0 0 0 2px #d63837 inset}
+body[data-edit="2"] #biTabEdit .swapRow.changed .swBtn{box-shadow:0 0 0 2px #2563eb inset}
 body[data-edit="2"] #biClickTip{display:flex}
 
 /* ---- 3 CARDS: pick a look first, fine-tune second ---- */
@@ -15422,8 +15422,8 @@ body[data-edit="3"] #biStyleCards{display:grid;grid-template-columns:1fr 1fr;gap
   background:var(--panel2,#202020);border:1.5px solid var(--line,#2c2c2c);border-radius:11px;
   color:var(--text,#e8e2d8);font:800 12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   text-align:left;transition:border-color .15s,transform .12s}
-.biCard:hover{border-color:#d63837;transform:translateY(-1px)}
-.biCard.set{border-color:#d63837;background:rgba(214,56,55,.10)}
+.biCard:hover{border-color:#2563eb;transform:translateY(-1px)}
+.biCard.set{border-color:#2563eb;background:rgba(37,99,235,.10)}
 .biCard .strip{display:flex;gap:3px}
 .biCard .strip img{width:19px;height:19px;border-radius:3px}
 .biCard .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -15441,19 +15441,19 @@ body[data-edit="3"].editFold #biClickTip{display:none !important}
 /* ---- 4 FOCUS: click-the-build first; only your own swaps are listed ---- */
 body[data-edit="4"] #biBench{display:block}
 #biBench .hero{display:flex;align-items:center;gap:10px;padding:11px 12px;margin:2px 0 9px;
-  background:rgba(214,56,55,.10);border:1px solid rgba(214,56,55,.42);border-radius:11px}
-#biBench .hero svg{width:24px;height:24px;flex:none;color:#d63837}
+  background:rgba(37,99,235,.10);border:1px solid rgba(37,99,235,.42);border-radius:11px}
+#biBench .hero svg{width:24px;height:24px;flex:none;color:#2563eb}
 #biBench .hero b{display:block;font-size:12.5px;color:var(--text,#e8e2d8)}
 #biBench .hero span{display:block;font-size:11.5px;color:var(--muted,#8f8779);margin-top:2px}
 #biBench .bRow{display:flex;align-items:center;gap:7px;margin-bottom:2px}
 #biBench #biChanged{flex:1;font:800 10.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   letter-spacing:.4px;color:var(--muted,#8f8779);background:var(--panel2,#202020);
   border:1px solid var(--line,#2c2c2c);border-radius:999px;padding:5px 10px;text-align:center}
-#biBench #biChanged.some{color:#fff;background:#d63837;border-color:#d63837}
+#biBench #biChanged.some{color:#fff;background:#2563eb;border-color:#2563eb}
 #biBench #biShowAll{flex:none;background:transparent;color:var(--muted,#8f8779);cursor:pointer;
   border:1px solid var(--line,#2c2c2c);border-radius:999px;padding:5px 11px;
   font:800 10.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-#biBench #biShowAll:hover{border-color:#d63837;color:#d63837}
+#biBench #biShowAll:hover{border-color:#2563eb;color:#2563eb}
 body[data-edit="4"] #biClickTip{display:none}
 body[data-edit="4"] #biMatHead{margin-top:4px}
 body[data-edit="4"] #biTabEdit #styleRows{max-height:none !important}
@@ -15464,8 +15464,8 @@ body[data-edit="4"] #biTabEdit .swapRow.changed .swName{color:var(--text,#e8e2d8
 
 /* ---- 5 SHOWCASE: the pitch leads for free visitors, vanishes for members ---- */
 body[data-edit="5"]:not(.biAuthed) #biEditPitch{display:block}
-#biEditPitch{background:linear-gradient(180deg,rgba(214,56,55,.14),rgba(214,56,55,.04));
-  border:1px solid rgba(214,56,55,.5);border-radius:13px;padding:13px 14px 14px;margin:0 0 12px}
+#biEditPitch{background:linear-gradient(180deg,rgba(37,99,235,.14),rgba(37,99,235,.04));
+  border:1px solid rgba(37,99,235,.5);border-radius:13px;padding:13px 14px 14px;margin:0 0 12px}
 #biEditPitch .ph{display:flex;align-items:center;gap:6px;font:800 10px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   letter-spacing:1.2px;color:#e0a83c}
 #biEditPitch .ph .crown{width:13px;height:13px;display:flex}
@@ -15473,9 +15473,9 @@ body[data-edit="5"]:not(.biAuthed) #biEditPitch{display:block}
 #biEditPitch b{display:block;margin:7px 0 8px;font-size:15px;color:var(--text,#e8e2d8)}
 #biEditPitch ul{margin:0;padding:0 0 0 16px;color:var(--muted,#8f8779);font-size:12px;line-height:1.75}
 #biEditPitch li em{color:var(--text,#e8e2d8);font-style:normal;font-weight:700}
-#biEditPitch button{width:100%;margin-top:11px;background:#d63837;border:0;color:#fff;cursor:pointer;
+#biEditPitch button{width:100%;margin-top:11px;background:#2563eb;border:0;color:#fff;cursor:pointer;
   border-radius:9px;padding:10px;font:800 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-#biEditPitch button:hover{background:#bf2f2e}
+#biEditPitch button:hover{background:#1d4ed8}
 /* free + showcase: the editor itself is visible but plainly out of reach */
 body[data-edit="5"]:not(.biAuthed) #biTabEdit #styleRows,
 body[data-edit="5"]:not(.biAuthed) #biStyleDD{filter:grayscale(.85) opacity(.5);pointer-events:none}
@@ -15494,27 +15494,27 @@ body[data-edit="5"].biAuthed #biTabEdit #styleRows{max-height:none !important}
 #biNameCard h6{margin:0 0 10px;font-size:11px;letter-spacing:1.1px;color:var(--muted,#8f8779);font-weight:800}
 #biNameCard input{width:100%;background:var(--panel2,#202020);color:var(--text,#e8e2d8);
   border:1px solid var(--line,#2c2c2c);border-radius:9px;padding:10px 11px;font-size:13px;outline:none}
-#biNameCard input:focus{border-color:#d63837}
+#biNameCard input:focus{border-color:#2563eb}
 #biNameBtns{display:flex;gap:8px;margin-top:12px}
 #biNameBtns button{flex:1;border-radius:9px;padding:10px;cursor:pointer;
   font:800 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 #biNameCancel{background:transparent;border:1px solid var(--line,#2c2c2c);color:var(--text,#e8e2d8)}
-#biNameCancel:hover{border-color:#d63837}
-#biNameOK{background:#d63837;border:1px solid #d63837;color:#fff}
-#biNameOK:hover{background:#bf2f2e}
+#biNameCancel:hover{border-color:#2563eb}
+#biNameOK{background:#2563eb;border:1px solid #2563eb;color:#fff}
+#biNameOK:hover{background:#1d4ed8}
 /* --- admin block inspector --- */
 #biInspectCard{position:fixed;z-index:75;width:min(320px,92vw);max-height:60vh;overflow:auto;
-  background:var(--panel,#171310);border:1px solid #d63837;border-radius:12px;padding:10px 12px;
+  background:var(--panel,#171310);border:1px solid #2563eb;border-radius:12px;padding:10px 12px;
   box-shadow:0 14px 40px rgba(0,0,0,.55)}
 #biInspectCard .hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 #biInspectCard .hd b{flex:1;font-size:12px;color:var(--text,#e8e2d8)}
 #biInspectCard button{background:transparent;border:1px solid var(--line,#2c2c2c);color:var(--muted,#8f8779);
   border-radius:7px;padding:4px 10px;font:700 11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer}
-#biInspectCard button:hover{border-color:#d63837;color:#d63837}
+#biInspectCard button:hover{border-color:#2563eb;color:#2563eb}
 #biInspectCard pre{margin:0;font:11px/1.5 Consolas,monospace;color:var(--text,#e8e2d8);white-space:pre-wrap;word-break:break-all}
 /* --- guided tour: spotlight + coach card --- */
 #biTourCatch{position:fixed;inset:0;z-index:79}
-#biTourHl{position:fixed;z-index:80;border:2px solid #d63837;border-radius:12px;pointer-events:none;
+#biTourHl{position:fixed;z-index:80;border:2px solid #2563eb;border-radius:12px;pointer-events:none;
   box-shadow:0 0 0 100vmax rgba(0,0,0,.62);transition:all .3s ease}
 #biTourHl.none{border-color:transparent}
 #biTourCard{position:fixed;z-index:81;width:min(300px,calc(100vw - 28px));background:var(--panel,#171310);
@@ -15528,17 +15528,17 @@ body[data-edit="5"].biAuthed #biTabEdit #styleRows{max-height:none !important}
 #biTourFoot{display:flex;align-items:center;gap:10px}
 #biTourDots{display:flex;gap:5px;flex:1;flex-wrap:wrap}
 #biTourDots i{width:6px;height:6px;border-radius:50%;background:var(--line,#2c2c2c)}
-#biTourDots i.on{background:#d63837}
+#biTourDots i.on{background:#2563eb}
 #biTourSkip{background:transparent;border:0;color:var(--muted,#8f8779);font-size:12px;font-weight:700;cursor:pointer;padding:6px 4px}
-#biTourSkip:hover{color:#d63837}
-#biTourNext{background:#d63837;border:0;color:#fff;border-radius:8px;padding:8px 16px;
+#biTourSkip:hover{color:#2563eb}
+#biTourNext{background:#2563eb;border:0;color:#fff;border-radius:8px;padding:8px 16px;
   font:800 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer}
-#biTourNext:hover{background:#bf2f2e}
+#biTourNext:hover{background:#1d4ed8}
 /* --- style teaser: the finished build in miniature, spinning through styles (Original only) --- */
 #biStyleTeaser{margin-top:10px;border:1px solid var(--line,#2c2c2c);border-radius:12px;
   overflow:hidden;cursor:pointer;display:none;background:rgba(0,0,0,.18);transition:border-color .15s}
 #biStyleTeaser.show{display:block}
-#biStyleTeaser:hover{border-color:#d63837}
+#biStyleTeaser:hover{border-color:#2563eb}
 #biStyleTeaser .vp{position:relative;width:100%;aspect-ratio:1/1;max-height:300px} /* near-square: any build shape fits */
 #biStyleTeaser .vp iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;background:transparent}
 #biStyleTeaser .cap{padding:10px 12px 12px;text-align:center;border-top:1px solid var(--line,#2c2c2c);
@@ -15555,14 +15555,14 @@ body[data-edit="5"].biAuthed #biTabEdit #styleRows{max-height:none !important}
    there. Members never see it: they already have PRO, there is nothing to sell. */
 /* crown only — square padding, since there is no word to sit beside any more */
 .proBadge{display:inline-flex;align-items:center;gap:0;border-radius:6px;padding:3px;
-  background:#d63837;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.5px;
+  background:#2563eb;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.5px;
   line-height:1;vertical-align:1.5px;margin-left:6px;white-space:nowrap}
 .proBadge svg{width:10px;height:10px;flex:none}
 body.biAuthed .proBadge{display:none}
-#biClickTip{display:flex;gap:10px;align-items:center;border:1.5px dashed #d63837;border-radius:10px;
+#biClickTip{display:flex;gap:10px;align-items:center;border:1.5px dashed #2563eb;border-radius:10px;
   padding:9px 11px;margin:10px 0;color:var(--text,#fff);font-size:12px;line-height:1.45}
-#biClickTip svg{flex:none;color:#d63837}
-#biClickTip b{color:#d63837}
+#biClickTip svg{flex:none;color:#2563eb}
+#biClickTip b{color:#2563eb}
 body.biMember #biTabEdit .empty{color:var(--muted,#8f8779);font-size:12px}
 
 /* --- my texture pack --- */
@@ -15570,7 +15570,7 @@ body.biMember #biTabEdit .empty{color:var(--muted,#8f8779);font-size:12px}
 #biTabEdit.on ~ #biPackDock{display:block}
 #biPackDock h5{margin:0 0 6px}
 #biPackZone{border:1.5px dashed var(--line,#2a2a2a);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer}
-#biPackZone.drag,#biPackZone:hover{border-color:#d63837}
+#biPackZone.drag,#biPackZone:hover{border-color:#2563eb}
 #biPackZone b{display:block;font-size:12px;color:var(--text,#fff)}
 #biPackZone span{display:block;font-size:10.5px;color:var(--muted,#8f8779);margin-top:2px;line-height:1.35}
 /* ---- FREE VIEWER: the gated section reads as unavailable ----
@@ -15607,35 +15607,35 @@ body:not(.biAuthed) #biPackZone:hover{opacity:1}
 #biPackStatus #biPackSwap{padding:6px 10px}
 #biPackStatus #biPackReset{width:26px;height:26px;display:grid;place-items:center;padding:0}
 #biPackStatus #biPackReset svg{width:13px;height:13px}
-#biPackStatus .pkActs button:hover{border-color:#d63837;color:#d63837;background:rgba(214,56,55,.08)}
+#biPackStatus .pkActs button:hover{border-color:#2563eb;color:#2563eb;background:rgba(37,99,235,.08)}
 
 /* --- remote --- */
 #biRemoteBtn{background:transparent;border:1px solid var(--line,#2a2a2a);color:var(--text,#fff);border-radius:10px;
   padding:15px 12px;font:700 12.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:8px}
-#biRemoteBtn:hover{border-color:#d63837}
+#biRemoteBtn:hover{border-color:#2563eb}
 /* --- the options-column ad. Sits under the remote button, visible for the
    whole session. Red box, so every colour on it is declared white. --- */
 #biAdOpt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   width:100%;box-sizing:border-box;margin-top:10px;padding:16px 14px;border-radius:12px;
-  background:#d63837 !important;color:#fff !important;text-decoration:none !important;text-align:center}
-#biAdOpt:hover{background:#b52e2d !important;color:#fff !important}
+  background:#2563eb !important;color:#fff !important;text-decoration:none !important;text-align:center}
+#biAdOpt:hover{background:#1d4ed8 !important;color:#fff !important}
 #biAdOpt b{font-size:14px;font-weight:800;color:#fff !important}
 #biAdOpt span{font-size:11.5px;font-weight:700;opacity:.9;color:#fff !important}
 #biRemoteCard{position:absolute;left:50%;top:14px;transform:translateX(-50%) translateY(-6px);z-index:14;
-  background:var(--panel,#181818);border:1.5px solid #d63837;border-radius:11px;padding:10px 30px;
+  background:var(--panel,#181818);border:1.5px solid #2563eb;border-radius:11px;padding:10px 30px;
   text-align:center;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;
   box-shadow:0 10px 26px rgba(0,0,0,.3)}
 #biRemoteCard.on{opacity:1;transform:translateX(-50%)}
 #biRemoteCard b{display:block;font-size:12.5px;color:var(--text,#fff)}
 #biRemoteCard span{display:block;font-size:11px;color:var(--muted,#8f8779);margin-top:2px}
-#biRemoteCard em{font-style:normal;color:#d63837;font-weight:800;letter-spacing:1px}
+#biRemoteCard em{font-style:normal;color:#2563eb;font-weight:800;letter-spacing:1px}
 /* the card itself stays click-through so it never steals a drag on the build —
    only the dismiss button takes the pointer */
 #biRemoteCard .rcX{position:absolute;top:4px;right:5px;width:22px;height:22px;padding:0;line-height:0;
   border:0;background:transparent;color:var(--muted,#8f8779);border-radius:6px;cursor:pointer;
   pointer-events:auto;display:grid;place-items:center}
-#biRemoteCard .rcX:hover{color:#d63837;background:rgba(214,56,55,.14)}
+#biRemoteCard .rcX:hover{color:#2563eb;background:rgba(37,99,235,.14)}
 #biRemoteCard .rcX svg{width:11px;height:11px;display:block}
 
 /* --- advanced: every toggle is the same bordered row, box right --- */
@@ -15644,9 +15644,9 @@ body:not(.biAuthed) #biPackZone:hover{opacity:1}
   margin:0;padding:10px 12px;border:1px solid var(--line,#2c2c2c);border-radius:8px;
   font-size:12.5px;font-weight:600;color:var(--text,#e8e2d8);cursor:pointer;user-select:none;
   white-space:normal;transition:border-color .15s}
-#biPanel details .biAdvRow:hover,#biPanel details .toggle:hover{border-color:#d63837}
+#biPanel details .biAdvRow:hover,#biPanel details .toggle:hover{border-color:#2563eb}
 #biPanel details .biAdvRow input,#biPanel details .toggle input{
-  accent-color:#d63837;width:15px;height:15px;flex:none;margin:0}
+  accent-color:#2563eb;width:15px;height:15px;flex:none;margin:0}
 #biPanel details[open] .biAdvRow{margin-bottom:9px}
 
 /* --- advanced: icon + title + what-it-does + switch, with its slider docked --- */
@@ -15656,13 +15656,13 @@ body:not(.biAuthed) #biPackZone:hover{opacity:1}
 .biAdvHead:first-of-type{margin-top:2px}
 .biAdv2{border:1px solid var(--line,#2c2c2c);border-radius:9px;margin-bottom:7px;overflow:hidden;
   transition:border-color .15s}
-.biAdv2:hover{border-color:#d63837}
-.biAdv2.on{border-color:rgba(214,56,55,.55);background:rgba(214,56,55,.05)}
+.biAdv2:hover{border-color:#2563eb}
+.biAdv2.on{border-color:rgba(37,99,235,.55);background:rgba(37,99,235,.05)}
 .biAdv2 .hd{display:flex;align-items:center;gap:10px;padding:9px 11px;margin:0;
   cursor:pointer;user-select:none}
 .biAdv2 .ic{flex:none;width:19px;height:19px;color:var(--muted,#8f8779);display:flex}
 .biAdv2 .ic svg{width:19px;height:19px;display:block}
-.biAdv2.on .ic{color:#d63837}
+.biAdv2.on .ic{color:#2563eb}
 .biAdv2 .tx{flex:1;min-width:0}
 .biAdv2 .tx b{display:block;font-size:12.5px;font-weight:700;color:var(--text,#e8e2d8);line-height:1.25}
 .biAdv2 .tx i{display:block;font-style:normal;font-size:10.5px;line-height:1.35;
@@ -15675,7 +15675,7 @@ body:not(.biAuthed) #biPackZone:hover{opacity:1}
   position:relative;transition:background .15s}
 .biAdv2 .sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;
   border-radius:50%;background:#fff;transition:left .15s}
-.biAdv2.on .sw{background:#d63837}
+.biAdv2.on .sw{background:#2563eb}
 .biAdv2.on .sw::after{left:16px}
 /* A docked slider is always visible. It used to reveal only when its toggle was
    on, which just made the sliders look missing — you can't discover a control
@@ -15698,62 +15698,62 @@ body:not(.biAuthed) #biPackZone:hover{opacity:1}
   opacity:.6;transition:opacity .15s,color .15s}
 .biRst svg{width:12px;height:12px;display:block}
 label:hover .biRst{opacity:1}
-.biRst:hover{color:#d63837;opacity:1}
-.biAdv2 .ext input[type=range]{width:100%;accent-color:#d63837;margin-top:5px}
+.biRst:hover{color:#2563eb;opacity:1}
+.biAdv2 .ext input[type=range]{width:100%;accent-color:#2563eb;margin-top:5px}
 #biSndStyle{display:flex;gap:5px}
 #biSndStyle button{flex:1;min-width:0;background:transparent;border:1px solid var(--line,#2c2c2c);color:var(--muted,#8f8779);
   border-radius:8px;padding:8px 0;font:700 10.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   cursor:pointer;transition:border-color .15s,background .15s,color .15s;white-space:nowrap;overflow:hidden}
-#biSndStyle button:hover{border-color:#d63837}
-#biSndStyle button.on{background:#d63837;border-color:#d63837;color:#fff}
+#biSndStyle button:hover{border-color:#2563eb}
+#biSndStyle button.on{background:#2563eb;border-color:#2563eb;color:#fff}
 #biSndVolRow label{display:block;font-size:11.5px;color:var(--muted,#8f8779)}
 #biSndVolRow .sv{float:right;font-family:'Silkscreen',monospace;font-size:10px;color:var(--text,#e8e2d8)}
-#biSndVolRow input[type=range]{width:100%;accent-color:#d63837;margin-top:4px}
+#biSndVolRow input[type=range]{width:100%;accent-color:#2563eb;margin-top:4px}
 #biSndBoard{position:fixed;right:12px;top:60px;z-index:70;width:284px;background:var(--panel,#171310);
   border:1px solid var(--line,#2c2c2c);border-radius:14px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
 #biSndBoard .hd{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
 #biSndBoard .hd b{font-size:13px;color:var(--text,#e8e2d8)}
 #biSndBoard .hd span{flex:1;font-size:9.5px;color:var(--muted,#8f8779)}
 #biSndBoardX{background:transparent;border:0;color:var(--muted,#8f8779);cursor:pointer;font-size:14px;padding:0 2px}
-#biSndBoardX:hover{color:#d63837}
+#biSndBoardX:hover{color:#2563eb}
 #biSndBoard .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 #biSndBoard .grid button{background:var(--panel2,#202020);border:1px solid var(--line,#2c2c2c);color:var(--text,#e8e2d8);
   border-radius:8px;padding:9px 2px;font:700 10.5px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   cursor:pointer;white-space:nowrap;overflow:hidden}
-#biSndBoard .grid button:hover{border-color:#d63837}
-#biSndBoard .grid button:active{background:#d63837;border-color:#d63837;color:#fff}
-#biImportReset{background:transparent;border:1px solid #d63837;color:#d63837;border-radius:9px;
+#biSndBoard .grid button:hover{border-color:#2563eb}
+#biSndBoard .grid button:active{background:#2563eb;border-color:#2563eb;color:#fff}
+#biImportReset{background:transparent;border:1px solid #2563eb;color:#2563eb;border-radius:9px;
   padding:9px 10px;font:700 12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer}
-#biImportReset:hover{background:#d63837;color:#fff}
+#biImportReset:hover{background:#2563eb;color:#fff}
 /* --- advanced: sun & light group matches the panel typography --- */
 #biPanel #sunPanel h4{font-family:inherit;font-size:10.5px;letter-spacing:1.1px;
   color:var(--muted,#8f8779);font-weight:800;margin:3px 0 2px}
 #biPanel #sunPanel label{display:block;font-size:11.5px;color:var(--muted,#8f8779);margin-top:9px}
-#biPanel #sunPanel input[type=range]{width:100%;accent-color:#d63837;margin-top:4px}
+#biPanel #sunPanel input[type=range]{width:100%;accent-color:#2563eb;margin-top:4px}
 #biPanel #sunPanel .sv{color:var(--text,#e8e2d8)}
 #biPanel #sunPanel label.toggle{display:flex;font-size:12.5px;color:var(--text,#e8e2d8)}
 #biPanel #sunPanel .biSlRow{display:flex;align-items:center;gap:7px;margin-top:4px}
 #biPanel #sunPanel .biSlRow input[type=range]{flex:1;width:auto;margin-top:0}
 .biSlReset{flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:transparent;
   border:1px solid var(--line,#2c2c2c);border-radius:6px;color:var(--muted,#8f8779);cursor:pointer;padding:0;transition:border-color .15s,color .15s}
-.biSlReset:hover{border-color:#d63837;color:#d63837}
+.biSlReset:hover{border-color:#2563eb;color:#2563eb}
 .biSlReset svg{width:11px;height:11px;display:block}
 
 /* --- fullscreen --- */
 #biFs{position:absolute;left:12px;top:12px;z-index:12;width:34px;height:34px;border-radius:9px;
   background:var(--panel,#181818);border:1px solid var(--line,#2a2a2a);color:var(--text,#fff);
   display:flex;align-items:center;justify-content:center;cursor:pointer}
-#biFs:hover{border-color:#d63837}
-#biFs.on{border-color:#d63837;color:#d63837}
-#biPackZone.pulse{border-color:#d63837;box-shadow:0 0 0 4px rgba(214,56,55,.18)}
+#biFs:hover{border-color:#2563eb}
+#biFs.on{border-color:#2563eb;color:#2563eb}
+#biPackZone.pulse{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.18)}
 
 /* --- resume chip --- */
 #biResume{position:absolute;left:56px;top:12px;z-index:12;display:none;align-items:center;gap:7px;
-  background:var(--panel,#181818);border:1.5px solid #d63837;color:var(--text,#fff);border-radius:999px;
+  background:var(--panel,#181818);border:1.5px solid #2563eb;color:var(--text,#fff);border-radius:999px;
   padding:8px 15px;font:800 12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;cursor:pointer;
   box-shadow:0 8px 22px rgba(0,0,0,.25)}
 #biResume.on{display:flex}
-#biResume:hover{background:#d63837;color:#fff}
+#biResume:hover{background:#2563eb;color:#fff}
 
 /* --- the click-card: one look for both modes --- */
 .stylePop.biCard{border-radius:9px !important;box-shadow:0 8px 22px rgba(0,0,0,.3) !important;
@@ -15774,7 +15774,7 @@ label:hover .biRst{opacity:1}
 #biSnd{position:absolute;right:12px;top:12px;z-index:12;width:38px;height:38px;border-radius:999px;
   border:1px solid rgba(255,255,255,.22);background:rgba(15,15,15,.55);backdrop-filter:blur(4px);
   color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#biSnd:hover{border-color:#d63837}
+#biSnd:hover{border-color:#2563eb}
 #biSnd.muted{opacity:.6}
 
 /* --- desktop: the panel is a real column --- */
@@ -15789,10 +15789,10 @@ label:hover .biRst{opacity:1}
 
 /* --- panel dismiss: arrow handle on the bar's edge collapses / restores it --- */
 #biPanelArrow{display:none;position:fixed;right:288px;top:50%;transform:translateY(-50%);z-index:33;
-  width:20px;height:58px;background:#d63837;border:1px solid #d63837;border-right:none;
+  width:20px;height:58px;background:#2563eb;border:1px solid #2563eb;border-right:none;
   border-radius:9px 0 0 9px;color:#fff;cursor:pointer;
   align-items:center;justify-content:center;padding:0;transition:right .25s ease,background .15s}
-#biPanelArrow:hover{background:#bf2f2e}
+#biPanelArrow:hover{background:#1d4ed8}
 #biPanelArrow svg{width:13px;height:13px;display:block;transition:transform .25s ease}
 body.biPanelHidden #biPanelArrow{right:0}
 body.biPanelHidden #biPanelArrow svg{transform:rotate(180deg)}
@@ -15819,7 +15819,7 @@ body.biPanelHidden #biPanelArrow svg{transform:rotate(180deg)}
 .biStepArrows{display:flex;flex-direction:column;width:20px;border-left:1px solid var(--line,#2c2c2c)}
 .biStepArrows button{flex:1;background:transparent;border:0;color:var(--muted,#8f8779);cursor:pointer;
   display:flex;align-items:center;justify-content:center;padding:0}
-.biStepArrows button:hover{color:#d63837;background:rgba(214,56,55,.12)}
+.biStepArrows button:hover{color:#2563eb;background:rgba(37,99,235,.12)}
 .biStepArrows button+button{border-top:1px solid var(--line,#2c2c2c)}
 .biStepArrows svg{width:9px;height:9px;display:block}
 
@@ -15899,7 +15899,7 @@ body.biHero #stage{position:fixed;inset:0}
  body.biMember:not(.biHero) #biSnd svg{width:19px;height:19px}
  body.biMember:not(.biHero) #biFs:active,
  body.biMember:not(.biHero) #biSnd:active{transform:scale(.9);background:var(--biGlassOn)}
- body.biMember:not(.biHero) #biFs.on{color:#d63837;border-color:rgba(214,56,55,.7)}
+ body.biMember:not(.biHero) #biFs.on{color:#2563eb;border-color:rgba(37,99,235,.7)}
  /* the remote card and the resume chip both want the top centre, where the two
     buttons now are — drop them onto their own line underneath instead of letting
     them sit wedged between a 44px button on either side */
@@ -15984,17 +15984,17 @@ body.biHero #stage{position:fixed;inset:0}
    background:transparent;margin:0;flex:1}
  body.biMember:not(.biHero) #steps input[type=range]::-webkit-slider-runnable-track{
    height:5px;border-radius:3px;
-   background:linear-gradient(90deg,#d63837 0 calc(var(--biScrub,0) * 1%),
+   background:linear-gradient(90deg,#2563eb 0 calc(var(--biScrub,0) * 1%),
                               var(--line) calc(var(--biScrub,0) * 1%) 100%)}
  body.biMember:not(.biHero) #steps input[type=range]::-moz-range-track{
    height:5px;border-radius:3px;
-   background:linear-gradient(90deg,#d63837 0 calc(var(--biScrub,0) * 1%),
+   background:linear-gradient(90deg,#2563eb 0 calc(var(--biScrub,0) * 1%),
                               var(--line) calc(var(--biScrub,0) * 1%) 100%)}
  body.biMember:not(.biHero) #steps input[type=range]::-webkit-slider-thumb{
    -webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;
-   border:2.5px solid #d63837;margin-top:-9px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+   border:2.5px solid #2563eb;margin-top:-9px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
  body.biMember:not(.biHero) #steps input[type=range]::-moz-range-thumb{
-   width:22px;height:22px;border:2.5px solid #d63837;border-radius:50%;background:#fff}
+   width:22px;height:22px;border:2.5px solid #2563eb;border-radius:50%;background:#fff}
  /* few-step builds show buttons instead of a slider — give them a scrollable
     row of real 44px targets rather than 46px squares crushed to fit */
  body.biMember:not(.biHero) #steps.scrollNums{height:auto;padding-top:9px;margin-top:-9px}
@@ -16029,7 +16029,7 @@ body.biHero #stage{position:fixed;inset:0}
  body.biMember:not(.biHero) #chapMenuBtn .cnum{font-size:15px;opacity:1;min-width:0}
  body.biMember:not(.biHero) #chapMenuPop .cnum{font-size:11.5px;opacity:.8;min-width:26px}
  body.biMember.hasChapters:not(.biHero) #chapMenuWrap.open #chapMenuBtn{
-   color:#d63837;border-color:#d63837;background:rgba(214,56,55,.12)}
+   color:#2563eb;border-color:#2563eb;background:rgba(37,99,235,.12)}
  /* opens upward from the left edge, and is allowed to be as wide as the viewer */
  body.biMember:not(.biHero) #chapMenuPop{
    left:0;right:auto;bottom:calc(100% + 9px);min-width:236px;
@@ -16090,8 +16090,8 @@ body.biHero #stage{position:fixed;inset:0}
  body.biMember:not(.biHero) #biPanelTab:active{transform:scale(.93)}
  /* same specificity trap as the panel transform: the plain .biPanelOpen selector
     loses to the mobile base rule above, so the open state has to be written long */
- body.biMember.biPanelOpen:not(.biHero) #biPanelTab{color:#d63837;border-color:#d63837;
-   background:rgba(214,56,55,.12)}
+ body.biMember.biPanelOpen:not(.biHero) #biPanelTab{color:#2563eb;border-color:#2563eb;
+   background:rgba(37,99,235,.12)}
 
  /* ---- options: a real bottom sheet --------------------------------------- */
  #biSheetDim{display:block;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.45);
@@ -16118,7 +16118,7 @@ body.biHero #stage{position:fixed;inset:0}
    height:26px;cursor:grab;touch-action:none;-webkit-tap-highlight-color:transparent}
  #biSheetGrab::before{content:'';width:40px;height:4px;border-radius:99px;
    background:var(--line);transition:background .15s,width .15s}
- body.biSheetDrag #biSheetGrab::before{background:#d63837;width:54px}
+ body.biSheetDrag #biSheetGrab::before{background:#2563eb;width:54px}
 
  /* ---- sheet contents at thumb size --------------------------------------- */
  body.biMember:not(.biHero) .biTabs button{padding:15px 0 13px;font-size:13px}
@@ -16537,22 +16537,22 @@ body.biHero #stage{position:fixed;inset:0}
       st.textContent='.biDrAd{position:relative;display:block;aspect-ratio:19/9;margin:10px 12px 2px;border-radius:12px;overflow:hidden;text-decoration:none;border:1px solid var(--line,#2c2c2c);background:var(--panel2,#221c17);opacity:0;transition:opacity .45s}'+
         '.biDrAd.on{opacity:1}'+
         '.biDrAd__in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:12px 16px}'+
-        '.biDrAd__cr{width:15px;height:15px;color:#d63837}'+
+        '.biDrAd__cr{width:15px;height:15px;color:#2563eb}'+
         '.biDrAd__ln{font-size:13px;font-weight:700;line-height:1.4;color:var(--text,#e8e2d8);max-width:30ch;text-wrap:balance}'+
         '.biDrAd__ln.hasbr{text-wrap:auto;max-width:none}'+
-        '.biDrAd__ln b{color:#d63837}'+
-        '.biDrAd__go{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;background:linear-gradient(135deg,#d63837,#a01f22);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.5px;line-height:1;box-shadow:0 2px 10px rgba(214,56,55,.3);transition:transform .15s,filter .15s,box-shadow .15s}'+
-        '.biDrAd__go:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 4px 16px rgba(214,56,55,.45)}'+
+        '.biDrAd__ln b{color:#2563eb}'+
+        '.biDrAd__go{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.5px;line-height:1;box-shadow:0 2px 10px rgba(37,99,235,.3);transition:transform .15s,filter .15s,box-shadow .15s}'+
+        '.biDrAd__go:hover{transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 4px 16px rgba(37,99,235,.45)}'+
         '.biDrAd--accent .biDrAd__go:hover{filter:none;box-shadow:0 4px 14px rgba(0,0,0,.25)}'+
         '.biDrAd__go svg{width:13px;height:13px}'+
         '.biDrAd__go svg.biDrAd__cr{color:#fff}'+
         '.biDrAd__ad{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.8px;color:#888;background:rgba(255,255,255,.10);border-radius:5px;padding:3px 6px;line-height:1}'+
-        '.biDrAd--accent{background:linear-gradient(135deg,#d63837,#a01f22);border-color:transparent}'+
+        '.biDrAd--accent{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:transparent}'+
         '.biDrAd--accent .biDrAd__cr{color:#fff}'+
         '.biDrAd--accent .biDrAd__ln{color:#fff}'+
         '.biDrAd--accent .biDrAd__ln b{color:#fff;text-decoration:underline;text-underline-offset:2px}'+
-        '.biDrAd--accent .biDrAd__go{background:#fff;color:#a01f22;box-shadow:none}'+
-        '.biDrAd--accent .biDrAd__go svg.biDrAd__cr{color:#a01f22}'+
+        '.biDrAd--accent .biDrAd__go{background:#fff;color:#1d4ed8;box-shadow:none}'+
+        '.biDrAd--accent .biDrAd__go svg.biDrAd__cr{color:#1d4ed8}'+
         '.biDrAd--accent .biDrAd__ad{background:rgba(0,0,0,.22);color:rgba(255,255,255,.85)}';
       document.head.appendChild(st);
       var CROWN='<svg class="biDrAd__cr" viewBox="0 0 24 24" fill="none"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-1.5 9.5h-15L3 8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>';
@@ -18418,7 +18418,7 @@ body.biHero #stage{position:fixed;inset:0}
           var sw=document.createElement('button');
           sw.type='button';
           sw.textContent='Swap this block';
-          sw.style.cssText='display:block;width:100%;font-family:inherit;margin-top:8px;background:var(--red,#d63837);color:#fff;border:0;border-radius:6px;font-size:11.5px;font-weight:700;padding:6px 12px;cursor:pointer';
+          sw.style.cssText='display:block;width:100%;font-family:inherit;margin-top:8px;background:var(--red,#2563eb);color:#fff;border:0;border-radius:6px;font-size:11.5px;font-weight:700;padding:6px 12px;cursor:pointer';
           sw.onclick=function(eb){
             try{ eb.stopPropagation(); }catch(_e2){}
             /* the popup takes the CHIP'S OWN CORNER - it replaces the chip

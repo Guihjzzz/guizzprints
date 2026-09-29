@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { normalizeModVersion, validateModVersion } from '@/lib/mod-version';
 import { collectCatalogCsv } from '@/lib/catalog-csv';
-import { supabase } from '@/lib/supabase';
+import { getClientAuthToken } from '@/lib/client-auth';
 import { 
   Upload, Link2, FileText, Tag, ArrowLeft, Loader2, 
   Gamepad2, Coffee, Layers, Video,
   Trash2, Edit3, Settings, Database, Save, Search, Download, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation'; // <-- Atualizado
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
 const CATEGORIES = [
   { id: 'bedrock', label: 'Minecraft Bedrock', icon: Gamepad2 },
@@ -57,6 +57,8 @@ type AdminModSummary = {
   id: string;
   title: string;
   category: string;
+  guide_mcstructure_url: string | null;
+  guide_schem_url: string | null;
   subcategory: string | null;
   version: string | null;
   file_size: string | null;
@@ -70,7 +72,34 @@ type AdminModSummary = {
   source_creator: string | null;
   source_tags: string[] | null;
   source_published_at: string | null;
+  categories?: string[];
+  subcategories?: string[];
 };
+
+function groupAdminMods(items: AdminModSummary[]): AdminModSummary[] {
+  const categoryOrder = new Map<string, number>(CATEGORIES.map((category, index) => [category.id, index]));
+  const formatOrder = new Map<string, number>(ALL_FORMATS.map((format, index) => [format.id, index]));
+  const groups = new Map<string, AdminModSummary>();
+  for (const item of items) {
+    const key = item.guide_mcstructure_url?.trim() || item.guide_schem_url?.trim() || `single:${item.id}`;
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, { ...item, categories: [item.category], subcategories: item.subcategory ? [item.subcategory] : [] });
+      continue;
+    }
+    existing.categories = Array.from(new Set([...(existing.categories || []), item.category]))
+      .sort((a, b) => (categoryOrder.get(a) ?? 99) - (categoryOrder.get(b) ?? 99));
+    existing.subcategories = Array.from(new Set([...(existing.subcategories || []), ...(item.subcategory ? [item.subcategory] : [])]))
+      .sort((a, b) => (formatOrder.get(a.trim().toLowerCase()) ?? 99) - (formatOrder.get(b.trim().toLowerCase()) ?? 99));
+    existing.downloads = (existing.downloads || 0) + (item.downloads || 0);
+    if (existing.source_sync_status !== 'error' && item.source_sync_status === 'error') existing.source_sync_status = 'error';
+  }
+  return Array.from(groups.values());
+}
+
+function formatLabel(formatId: string) {
+  return ALL_FORMATS.find((format) => format.id === formatId.trim().toLowerCase())?.label || formatId;
+}
 
 class AdminRequestError extends Error {
   constructor(message: string, public status: number) {
@@ -80,16 +109,15 @@ class AdminRequestError extends Error {
 
 async function authenticatedAdminRequest(endpoint: string, path = '', init: RequestInit = {}) {
   let sessionTimer: ReturnType<typeof setTimeout> | undefined;
-  const sessionResult = await Promise.race([
-    supabase.auth.getSession(),
+  const token = await Promise.race([
+    getClientAuthToken(),
     new Promise<never>((_, reject) => {
       sessionTimer = setTimeout(() => reject(new Error('A sessão demorou para responder. Tente novamente.')), 15_000);
     }),
   ]).finally(() => clearTimeout(sessionTimer));
-  const { data: { session } } = sessionResult;
   init.signal?.throwIfAborted();
 
-  if (!session) {
+  if (!token) {
     throw new AdminRequestError('Authentication required.', 401);
   }
 
@@ -99,7 +127,7 @@ async function authenticatedAdminRequest(endpoint: string, path = '', init: Requ
     cache: 'no-store',
     headers: {
       ...init.headers,
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -123,6 +151,7 @@ async function minecraftImportRequest(init: RequestInit = {}) {
 export default function AdminUploadPage() {
   const router = useRouter();
   const params = useParams(); // <-- Pega o locale atual
+  const searchParams = useSearchParams();
   const locale = (params.locale as string) || "en";
   
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('manage');
@@ -197,7 +226,7 @@ export default function AdminUploadPage() {
         setCatalogQuery((previous) => ({ ...previous, page: previous.page - 1 }));
         return;
       }
-      setMods(data.items);
+      setMods(groupAdminMods(data.items));
       setHasMore(data.hasMore);
       setAttentionCount(Number(data.attentionCount) || 0);
       setCheckingAccess(false);
@@ -224,6 +253,11 @@ export default function AdminUploadPage() {
       catalogRequest.current?.abort();
     };
   }, [fetchMods, activeTab]);
+
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (!checkingAccess && editId && !isEditing) void handleEditInit(editId);
+  }, [checkingAccess, isEditing, searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -282,55 +316,28 @@ export default function AdminUploadPage() {
     setFormData((prev) => ({ ...prev, category: categoryId, subcategory: '' }));
   };
 
-  const handleEditInit = async (modId: string) => {
-    setLoading(true);
-
-    try {
-      const data = await adminRequest(`?id=${encodeURIComponent(modId)}`);
-      setFormData({
-        id: data.id,
-        title: data.title || '',
-        category: data.category || '',
-        subcategory: data.subcategory || '',
-        description: data.description || '',
-        version: normalizeModVersion(data.version || '1.0.0'),
-        file_size: data.file_size || '',
-        price: data.price || 'Free',
-        terabox_url: data.terabox_url || '',
-        youtube_trailer_url: data.youtube_trailer_url || '',
-        image_url_1: data.image_url_1 || '',
-        image_url_2: data.image_url_2 || '',
-        image_url_3: data.image_url_3 || '',
-        image_url_4: data.image_url_4 || '',
-        image_url_5: data.image_url_5 || '',
-        source_url: data.source_url || '',
-        source_fingerprint: data.source_fingerprint || '',
-        source_creator: data.source_creator || '',
-        source_tags: Array.isArray(data.source_tags) ? data.source_tags : [],
-        source_published_at: data.source_published_at || '',
-        source_pack_type: data.source_pack_type || '',
-      });
-      setMinecraftUrl(data.source_url || '');
-      setIsEditing(true);
-      setActiveTab('upload');
-      setMessage(null);
-    } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Erro ao carregar mod.' });
-    } finally {
-      setLoading(false);
-    }
+  const handleEditInit = (modId: string) => {
+    router.push(`/${locale}/admin/publisher?edit=${encodeURIComponent(modId)}`);
   };
 
-  const handleDelete = async (modId: string, modTitle: string) => {
+  const handleDelete = async (mod: AdminModSummary) => {
     if (loading) return;
-    if (!window.confirm(`Tem certeza que deseja EXCLUIR "${modTitle}"?`)) return;
+    const isPublishedPair = Boolean(mod.guide_mcstructure_url || mod.guide_schem_url);
+    const confirmation = isPublishedPair
+      ? `Tem certeza que deseja EXCLUIR "${mod.title}"? As edições Bedrock e Java serão removidas juntas do catálogo.`
+      : `Tem certeza que deseja EXCLUIR "${mod.title}"?`;
+    if (!window.confirm(confirmation)) return;
     
     setLoadingMods(true);
     setLoading(true);
 
     try {
-      await adminRequest(`?id=${encodeURIComponent(modId)}`, { method: 'DELETE' });
-      setMessage({ type: 'success', text: 'Mod excluído com sucesso.' });
+      if (isPublishedPair) {
+        await authenticatedAdminRequest('/api/admin/publisher/publication', `?id=${encodeURIComponent(mod.id)}`, { method: 'DELETE' });
+      } else {
+        await adminRequest(`?id=${encodeURIComponent(mod.id)}`, { method: 'DELETE' });
+      }
+      setMessage({ type: 'success', text: isPublishedPair ? 'As edições Bedrock e Java foram excluídas juntas.' : 'Mod excluído com sucesso.' });
       await fetchMods();
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Erro ao excluir.' });
@@ -354,6 +361,16 @@ export default function AdminUploadPage() {
     submitting.current = true;
     setLoading(true);
     setMessage(null);
+
+    // New items must go through the 3D publisher, which generates the Guide
+    // 3D assets and the Guizz Studio cover/board together. This screen keeps
+    // the metadata editor for existing catalog entries only.
+    if (!isEditing) {
+      setMessage({ type: 'error', text: 'Use o Publicador 3D para criar uma nova publicação.' });
+      setLoading(false);
+      submitting.current = false;
+      return;
+    }
 
     if (!formData.title || !formData.category || !formData.terabox_url) {
       setMessage({ type: 'error', text: 'Preencha todos os campos obrigatórios (*)' });
@@ -434,10 +451,14 @@ export default function AdminUploadPage() {
               <h1 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
                 <Settings className="text-blue-500" size={24} /> Admin Dashboard
               </h1>
-              <p className="text-sm text-zinc-400">Gerenciamento completo do catálogo.</p>
+              <p className="text-sm text-zinc-400">Gerenciamento do catálogo. Novas publicações usam somente o Publicador 3D.</p>
             </div>
           </div>
 
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Link href={`/${locale}/admin/publisher`} className="flex items-center justify-center gap-2 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-2 text-sm font-black text-red-200 transition hover:bg-red-500/20">
+              <Upload size={16} /> Publicador 3D
+            </Link>
           <div className="flex bg-[#111318] border border-[#1D2433] rounded-xl p-1 w-full sm:w-auto">
             <button disabled={loading}
               onClick={() => { setActiveTab('manage'); setIsEditing(false); setFormData(INITIAL_FORM); setMinecraftUrl(''); setMessage(null); }}
@@ -445,12 +466,7 @@ export default function AdminUploadPage() {
             >
               <Database size={16} /> Catálogo
             </button>
-            <button disabled={loading}
-              onClick={() => { setActiveTab('upload'); setMessage(null); }}
-              className={`flex-1 sm:px-6 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'upload' ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300'}`}
-            >
-              {isEditing ? <><Edit3 size={16} /> Editando</> : <><Upload size={16} /> Publicar</>}
-            </button>
+          </div>
           </div>
         </div>
 
@@ -558,8 +574,8 @@ export default function AdminUploadPage() {
                             <p className="font-bold text-sm text-zinc-200 break-words [overflow-wrap:anywhere]">{mod.title}</p>
                             {mod.source_sync_status === 'error' && <span className="mt-2 inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-300"><AlertTriangle size={12} /> Atenção manual</span>}
                             <div className="md:hidden mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-400">
-                              <span>{CATEGORIES.find(category => category.id === mod.category)?.label || mod.category}</span>
-                              {mod.subcategory?.trim() && <span className="text-blue-300 break-words [overflow-wrap:anywhere]">Formato: {ALL_FORMATS.find(format => format.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</span>}
+                              <span>{(mod.categories || [mod.category]).map((category) => CATEGORIES.find((entry) => entry.id === category)?.label || category).join(' + ')}</span>
+                              {!!mod.subcategories?.length && <span className="text-blue-300 break-words [overflow-wrap:anywhere]">Formatos: {mod.subcategories.map(formatLabel).join(' + ')}</span>}
                               <span className="break-all">Versão: {mod.version ? `# v${normalizeModVersion(mod.version)}` : 'Não informada'}</span>
                               <span>Tamanho: {mod.file_size || 'Não informado'}</span>
                             </div>
@@ -567,10 +583,12 @@ export default function AdminUploadPage() {
                             {mod.source_creator && <p className="mt-1 text-[10px] text-emerald-300/80">Marketplace: {mod.source_creator}</p>}
                           </td>
                           <td className="p-4 text-center hidden md:table-cell">
-                            <span className="text-[10px] uppercase tracking-wider font-black px-2 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">
-                              {mod.category}
-                            </span>
-                            {mod.subcategory?.trim() && <p className="mt-2 text-xs text-blue-300 break-words [overflow-wrap:anywhere]">Formato: {ALL_FORMATS.find(format => format.id === mod.subcategory?.trim().toLowerCase())?.label || mod.subcategory}</p>}
+                            <div className="flex flex-wrap justify-center gap-1">
+                              {(mod.categories || [mod.category]).map((category) => (
+                                <span key={category} className="text-[10px] uppercase tracking-wider font-black px-2 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">{category}</span>
+                              ))}
+                            </div>
+                            {!!mod.subcategories?.length && <p className="mt-2 text-xs text-blue-300 break-words [overflow-wrap:anywhere]">Formatos: {mod.subcategories.map(formatLabel).join(' + ')}</p>}
                           </td>
                           <td className="p-4 hidden md:table-cell text-xs text-blue-300 break-all">{mod.version ? `# v${normalizeModVersion(mod.version)}` : 'Não informada'}</td>
                           <td className="p-4 hidden md:table-cell text-xs text-zinc-300">{mod.file_size || 'Não informado'}</td>
@@ -580,11 +598,13 @@ export default function AdminUploadPage() {
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button disabled={loading} onClick={() => handleEditInit(mod.id)} className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/30 rounded-lg transition-colors disabled:opacity-40" title="Editar" aria-label={`Editar ${mod.title}`}>
+                              <button disabled={loading} onClick={() => handleEditInit(mod.id)} className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-2 text-blue-300 transition-colors hover:bg-blue-500/20 disabled:opacity-40" title="Editar publicação" aria-label={`Editar publicação ${mod.title}`}>
                                 <Edit3 size={16} />
+                                <span className="hidden xl:inline text-xs font-bold">Editar</span>
                               </button>
-                              <button disabled={loading} onClick={() => handleDelete(mod.id, mod.title)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-lg transition-colors disabled:opacity-40" title="Excluir" aria-label={`Excluir ${mod.title}`}>
+                              <button disabled={loading} onClick={() => handleDelete(mod)} className="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-2 text-red-300 transition-colors hover:bg-red-500/20 disabled:opacity-40" title="Excluir publicação" aria-label={`Excluir publicação ${mod.title}`}>
                                 <Trash2 size={16} />
+                                <span className="hidden xl:inline text-xs font-bold">Excluir</span>
                               </button>
                             </div>
                           </td>

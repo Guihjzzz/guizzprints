@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guia 3D Guizz</title>
+  <style>html,body,#studio{width:100%;height:100%;margin:0;border:0;background:#050608}#studio{display:block}#state{position:fixed;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);max-width:calc(100% - 32px);padding:10px 14px;border:1px solid #263044;border-radius:9px;background:#111318e8;color:#e4e4e7;font:600 13px system-ui;pointer-events:none}#state.error{border-color:#3b82f6;color:#dbeafe}</style>
+</head>
+<body>
+  <iframe id="studio" title="Visualizador 3D da construção" allow="fullscreen"></iframe>
+  <output id="state">Carregando Guia 3D…</output>
+  <script>
+    (() => {
+      const frame = document.querySelector('#studio');
+      const state = document.querySelector('#state');
+      const studioOrigin = 'http://127.0.0.1:5175';
+      const parameters = new URLSearchParams(location.search);
+      const requested = parameters.get('model') || '';
+      const title = String(parameters.get('title') || 'Construção Guizzprints').slice(0, 100);
+      let model = '';
+      try {
+        const url = new URL(requested);
+        if (url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.startsWith('/Guizzhjz/guizzprints-assets/releases/download/')) model = url.toString();
+      } catch (_) {}
+      if (!model) {
+        document.body.textContent = 'A construção 3D não está disponível.';
+        return;
+      }
+      const setState = (message, error = false) => {
+        state.textContent = message;
+        state.classList.toggle('error', error);
+      };
+      const send = async () => {
+        try {
+          setState('Baixando a construção publicada…');
+          const response = await fetch('/api/guide3d/source?url=' + encodeURIComponent(model), { cache: 'no-store' });
+          if (!response.ok) throw new Error('A construção publicada não pôde ser carregada.');
+          const buffer = await response.arrayBuffer();
+          setState('Abrindo a construção no Guia 3D…');
+          frame.contentWindow?.postMessage({
+            guizzStudioPublisher: 1,
+            type: 'preview',
+            loadId: 'preview-' + Date.now(),
+            name: model.split('/').pop().split('?')[0] || 'construcao.mcstructure',
+            buffer,
+            title,
+          }, studioOrigin, [buffer]);
+        } catch (error) {
+          setState(error && error.message ? error.message : 'Não foi possível abrir a construção.', true);
+        }
+      };
+
+      frame.src = studioOrigin + '/?preview=1&session=' + encodeURIComponent(String(Date.now()));
+      window.addEventListener('message', (event) => {
+        if (event.source !== frame.contentWindow || event.origin !== studioOrigin || event.data?.guizzStudioPublisher !== 1) return;
+        if (event.data.type === 'studio-ready') void send();
+        if (event.data.type === 'status' && event.data.message) setState(event.data.message);
+        if (event.data.type === 'loaded') { setState('Construção carregada.'); window.setTimeout(() => state.remove(), 1200); }
+        if (event.data.type === 'error') setState(event.data.message || 'Não foi possível abrir a construção.', true);
+      });
+    })();
+  </script>
+</body>
+</html>

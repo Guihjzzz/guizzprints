@@ -5,8 +5,8 @@ export const DOWNLOAD_WAIT_MS = 20_000;
 export const DOWNLOAD_ACCESS_TTL_SECONDS = 10 * 60;
 
 // One mod must not replace another mod's pending verification in a second tab.
-export function downloadAccessCookie(modId: string) {
-  return `${DOWNLOAD_ACCESS_COOKIE}_${createHash('sha256').update(modId).digest('hex').slice(0, 24)}`;
+export function downloadAccessCookie(modId: string, formatId = 'default') {
+  return `${DOWNLOAD_ACCESS_COOKIE}_${createHash('sha256').update(`${modId}:${formatId}`).digest('hex').slice(0, 24)}`;
 }
 
 type DownloadAccessPayload = {
@@ -14,6 +14,7 @@ type DownloadAccessPayload = {
   readyAt: number;
   expiresAt: number;
   nonce: string;
+  formatId?: string;
   vip?: boolean;
 };
 
@@ -60,6 +61,7 @@ export function readDownloadAccessToken(token: string | undefined): DownloadAcce
       typeof (payload as DownloadAccessPayload).readyAt !== 'number' ||
       typeof (payload as DownloadAccessPayload).expiresAt !== 'number' ||
       typeof (payload as DownloadAccessPayload).nonce !== 'string' ||
+      ('formatId' in payload && typeof (payload as DownloadAccessPayload).formatId !== 'string') ||
       ('vip' in payload && typeof (payload as DownloadAccessPayload).vip !== 'boolean')
     ) {
       return null;
@@ -69,7 +71,8 @@ export function readDownloadAccessToken(token: string | undefined): DownloadAcce
     if (!access.modId || access.modId.length > 200
       || !Number.isSafeInteger(access.readyAt) || !Number.isSafeInteger(access.expiresAt)
       || access.readyAt < 0 || access.expiresAt <= access.readyAt
-      || !access.nonce || access.nonce.length > 128) return null;
+      || !access.nonce || access.nonce.length > 128
+      || (access.formatId !== undefined && (!/^[a-z0-9-]{1,32}$/i.test(access.formatId)))) return null;
 
     return access;
   } catch {

@@ -1,0 +1,17 @@
+{
+  "auth": {
+    "authorizedDomains": [
+      "localhost",
+      "127.0.0.1",
+      "guizz.xyz",
+      "www.guizz.xyz"
+    ],
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Guizzprints",
+        "supportEmail": "junindacosta064@gmail.com"
+      }
+    }
+  }
+}

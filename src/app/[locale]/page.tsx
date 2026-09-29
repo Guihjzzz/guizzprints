@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Download, ChevronRight, ChevronLeft, Star, Gamepad2, Coffee, type LucideIcon } from "lucide-react";
+import { Download, ChevronRight, ChevronLeft, Star, Gamepad2, Coffee, Box, Eye, FileArchive, type LucideIcon } from "lucide-react";
 import { useTranslations } from 'next-intl';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { CategoryBadges } from '@/components/CategoryBadges';
@@ -21,6 +21,9 @@ interface ModSummary {
   category: string;
   subcategory: string | null;
   image_url_1?: string | null;
+  image_url_2?: string | null;
+  showcase_cover_url?: string | null;
+  guide_mcstructure_url?: string | null;
   rating?: number | null;
   downloads?: number | null;
   created_at?: string;
@@ -29,7 +32,21 @@ interface ModSummary {
 // Home cards only render this bounded summary. Avoid transferring descriptions,
 // private metadata or unused image columns for the 50-item discovery window and
 // the seven category rails.
-const HOME_MOD_FIELDS = 'id, title, category, subcategory, image_url_1, rating, downloads, created_at';
+const HOME_MOD_FIELDS = 'id, title, category, subcategory, image_url_1, image_url_2, showcase_cover_url, guide_mcstructure_url, rating, downloads, created_at';
+
+// A single 3D publication creates one entry for Bedrock and another for Java.
+// The home-wide discovery areas should feature the construction once, while
+// the edition-specific rails below continue to show the relevant version.
+function withoutPublicationDuplicates(items: ModSummary[]) {
+  const publicationSources = new Set<string>();
+  return items.filter((item) => {
+    const source = item.guide_mcstructure_url?.trim();
+    if (!source) return true;
+    if (publicationSources.has(source)) return false;
+    publicationSources.add(source);
+    return true;
+  });
+}
 
 const TikTokIcon = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path></svg>
@@ -141,8 +158,10 @@ export default function Home() {
       // newer items from other categories filled that window first.
       const categoryItems = Object.fromEntries(categoryNames.map((category, index) => [category, categoryResults[index].data || []]));
       const demo = DEMO_BUILD_SUMMARY as ModSummary;
-      const topItems = trending && trending.length > 0 ? trending : [demo];
-      const downloadedItems = all.length > 0 ? [...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, railLimit) : [demo];
+      const topItems = withoutPublicationDuplicates(trending && trending.length > 0 ? trending : [demo]);
+      const downloadedItems = all.length > 0
+        ? withoutPublicationDuplicates([...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0))).slice(0, railLimit)
+        : [demo];
       const bedrockItems = categoryItems.bedrock.length > 0 ? categoryItems.bedrock : [demo];
 
       setTopMods(topItems);
@@ -173,7 +192,7 @@ export default function Home() {
       <main className="flex-1 min-w-0 space-y-8 pb-20">
         
         {!loading && topMods.length > 0 && <HeroCarousel mods={topMods} locale={locale} />}
-        {loading && <div className="w-full aspect-[16/9] md:aspect-[3/1] bg-[#111318] rounded-2xl animate-pulse" />}
+        {loading && <div className="min-h-[380px] w-full rounded-2xl border border-[#1D2433] bg-[#111318] animate-pulse md:aspect-[2/1] md:min-h-0" />}
 
         <section>
           <h2 className="text-xl font-black uppercase tracking-tighter mb-4 text-white">{t('marketplace')}</h2>
@@ -190,7 +209,7 @@ export default function Home() {
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)]">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0 relative">
-              <OptimizedImage src="/logo.jpg" optimizeWidth={64} alt="Guizzprints" fill className="rounded-lg object-cover" sizes="48px" />
+              <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={64} alt="Guizzprints" fill className="rounded-lg object-cover" sizes="48px" />
             </div>
             <div>
               <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
@@ -198,6 +217,19 @@ export default function Home() {
             </div>
           </div>
           <InstallAppButton className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#0a0a0a] border border-[#2563EB]/30 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/60 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all text-white cursor-pointer" />
+        </section>
+
+        <section aria-labelledby="quick-start-title" className="rounded-2xl border border-[#1D2433] bg-[#111318] p-4 shadow-xl sm:p-6">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-red-400">Guizzprints</p>
+            <h2 id="quick-start-title" className="mt-2 text-xl font-black text-white sm:text-2xl">{t('quickStart.title')}</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">{t('quickStart.description')}</p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <QuickStartStep icon={Box} title={t('quickStart.chooseTitle')} description={t('quickStart.chooseDescription')} color="text-emerald-300" />
+            <QuickStartStep icon={Eye} title={t('quickStart.guideTitle')} description={t('quickStart.guideDescription')} color="text-blue-300" />
+            <QuickStartStep icon={FileArchive} title={t('quickStart.downloadTitle')} description={t('quickStart.downloadDescription')} color="text-orange-300" />
+          </div>
         </section>
 
         <section className="mt-12 bg-gradient-to-r from-[#2563EB]/10 to-black p-6 border-t border-[#2563EB]/30 text-center rounded-2xl">
@@ -212,6 +244,16 @@ export default function Home() {
 
       </main>
 
+    </div>
+  );
+}
+
+function QuickStartStep({ icon: Icon, title, description, color }: { icon: LucideIcon; title: string; description: string; color: string }) {
+  return (
+    <div className="rounded-xl border border-[#263247] bg-[#090b10] p-4">
+      <Icon size={22} className={color} aria-hidden="true" />
+      <h3 className="mt-3 text-sm font-black text-white">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-zinc-400">{description}</p>
     </div>
   );
 }
@@ -241,50 +283,66 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
   };
 
   return (
-    <section className="relative w-full aspect-[16/9] md:aspect-[3/1] rounded-2xl overflow-hidden border border-[#1D2433] shadow-2xl group">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090b10] shadow-2xl">
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {mods.map((mod, index) => (
-          <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" key={`hero-${mod.id}`} className="w-full h-full flex-shrink-0 snap-center relative block">
-            <OptimizedImage
-              src={mod.image_url_1 || "https://picsum.photos/seed/hero2/1200/600"}
-              optimizeWidth={1280}
-              optimizeHeight={720}
-              optimizeQuality={78}
-              fill
-              className="object-cover brightness-[0.65]"
-              priority={index === 0}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              fetchPriority={index === 0 ? 'high' : 'low'}
-              alt={mod.title}
-              sizes="(max-width: 1200px) 100vw, 1200px"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07090D] via-[#07090D]/40 to-transparent" />
-            
-            <div className="absolute bottom-6 left-4 md:bottom-8 md:left-8 flex flex-col items-start gap-2">
-              <div className="flex items-center gap-2 md:gap-4">
-                <div className="hidden md:block w-16 h-16 rounded-xl border border-white/10 shadow-lg relative overflow-hidden shrink-0">
-                  <OptimizedImage src={mod.image_url_1 || "/logo.jpg"} optimizeWidth={128} optimizeHeight={128} alt={mod.title} fill className="object-cover" sizes="64px" />
-                </div>
-                <div>
-                  <span className="bg-[#2563EB] text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-widest">{t('featuredWeek')}</span>
-                  <h1 className="text-xl md:text-4xl font-black text-white mt-1 drop-shadow-md line-clamp-1">{mod.title}</h1>
-                  <div className="hidden md:flex items-center gap-2 mt-3">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 pointer-events-none">
-                      <Download size={16} /> {t('viewDetails')}
-                    </button>
-                  </div>
-                </div>
+          <Link
+            href={`/${locale}/mod/${mod.id}`}
+            prefetch={false}
+            target="_blank"
+            rel="noopener noreferrer"
+            key={`hero-${mod.id}`}
+            className="group/slide relative grid w-full flex-shrink-0 snap-center overflow-hidden bg-[#080a0f] md:aspect-[2.08/1]"
+          >
+            <div className="grid aspect-[2/1] grid-cols-2 gap-1 bg-[#101722] p-1 sm:p-1.5 md:absolute md:inset-0 md:aspect-auto">
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+                <OptimizedImage
+                  src={mod.image_url_1 || mod.showcase_cover_url || "https://picsum.photos/seed/hero-1/900/900"}
+                  optimizeWidth={960}
+                  optimizeQuality={80}
+                  fill
+                  className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
+                  priority={index === 0}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'low'}
+                  alt={`${mod.title} — ${t('featuredView', { number: 1 })}`}
+                  sizes="(max-width: 767px) 50vw, (max-width: 1200px) 50vw, 900px"
+                />
               </div>
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+                <OptimizedImage
+                  src={mod.image_url_2 || mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/hero-2/900/900"}
+                  optimizeWidth={960}
+                  optimizeQuality={80}
+                  fill
+                  className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
+                  priority={index === 0}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'low'}
+                  alt={`${mod.title} — ${t('featuredView', { number: 2 })}`}
+                  sizes="(max-width: 767px) 50vw, (max-width: 1200px) 50vw, 900px"
+                />
+              </div>
+            </div>
+
+            <div className="relative z-10 px-5 pb-10 pt-4 sm:px-7 md:absolute md:bottom-8 md:left-7 md:w-[224px] md:p-0">
+              <span className="w-fit rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-950/40">
+                {t('featuredWeek')}
+              </span>
+              <h1 className="mt-2 line-clamp-1 text-2xl font-black leading-tight text-white sm:text-3xl md:text-[26px] md:text-[#101827] md:[text-shadow:0_1px_0_rgba(255,255,255,.72)]">{mod.title}</h1>
+              <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-xl border border-blue-400/40 bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500">
+                <Eye size={16} aria-hidden="true" /> {t('viewDetails')}
+              </span>
             </div>
           </Link>
         ))}
       </div>
       
-      <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2">
         {mods.map((_, i) => (
           <button 
             key={`dot-${i}`} 
@@ -348,9 +406,9 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
     return (
       <section aria-hidden="true" className="space-y-3 min-h-[204px] md:min-h-[254px]">
         <div className="h-7 md:h-8 w-2/5 rounded-lg bg-[#111318]/70 motion-safe:animate-pulse" />
-        <div className="flex h-40 md:h-[210px] gap-2 overflow-hidden md:gap-4">
+        <div className="flex h-[220px] md:h-[288px] gap-2 overflow-hidden md:gap-4">
           {Array.from({ length: 4 }, (_, index) => (
-            <div key={`rail-skeleton-${index}`} className="h-36 min-w-[160px] rounded-xl border border-zinc-800/70 bg-[#111318]/60 motion-safe:animate-pulse md:h-[190px] md:min-w-[220px]" />
+            <div key={`rail-skeleton-${index}`} className="h-[200px] min-w-[160px] rounded-xl border border-zinc-800/70 bg-[#111318]/60 motion-safe:animate-pulse md:h-[270px] md:min-w-[220px]" />
           ))}
         </div>
       </section>
@@ -386,18 +444,17 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
 
       <div ref={scrollRef} className="flex gap-2 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
         {mods.map((mod) => (
-          <Link href={`/${locale}/mod/${mod.id}`} target="_blank" rel="noopener noreferrer" key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
+          <Link href={`/${locale}/mod/${mod.id}`} prefetch={false} target="_blank" rel="noopener noreferrer" key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
             
-            <div className="relative w-full h-[89px] md:h-[124px] bg-zinc-900 overflow-hidden flex-shrink-0">
+            <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0">
               <OptimizedImage
-                src={mod.image_url_1 || "https://picsum.photos/seed/1/400/225"} 
-                optimizeWidth={480}
-                optimizeHeight={270}
-                optimizeQuality={70}
+                src={mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/400/225"}
+                optimizeWidth={640}
+                optimizeQuality={78}
                 alt={mod.title} 
                 fill
                 loading="lazy"
-                className="site-motion-image object-cover opacity-90 group-hover:opacity-100"
+                className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
                 sizes="(max-width: 768px) 160px, 220px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />

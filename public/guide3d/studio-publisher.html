@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Publicador Guizz Studio</title>
+  <style>html,body,#studio{width:100%;height:100%;margin:0;border:0;background:#050608}#studio{display:block}</style>
+</head>
+<body>
+  <iframe id="studio" title="Guizz Studio original" allow="fullscreen"></iframe>
+  <script>
+    const frame = document.querySelector('#studio');
+    const parentOrigin = location.origin;
+    const studioOrigin = 'http://127.0.0.1:5175';
+    let pendingLoad = null;
+    let studioReady = false;
+
+    const emit = (type, payload = {}, transfer = []) => {
+      window.parent.postMessage({ guizzPublisher: 1, type, ...payload }, parentOrigin, transfer);
+    };
+    const postStudio = (data, transfer = []) => frame.contentWindow?.postMessage({ guizzStudioPublisher: 1, ...data }, studioOrigin, transfer);
+
+    function openStudio() {
+      studioReady = false;
+      frame.src = studioOrigin + '/?publisher=1&session=' + encodeURIComponent(String(Date.now()));
+    }
+
+    function sendPendingLoad() {
+      if (!studioReady || !pendingLoad) return;
+      const data = pendingLoad;
+      pendingLoad = null;
+      postStudio({ type: 'load', ...data }, [data.buffer]);
+    }
+
+    async function prepareLoad(data) {
+      if (!(data.buffer instanceof ArrayBuffer)) throw new Error('Arquivo .mcstructure ausente.');
+      const original = data.buffer.slice(0);
+      pendingLoad = {
+        loadId: String(Date.now()) + '-' + Math.random().toString(36).slice(2),
+        name: data.name || 'construcao.mcstructure',
+        buffer: original,
+      };
+      emit('status', { message: 'Iniciando o Guizz Studio original…' });
+      openStudio();
+    }
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (event.source === window.parent && event.origin === parentOrigin && data?.guizzPublisher === 1) {
+        if (data.type === 'load') void prepareLoad(data).catch((error) => emit('error', { message: error?.message || String(error) }));
+        if (data.type === 'generateStudio') {
+          if (!studioReady) emit('error', { message: 'O Guizz Studio ainda está abrindo a construção.' });
+          else postStudio({ type: 'generate', title: String(data.title || 'Construção Guizzprints'), includeViews: false });
+        }
+        return;
+      }
+      if (event.source === frame.contentWindow && event.origin === studioOrigin && data?.guizzStudioPublisher === 1) {
+        if (data.type === 'studio-ready') {
+          studioReady = true;
+          emit('ready');
+          sendPendingLoad();
+          return;
+        }
+        const transfer = data.buffer instanceof ArrayBuffer ? [data.buffer] : [];
+        emit(data.type, data, transfer);
+      }
+    });
+
+    // Boot immediately so the parent can receive `ready` before a file is
+    // selected. Without this, the automatic publisher waits for a Studio
+    // readiness event that can never be emitted.
+    openStudio();
+  </script>
+</body>
+</html>

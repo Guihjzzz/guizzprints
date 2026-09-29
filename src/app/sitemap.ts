@@ -1,19 +1,15 @@
 import type { MetadataRoute } from 'next';
-import { siteLocales } from '@/lib/site-pages';
+import { buildCatalogSitemap, getCatalogSitemapIds } from '@/lib/catalog-sitemap';
 
-// Vercel redirects the apex host to the public www host. Keep every sitemap
-// URL on the final canonical origin so crawlers do not see cross-property
-// redirects or split indexing signals.
-const BASE_URL = 'https://www.guizz.xyz';
-const paths = ['', '/about', '/privacy', '/terms', '/contact', '/category/bedrock', '/category/java'];
+// Rebuild sitemap shards periodically, rather than requiring a deploy for
+// every new construction. Each shard stays below Supabase's normal row cap.
+export const revalidate = 3600;
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return paths.flatMap((path) => siteLocales.map((locale) => ({
-    url: `${BASE_URL}/${locale}${path}`,
-    changeFrequency: path === '' ? 'daily' as const : 'weekly' as const,
-    priority: path === '' ? 1 : path.startsWith('/category/') ? 0.8 : 0.5,
-    alternates: {
-      languages: Object.fromEntries(siteLocales.map((alternateLocale) => [alternateLocale, `${BASE_URL}/${alternateLocale}${path}`])),
-    },
-  })));
+export async function generateSitemaps() {
+  return (await getCatalogSitemapIds()).map((id) => ({ id }));
+}
+
+export default async function sitemap({ id }: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
+  const page = Number(await id);
+  return buildCatalogSitemap(Number.isSafeInteger(page) && page >= 0 ? page : 0);
 }

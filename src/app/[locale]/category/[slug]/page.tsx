@@ -23,6 +23,7 @@ interface ModSummary {
   category: string;
   subcategory: string | null;
   image_url_1: string | null;
+  showcase_cover_url?: string | null;
   rating: number | null;
   downloads: number | null;
 }
@@ -53,7 +54,7 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
     try {
       const { data, error } = await supabase
         .from('public_mods')
-        .select('id, title, category, subcategory, image_url_1, rating, downloads')
+        .select('id, title, category, subcategory, image_url_1, showcase_cover_url, rating, downloads')
         .or(categoryFilter(slug))
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
@@ -196,20 +197,20 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
                     {/* CARD DO MOD */}
                     <Link 
                       href={`/${locale}/mod/${mod.id}`} 
+                      prefetch={false}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl overflow-hidden hover:border-blue-500 shadow-lg flex-shrink-0"
                     >
-                      <div className="relative w-full h-[89px] md:h-[124px] bg-zinc-900 overflow-hidden flex-shrink-0">
+                      <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0">
                         <OptimizedImage
-                          src={mod.image_url_1 || "https://picsum.photos/seed/1/400/225"} 
-                          optimizeWidth={480}
-                          optimizeHeight={270}
-                          optimizeQuality={70}
+                          src={mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/400/225"}
+                          optimizeWidth={640}
+                          optimizeQuality={78}
                           alt={mod.title} 
                           fill
                           loading="lazy"
-                          className="site-motion-image object-cover opacity-90 group-hover:opacity-100"
+                          className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
                           sizes="(max-width: 768px) 160px, 220px"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />

@@ -1,159 +1,75 @@
-import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createDownloadAccessToken,
   downloadAccessCookie,
   DOWNLOAD_ACCESS_TTL_SECONDS,
-  readDownloadAccessToken,
 } from '@/lib/download-access';
-import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { invokeGuizzCatalog } from '@/lib/guizz-catalog-edge';
 import { logServerFailure } from '@/lib/server-observability';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const noStoreHeaders = {
-  'Cache-Control': 'no-store, max-age=0',
-  'Referrer-Policy': 'no-referrer',
-};
+const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0', 'Referrer-Policy': 'no-referrer' };
 const MAX_BODY_BYTES = 2048;
+const FORMAT_IDS = new Set(['default', 'holoprint', 'mcstructure', 'mcaddon', 'mcworld', 'litematic', 'schematic', 'world', 'mcfunction']);
 
-function isCrossSiteRequest(request: NextRequest) {
-  const fetchSite = request.headers.get('sec-fetch-site')?.trim().toLowerCase();
-  if (fetchSite === 'cross-site') return true;
-
+function crossSite(request: NextRequest) {
   const origin = request.headers.get('origin')?.trim();
-  if (!origin) return false;
-  try {
-    return new URL(origin).origin !== request.nextUrl.origin;
-  } catch {
-    return true;
+  // `Sec-Fetch-Site` may be reported as cross-site by embedded browsers even
+  // when they send an exact local Origin. Prefer the explicit Origin when it
+  // exists, while retaining the Fetch Metadata protection for requests that
+  // do not carry one.
+  if (origin) {
+    try {
+      const requestOrigin = new URL(origin).origin;
+      if (requestOrigin === request.nextUrl.origin) return false;
+
+      // Next's development server can resolve `nextUrl` to its configured
+      // host even when the browser is using another loopback alias such as
+      // 127.0.0.1. The actual Host/forwarded Host is the request's authority,
+      // so accept only an exact Origin match for that authority as well.
+      const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').split(',')[0].trim();
+      const protocol = (request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(/:$/, '')).split(',')[0].trim();
+      return !host || requestOrigin !== `${protocol}://${host}`;
+    } catch { return true; }
   }
+  return request.headers.get('sec-fetch-site')?.trim().toLowerCase() === 'cross-site';
 }
 
 export async function POST(request: NextRequest) {
-  let stage = 'request';
   try {
-    // Session creation mutates the private nonce ledger. Reject an explicit
-    // cross-site signal before parsing or touching the database, while still
-    // supporting direct browser requests that omit Fetch Metadata headers.
-    if (isCrossSiteRequest(request)) {
-      return NextResponse.json({ error: 'This download must be started from its mod page.' }, {
-        status: 403, headers: noStoreHeaders,
-      });
-    }
-
-    // This endpoint needs only a tiny JSON object. Reject oversized or
-    // non-JSON requests before parsing so public callers cannot use the
-    // download gate as an avoidable body-parsing/memory sink.
-    if (!request.headers.get('content-type')?.startsWith('application/json')) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 400, headers: noStoreHeaders });
-    }
+    if (crossSite(request)) return NextResponse.json({ error: 'This download must be started from its mod page.' }, { status: 403, headers: noStoreHeaders });
+    if (!request.headers.get('content-type')?.startsWith('application/json')) return NextResponse.json({ error: 'Invalid request.' }, { status: 400, headers: noStoreHeaders });
     const declaredLength = Number(request.headers.get('content-length'));
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 413, headers: noStoreHeaders });
-    }
-    const rawBody = await request.text();
-    if (Buffer.byteLength(rawBody, 'utf8') > MAX_BODY_BYTES) {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 413, headers: noStoreHeaders });
-    }
-    let body: unknown;
-    try {
-      body = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: 'Invalid request.' }, { status: 400, headers: noStoreHeaders });
-    }
-    const modId = typeof (body as { modId?: unknown })?.modId === 'string'
-      ? (body as { modId: string }).modId.trim()
-      : '';
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) return NextResponse.json({ error: 'Invalid request.' }, { status: 413, headers: noStoreHeaders });
+    const raw = await request.text();
+    if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) return NextResponse.json({ error: 'Invalid request.' }, { status: 413, headers: noStoreHeaders });
+    const body: unknown = JSON.parse(raw);
+    const modId = typeof (body as { modId?: unknown })?.modId === 'string' ? (body as { modId: string }).modId.trim() : '';
+    const formatId = typeof (body as { format?: unknown })?.format === 'string' ? (body as { format: string }).format.trim().toLowerCase() : 'default';
+    if (!modId || modId.length > 200 || !FORMAT_IDS.has(formatId)) return NextResponse.json({ error: 'Invalid mod.' }, { status: 400, headers: noStoreHeaders });
 
-    if (!modId || modId.length > 200) {
-      return NextResponse.json({ error: 'Invalid mod.' }, { status: 400, headers: noStoreHeaders });
+    const edge = await invokeGuizzCatalog<{ readyAt?: number; expiresAt?: number; serverTime?: number; vip?: boolean; nonce?: string }>({
+      action: 'create-download-session', modId, format: formatId,
+    });
+    if (!edge.ok || !edge.data || typeof edge.data.readyAt !== 'number' || typeof edge.data.expiresAt !== 'number' || typeof edge.data.nonce !== 'string') {
+      return NextResponse.json({ error: edge.error || 'Unable to start the protected download.' }, { status: edge.status || 503, headers: noStoreHeaders });
     }
-
-    stage = 'mod-lookup';
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase.from('mods').select('id').eq('id', modId).maybeSingle();
-
-    if (error || !data) {
-      return NextResponse.json({ error: 'Mod not found.' }, { status: 404, headers: noStoreHeaders });
-    }
-
     const now = Date.now();
-    const vip = false;
-    const expiresAt = now + DOWNLOAD_ACCESS_TTL_SECONDS * 1000;
-    stage = 'existing-session';
-    const existingCookie = request.cookies.get(downloadAccessCookie(modId))?.value;
-    const existingAccess = readDownloadAccessToken(existingCookie);
-    if (existingAccess?.modId === modId && existingAccess.expiresAt > now) {
-      const { data: existingSession, error: existingSessionError } = await supabase
-        .from('download_access_sessions')
-        .select('ready_at, expires_at, vip')
-        .eq('nonce', existingAccess.nonce)
-        .eq('mod_id', modId)
-        .is('consumed_at', null)
-        .maybeSingle();
-      if (!existingSessionError && existingSession
-        && typeof existingSession.ready_at === 'string'
-        && typeof existingSession.expires_at === 'string'
-        && typeof existingSession.vip === 'boolean') {
-        const existingReadyAt = Date.parse(existingSession.ready_at);
-        const existingExpiresAt = Date.parse(existingSession.expires_at);
-        if (existingSession.vip === false
-          && Number.isFinite(existingReadyAt) && Number.isFinite(existingExpiresAt) && existingExpiresAt > now) {
-          return NextResponse.json(
-            { readyAt: existingReadyAt, expiresAt: existingExpiresAt, serverTime: now, vip: existingSession.vip },
-            { headers: noStoreHeaders },
-          );
-        }
-      }
-    }
-    const cookieMaxAge = Math.max(1, Math.ceil((expiresAt - now) / 1000));
-    const readyAt = now;
-    const nonce = randomUUID();
-    stage = 'persist';
-    const { error: sessionError } = await supabase.from('download_access_sessions').insert({
-      nonce,
-      mod_id: modId,
-      ready_at: new Date(readyAt).toISOString(),
-      expires_at: new Date(expiresAt).toISOString(),
-      vip,
-    });
-    if (sessionError) {
-      return NextResponse.json(
-        { error: 'Unable to start the protected download.' },
-        { status: 503, headers: noStoreHeaders },
-      );
-    }
     const token = createDownloadAccessToken({
-      modId,
-      readyAt,
-      expiresAt,
-      nonce,
-      vip,
+      modId, formatId, nonce: edge.data.nonce, readyAt: edge.data.readyAt, expiresAt: edge.data.expiresAt, vip: edge.data.vip === true,
     });
-
-    const response = NextResponse.json(
-      { readyAt, expiresAt, serverTime: now, vip },
-      { headers: noStoreHeaders },
-    );
-
-    response.cookies.set({
-      name: downloadAccessCookie(modId),
-      value: token,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: cookieMaxAge,
+    const result = NextResponse.json({
+      readyAt: edge.data.readyAt, expiresAt: edge.data.expiresAt, serverTime: edge.data.serverTime || now, vip: edge.data.vip === true,
+    }, { headers: noStoreHeaders });
+    result.cookies.set({
+      name: downloadAccessCookie(modId, formatId), value: token, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/',
+      maxAge: Math.max(1, Math.min(DOWNLOAD_ACCESS_TTL_SECONDS, Math.ceil((edge.data.expiresAt - now) / 1000))),
     });
-
-    return response;
+    return result;
   } catch {
-    logServerFailure('download-session', stage, 'unexpected');
-    return NextResponse.json(
-      { error: 'Unable to start the protected download.' },
-      { status: 500, headers: noStoreHeaders },
-    );
+    logServerFailure('download-session', 'edge-session', 'unexpected');
+    return NextResponse.json({ error: 'Unable to start the protected download.' }, { status: 500, headers: noStoreHeaders });
   }
 }
