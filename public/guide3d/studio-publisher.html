@@ -9,7 +9,7 @@
 <body>
   <iframe id="engine" title="Motor local do Guizz Studio" src="./engine/viewer.html?guizz=1&amp;publisher=1" allow="fullscreen"></iframe>
   <script type="module">
-    import { convertFileToSchem } from './studio/converter/formatBridge.js?v=studio-publisher-2';
+    import { convertWithOriginalEngine } from './original-converter-client.js?v=original-1';
 
     const engine = document.querySelector('#engine');
     const origin = location.origin;
@@ -89,15 +89,15 @@
 
     async function loadBuild(payload) {
       try {
-        emit('status', { message: 'Guizz Studio preparando a construção…' });
+        emit('status', { message: 'Guizz Studio iniciando o conversor original…' });
         const file = new File([payload.buffer], payload.name || 'construcao.mcstructure', { type: 'application/octet-stream' });
-        const result = await convertFileToSchem(file);
-        const schemBuffer = await result.file.arrayBuffer();
+        const converted = await convertWithOriginalEngine(file, (message) => emit('status', { message: `Guizz Studio: ${message}` }));
+        const schemBuffer = await converted.arrayBuffer();
         if (activeUrl) URL.revokeObjectURL(activeUrl);
         activeUrl = URL.createObjectURL(new Blob([schemBuffer], { type: 'application/octet-stream' }));
-        publicationTitle = String(payload.title || result.file.name).slice(0, 100);
+        publicationTitle = String(payload.title || converted.name).slice(0, 100);
         emit('status', { message: 'Guizz Studio montando a capa e a prancha…' });
-        send('loadSchem', { url: activeUrl, name: result.file.name, title: publicationTitle });
+        send('loadSchem', { url: activeUrl, name: converted.name, title: publicationTitle });
       } catch (error) {
         emit('error', { message: error instanceof Error ? error.message : 'Não foi possível abrir a construção no Guizz Studio.' });
       }

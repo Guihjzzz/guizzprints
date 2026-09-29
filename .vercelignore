@@ -1,0 +1,4 @@
+# The original converter is deployed as its own Vercel project from this folder.
+# Keep the main Guizzprints deployment lean.
+native-converter/
+.work/

@@ -296,7 +296,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
             target="_blank"
             rel="noopener noreferrer"
             key={`hero-${mod.id}`}
-            className="group/slide relative grid w-full flex-shrink-0 snap-center overflow-hidden bg-[#080a0f] md:aspect-[2.08/1]"
+            className="group/slide relative grid aspect-[2/1] w-full flex-shrink-0 snap-center overflow-hidden bg-[#080a0f] md:aspect-[2.08/1]"
           >
             <div className="grid aspect-[2/1] grid-cols-2 gap-1 bg-[#101722] p-1 sm:p-1.5 md:absolute md:inset-0 md:aspect-auto md:gap-2 md:p-2">
               <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
@@ -329,8 +329,8 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
               </div>
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[52%] bg-gradient-to-t from-[#05070b]/90 via-[#05070b]/42 to-transparent md:block" aria-hidden="true" />
-            <div className="relative z-10 px-5 pb-10 pt-4 sm:px-7 md:absolute md:bottom-8 md:left-8 md:w-[min(34%,360px)] md:p-0 lg:bottom-10 lg:left-10">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[58%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:h-[52%]" aria-hidden="true" />
+            <div className="absolute bottom-7 left-0 z-10 flex max-w-[78%] flex-col items-start px-4 sm:bottom-8 sm:px-7 md:bottom-8 md:left-8 md:w-[min(34%,360px)] md:max-w-none md:p-0 lg:bottom-10 lg:left-10">
               <span className="w-fit rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-950/40">
                 {t('featuredWeek')}
               </span>

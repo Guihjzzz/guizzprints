@@ -9,7 +9,7 @@
 <body>
   <iframe id="engine" title="Motor 3D do publicador" src="./engine/viewer.html?guizz=1&amp;publisher=1" allow="fullscreen"></iframe>
   <script type="module">
-    import { convertFileToSchem } from './studio/converter/formatBridge.js?v=publisher-1';
+    import { convertWithOriginalEngine } from './original-converter-client.js?v=original-1';
 
     const engine = document.querySelector('#engine');
     const origin = location.origin;
@@ -27,15 +27,15 @@
 
     async function loadBuild(payload) {
       try {
-        emit('status', { message: 'Convertendo o .mcstructure para o guia 3D…' });
+        emit('status', { message: 'Iniciando o conversor original para o Guia 3D…' });
         const file = new File([payload.buffer], payload.name || 'construcao.mcstructure', { type: 'application/octet-stream' });
-        const result = await convertFileToSchem(file);
-        const schemBuffer = await result.file.arrayBuffer();
+        const converted = await convertWithOriginalEngine(file, (message) => emit('status', { message: `Guia 3D: ${message}` }));
+        const schemBuffer = await converted.arrayBuffer();
         if (activeUrl) URL.revokeObjectURL(activeUrl);
         activeUrl = URL.createObjectURL(new Blob([schemBuffer], { type: 'application/octet-stream' }));
-        emit('converted', { name: result.file.name, buffer: schemBuffer, blocks: result.blocks.length }, [schemBuffer]);
+        emit('converted', { name: converted.name, buffer: schemBuffer }, [schemBuffer]);
         emit('status', { message: 'Montando a construção no Guia 3D…' });
-        send('loadSchem', { url: activeUrl, name: result.file.name, title: payload.title || result.file.name });
+        send('loadSchem', { url: activeUrl, name: converted.name, title: payload.title || converted.name });
       } catch (error) {
         emit('error', { message: error instanceof Error ? error.message : 'Não foi possível converter o arquivo.' });
       }
