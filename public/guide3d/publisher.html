@@ -17,6 +17,7 @@
     let pendingLoad = null;
     let activeUrl = '';
     let generationQueue = [];
+    let warmupTimer = 0;
 
     const emit = (type, payload = {}, transfer = []) => {
       if (window.parent === window) return;
@@ -40,18 +41,26 @@
       }
     }
 
+    const dataUrlToBuffer = async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Não foi possível preparar uma das vistas geradas.');
+      return response.arrayBuffer();
+    };
+
+    async function publishViews(shots) {
+      if (!Array.isArray(shots) || shots.length !== 8) throw new Error('O Guia 3D não gerou as oito vistas necessárias.');
+      for (let index = 0; index < shots.length; index += 1) {
+        const buffer = await dataUrlToBuffer(shots[index]?.url || '');
+        emit('view', { index, buffer, mime: 'image/png' }, [buffer]);
+      }
+    }
+
     function nextGeneration() {
       const next = generationQueue.shift();
       if (!next) return emit('generated');
-      if (next === 'cover') {
-        emit('status', { message: 'Gerando capa isométrica…' });
-        send('thumbShot', { size: 1600, rot: 45, el: 35.264, zoom: 1, shadow: 0.28, ao: true });
-      } else if (next === 'views') {
+      if (next === 'views') {
         emit('status', { message: 'Gerando oito vistas…' });
         send('shots', { n: 8, size: 1200 });
-      } else if (next === 'spin') {
-        emit('status', { message: 'Gravando vídeo giratório…' });
-        send('spinVid', { size: 720, seconds: 7, shadow: 0.28 });
       }
     }
 
@@ -63,8 +72,19 @@
         if (!engineReady) pendingLoad = data;
         else void loadBuild(data);
       }
+      if (data.type === 'warmup' && engineReady) {
+        window.clearTimeout(warmupTimer);
+        emit('status', { message: 'Estabilizando o holograma no Guia 3D…' });
+        warmupTimer = window.setTimeout(() => {
+          send('relayout');
+          send('fitBuild', { rot: 45, elevation: 28 });
+          emit('warmed');
+        }, 900);
+      }
       if (data.type === 'generate' && engineReady) {
-        generationQueue = ['cover', 'views', 'spin'];
+        // Cover and board are made by Guizz Studio. This worker is dedicated
+        // to the eight Guide 3D views, keeping publishing fast and consistent.
+        generationQueue = ['views'];
         nextGeneration();
       }
     });
@@ -92,19 +112,10 @@
         send('fitBuild', { rot: 45, elevation: 28 });
       }
       if (data.cmd === 'buildFailed') emit('error', { message: data.error || 'O Guia 3D não conseguiu abrir a construção.' });
-      if (data.cmd === 'thumbShotDone') {
-        if (data.err || !data.url) emit('error', { message: data.err || 'Falha ao gerar a capa.' });
-        else emit('cover', { url: data.url });
-        nextGeneration();
-      }
       if (data.cmd === 'shotsDone') {
-        emit('views', { shots: Array.isArray(data.shots) ? data.shots : [] });
-        nextGeneration();
-      }
-      if (data.cmd === 'spinVidDone') {
-        if (data.err || !data.buf) emit('error', { message: data.err || 'Falha ao gerar o vídeo.' });
-        else emit('spin', { buffer: data.buf, mime: data.mime || 'video/webm' }, [data.buf]);
-        nextGeneration();
+        void publishViews(data.shots)
+          .then(() => nextGeneration())
+          .catch((error) => emit('error', { message: error?.message || 'Falha ao gerar as oito vistas.' }));
       }
     });
   </script>

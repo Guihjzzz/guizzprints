@@ -298,7 +298,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
             key={`hero-${mod.id}`}
             className="group/slide relative grid w-full flex-shrink-0 snap-center overflow-hidden bg-[#080a0f] md:aspect-[2.08/1]"
           >
-            <div className="grid aspect-[2/1] grid-cols-2 gap-1 bg-[#101722] p-1 sm:p-1.5 md:absolute md:inset-0 md:aspect-auto">
+            <div className="grid aspect-[2/1] grid-cols-2 gap-1 bg-[#101722] p-1 sm:p-1.5 md:absolute md:inset-0 md:aspect-auto md:gap-2 md:p-2">
               <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
                 <OptimizedImage
                   src={mod.image_url_1 || mod.showcase_cover_url || "https://picsum.photos/seed/hero-1/900/900"}
@@ -329,11 +329,12 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
               </div>
             </div>
 
-            <div className="relative z-10 px-5 pb-10 pt-4 sm:px-7 md:absolute md:bottom-8 md:left-7 md:w-[224px] md:p-0">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[52%] bg-gradient-to-t from-[#05070b]/90 via-[#05070b]/42 to-transparent md:block" aria-hidden="true" />
+            <div className="relative z-10 px-5 pb-10 pt-4 sm:px-7 md:absolute md:bottom-8 md:left-8 md:w-[min(34%,360px)] md:p-0 lg:bottom-10 lg:left-10">
               <span className="w-fit rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-950/40">
                 {t('featuredWeek')}
               </span>
-              <h1 className="mt-2 line-clamp-1 text-2xl font-black leading-tight text-white sm:text-3xl md:text-[26px] md:text-[#101827] md:[text-shadow:0_1px_0_rgba(255,255,255,.72)]">{mod.title}</h1>
+              <h1 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] sm:text-3xl md:text-[30px]">{mod.title}</h1>
               <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-xl border border-blue-400/40 bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500">
                 <Eye size={16} aria-hidden="true" /> {t('viewDetails')}
               </span>

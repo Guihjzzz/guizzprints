@@ -45,8 +45,6 @@ type PublishedEdition = {
 };
 type EditingPair = { bedrockId: string; javaId: string };
 const initialGeneration: Generation = { views: [] };
-const GUIDE_PUBLISHER_ORIGIN = 'http://127.0.0.1:5180';
-
 type PublisherMessage = {
   type?: string;
   message?: string;
@@ -120,7 +118,6 @@ export default function PublisherPage() {
   const [uploadingDownload, setUploadingDownload] = useState<string | null>(null);
   const [publishedItems, setPublishedItems] = useState<PublishedItems | null>(null);
   const [editingPair, setEditingPair] = useState<EditingPair | null>(null);
-  const [loadingPublication, setLoadingPublication] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', version: '1.21.0', file_size: '' });
   const [links, setLinks] = useState<Record<string, string>>(() => Object.fromEntries(ALL_FORMATS.map(([id]) => [id, ''])));
   const generationProgressRef = useRef({ studio: false, guide: false });
@@ -175,7 +172,6 @@ export default function PublisherPage() {
     let active = true;
 
     const loadPublication = async () => {
-      setLoadingPublication(true);
       setError(null);
       setStatus('Carregando as edições Bedrock e Java para edição conjunta…');
       try {
@@ -202,8 +198,6 @@ export default function PublisherPage() {
         setStatus('Editando uma publicação única: Bedrock e Java continuarão separados no catálogo público.');
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar a publicação.');
-      } finally {
-        if (active) setLoadingPublication(false);
       }
     };
 
@@ -222,12 +216,11 @@ export default function PublisherPage() {
 
     const listener = (event: MessageEvent) => {
       const fromStudio = event.origin === window.location.origin && event.source === studioRef.current?.contentWindow;
-      const fromGuide = event.origin === GUIDE_PUBLISHER_ORIGIN && event.source === guideRef.current?.contentWindow;
+      const fromGuide = event.origin === window.location.origin && event.source === guideRef.current?.contentWindow;
       if (!fromStudio && !fromGuide) return;
 
-      const envelope = event.data as { guizzPublisher?: number; guizzGuidePublisher?: number } & PublisherMessage;
-      if (fromStudio && !envelope?.guizzPublisher) return;
-      if (fromGuide && !envelope?.guizzGuidePublisher) return;
+      const envelope = event.data as { guizzPublisher?: number } & PublisherMessage;
+      if (!envelope?.guizzPublisher) return;
       const data = envelope as PublisherMessage;
 
       if (data.type === 'status' && data.message) setStatus(data.message);
@@ -319,7 +312,7 @@ export default function PublisherPage() {
         const studioBuffer = buffer.slice(0);
         const guideBuffer = buffer.slice(0);
         studioRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'load', name: source.name, title: form.title || source.name, buffer: studioBuffer }, window.location.origin, [studioBuffer]);
-        guideRef.current?.contentWindow?.postMessage({ guizzGuidePublisher: 1, type: 'load', name: source.name, title: form.title || source.name, buffer: guideBuffer }, GUIDE_PUBLISHER_ORIGIN, [guideBuffer]);
+        guideRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'load', name: source.name, title: form.title || source.name, buffer: guideBuffer }, window.location.origin, [guideBuffer]);
       } catch (loadError) {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : 'Não foi possível ler o arquivo .mcstructure.');
       }
@@ -348,7 +341,7 @@ export default function PublisherPage() {
     if (!source || !guideReady || !guideLoaded || guideWarmupSourceRef.current === source) return;
     guideWarmupSourceRef.current = source;
     setStatus('Guia 3D renderizando e estabilizando o holograma enquanto o Guizz Studio gera os materiais…');
-    guideRef.current?.contentWindow?.postMessage({ guizzGuidePublisher: 1, type: 'warmup' }, GUIDE_PUBLISHER_ORIGIN);
+    guideRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'warmup' }, window.location.origin);
   }, [generation.source, guideLoaded, guideReady]);
 
   useEffect(() => {
@@ -358,7 +351,7 @@ export default function PublisherPage() {
     setStatus(studioGenerated
       ? 'Guia 3D estabilizado. Gerando as oito vistas em PNG…'
       : 'Guia 3D estabilizado. Gerando as oito vistas em paralelo à capa e à prancha…');
-    guideRef.current?.contentWindow?.postMessage({ guizzGuidePublisher: 1, type: 'generate', title: form.title || 'Construção Guizzprints' }, GUIDE_PUBLISHER_ORIGIN);
+    guideRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'generate', title: form.title || 'Construção Guizzprints' }, window.location.origin);
   }, [generation.source, guideLoaded, guideReady, guideWarmed, studioGenerated, form.title]);
 
   const uploadAsset = async (kind: string, file: Blob, fileName: string, token: string) => {
@@ -477,7 +470,7 @@ export default function PublisherPage() {
               <button type="button" onClick={() => sourceRef.current?.click()} className="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-red-400/50 bg-red-500/[.06] px-4 py-5 text-center text-sm font-bold text-red-100 transition hover:bg-red-500/[.12]"><Upload size={21} /> <span>{generation.source ? `Trocar ${generation.source.name} e gerar novamente` : 'Selecionar .mcstructure e gerar tudo'}</span><span className="text-xs font-medium text-red-200/70">Capa com 4 vistas, prancha, `.schem` e oito imagens são preparados automaticamente.</span></button>
               <div aria-hidden="true">
                 <iframe ref={studioRef} tabIndex={-1} title="Gerador Guizz Studio" src="/guide3d/studio-publisher.html" className="pointer-events-none fixed left-0 top-0 h-[720px] w-[1200px] border-0 opacity-0" />
-                <iframe ref={guideRef} tabIndex={-1} title="Gerador Guia 3D" src={`${GUIDE_PUBLISHER_ORIGIN}/guia.html?publisher=1`} className="pointer-events-none fixed left-0 top-0 h-[720px] w-[1200px] border-0 opacity-0" />
+                <iframe ref={guideRef} tabIndex={-1} title="Gerador Guia 3D" src="/guide3d/publisher.html?publisher=1" className="pointer-events-none fixed left-0 top-0 h-[720px] w-[1200px] border-0 opacity-0" />
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3"><p className="text-sm text-zinc-400">{status}</p>{isGenerating && <span className="inline-flex items-center gap-2 text-xs font-bold text-red-200"><Loader2 size={14} className="animate-spin" /> Gerando materiais</span>}</div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">{generatedChecks.map(({ label, ready }) => <span key={label} className={`flex items-center gap-1 rounded-lg border px-2 py-2 ${ready ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-[#283244] text-zinc-600'}`}><CheckCircle2 size={13} /> {label}</span>)}</div>

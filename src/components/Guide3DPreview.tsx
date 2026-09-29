@@ -26,14 +26,15 @@ export function Guide3DPreview({
   }, []);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const frame = frameRef.current;
     const closeForNavigation = () => releaseViewer();
     window.addEventListener('pagehide', closeForNavigation);
     return () => {
       window.removeEventListener('pagehide', closeForNavigation);
-      const frame = frameRef.current;
       if (frame) frame.src = 'about:blank';
     };
-  }, [releaseViewer]);
+  }, [isOpen, releaseViewer]);
 
   const openViewer = () => {
     setSession((value) => value + 1);
@@ -63,10 +64,11 @@ export function Guide3DPreview({
     );
   }
 
-  // Reuse the publisher-generated .schem whenever available, avoiding a
-  // conversion in the visitor's browser. A new session creates a fresh,
-  // disposable viewer after each close.
-  const previewFile = schemUrl || modelUrl;
+  // Keep the Bedrock .mcstructure as the primary source. It is the original
+  // publication payload and avoids losing Bedrock block-state details through
+  // an unnecessary client-side round trip. The generated .schem remains a
+  // compatibility fallback for older publications.
+  const previewFile = modelUrl || schemUrl || '';
   const src = `/guide3d/guia-preview.html?model=${encodeURIComponent(previewFile)}&title=${encodeURIComponent(title)}&session=${session}`;
 
   return (

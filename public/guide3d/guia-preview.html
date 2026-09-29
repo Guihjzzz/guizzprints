@@ -18,60 +18,67 @@
     (() => {
       const frame = document.querySelector('#guide');
       const state = document.querySelector('#state');
-      const guideOrigin = 'http://127.0.0.1:5180';
+      const origin = location.origin;
       const parameters = new URLSearchParams(location.search);
       const requested = parameters.get('model') || '';
       const title = String(parameters.get('title') || 'Construção Guizzprints').slice(0, 100);
-      let isDemo = false;
-      try {
-        // A demo pode carregar uma versão nova pelo query string. Validamos o
-        // caminho local, em vez da string inteira, para manter o allow-list
-        // fechado sem bloquear o cache-buster da publicação.
-        const localUrl = new URL(requested, location.origin);
-        isDemo = localUrl.origin === location.origin
-          && (localUrl.pathname === '/demo/warden/warden.mcstructure' || localUrl.pathname === '/demo/warden/warden.schem');
-      } catch (_) {}
+
+      let localSource = '';
       let releaseUrl = '';
+      try {
+        const localUrl = new URL(requested, origin);
+        if (localUrl.origin === origin && localUrl.pathname.startsWith('/demo/')) localSource = localUrl.pathname + localUrl.search;
+      } catch (_) {}
       try {
         const url = new URL(requested);
         if (url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.startsWith('/Guizzhjz/guizzprints-assets/releases/download/')) releaseUrl = url.toString();
       } catch (_) {}
-      if (!isDemo && !releaseUrl) {
-        document.body.textContent = 'A construção 3D não está disponível.';
+
+      if (!localSource && !releaseUrl) {
+        state.textContent = 'A construção 3D não está disponível.';
+        state.classList.add('error');
         return;
       }
+
       const setState = (message, error = false) => {
         state.textContent = message;
         state.classList.toggle('error', error);
       };
+
+      const sourceUrl = localSource || `/api/guide3d/source?url=${encodeURIComponent(releaseUrl)}`;
+      const sourceName = (localSource || releaseUrl).split('/').pop().split('?')[0] || 'construcao.mcstructure';
+
       const send = async () => {
         try {
           setState('Baixando a construção publicada…');
-          const source = isDemo
-            ? requested
-            : '/api/guide3d/source?url=' + encodeURIComponent(releaseUrl);
-          const response = await fetch(source, { cache: 'no-store' });
+          const response = await fetch(sourceUrl, { cache: 'no-store' });
           if (!response.ok) throw new Error('A construção publicada não pôde ser carregada.');
           const buffer = await response.arrayBuffer();
+          if (!buffer.byteLength) throw new Error('A construção publicada está vazia.');
           setState('Abrindo a construção no Guia 3D…');
           frame.contentWindow?.postMessage({
-            guizzGuidePublisher: 1,
+            guizzPublisher: 1,
             type: 'load',
-            name: (isDemo ? requested : releaseUrl).split('/').pop().split('?')[0] || 'construcao.mcstructure',
+            name: sourceName,
             buffer,
             title,
-          }, guideOrigin, [buffer]);
+          }, origin, [buffer]);
         } catch (error) {
           setState(error && error.message ? error.message : 'Não foi possível abrir a construção.', true);
         }
       };
 
-      frame.src = guideOrigin + '/guia.html?publisher=1&publicPreview=1&session=' + encodeURIComponent(String(Date.now()));
+      // The published preview and the generator share the same local engine.
+      // No iframe reaches a separate application or asks a device for access.
+      frame.src = `./publisher.html?publicPreview=1&session=${encodeURIComponent(String(Date.now()))}`;
       window.addEventListener('message', (event) => {
-        if (event.source !== frame.contentWindow || event.origin !== guideOrigin || event.data?.guizzGuidePublisher !== 1) return;
+        if (event.source !== frame.contentWindow || event.origin !== origin || event.data?.guizzPublisher !== 1) return;
         if (event.data.type === 'ready') void send();
         if (event.data.type === 'status' && event.data.message) setState(event.data.message);
-        if (event.data.type === 'loaded') { setState('Construção carregada.'); window.setTimeout(() => state.remove(), 1200); }
+        if (event.data.type === 'loaded') {
+          setState('Construção carregada.');
+          window.setTimeout(() => state.remove(), 900);
+        }
         if (event.data.type === 'error') setState(event.data.message || 'Não foi possível abrir a construção.', true);
       });
     })();
