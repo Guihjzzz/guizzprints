@@ -13,37 +13,31 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteMotion } from '@/components/SiteMotion';
+import { JsonLd } from '@/components/JsonLd';
+import { siteStructuredData } from '@/lib/seo';
+import { siteLocales, toSiteLocale } from '@/lib/site-pages';
 
-export const metadata: Metadata = {
-  metadataBase: new URL('https://www.guizz.xyz'),
-  title: 'Guizzprints',
-  description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
-  applicationName: 'Guizzprints',
-  verification: {
-    google: '8w5uX2MyeL_ZEPijl_nCVioi0ltATg2-t03VNMTVYH0',
-  },
-  openGraph: {
-    title: 'Guizzprints — Construções Minecraft',
-    description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
-    siteName: 'Guizzprints',
-    type: 'website',
-    images: [{ url: '/guizz-cover.jpg', alt: 'Guizzprints' }],
-  },
-  twitter: {
-    card: 'summary',
-    title: 'Guizzprints — Construções Minecraft',
-    description: 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.',
-    images: ['/guizz-cover.jpg'],
-  },
-  manifest: '/manifest.webmanifest',
-  // Pin every browser surface to the same stable logo. Without an explicit
-  // regular favicon, some browsers fall back to a deployment/provider icon.
-  icons: {
-    icon: [{ url: '/icon.jpg', type: 'image/jpeg' }],
-    shortcut: '/icon.jpg',
-    apple: '/icons/guizz-180.png',
-  },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const safeLocale = toSiteLocale(locale);
+  const title = 'Guizzprints — Construções Minecraft';
+  const description = 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.';
+  const languages = Object.fromEntries(siteLocales.map((item) => [item, `/${item}`]));
+
+  return {
+    metadataBase: new URL('https://www.guizz.xyz'),
+    title: { default: title, template: '%s | Guizzprints' },
+    description,
+    applicationName: 'Guizzprints',
+    alternates: { canonical: `/${safeLocale}`, languages: { ...languages, 'x-default': '/pt' } },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
+    verification: { google: '8w5uX2MyeL_ZEPijl_nCVioi0ltATg2-t03VNMTVYH0' },
+    openGraph: { title, description, siteName: 'Guizzprints', type: 'website', url: `/${safeLocale}`, images: [{ url: '/guizz-cover.jpg', alt: 'Guizzprints' }] },
+    twitter: { card: 'summary_large_image', title, description, images: ['/guizz-cover.jpg'] },
+    manifest: '/manifest.webmanifest',
+    icons: { icon: [{ url: '/icon.jpg', type: 'image/jpeg' }], shortcut: '/icon.jpg', apple: '/icons/guizz-180.png' },
+  };
+}
 
 const SIDEBAR_ITEMS = [
   { id: "home", icon: Home, label: "Home", href: "/" },
@@ -70,6 +64,7 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning>
       <body className="bg-[#07090D] text-[#F8FAFC] antialiased">
         <NextIntlClientProvider messages={messages}>
+          <JsonLd data={siteStructuredData()} />
           <SiteMotion />
           <aside className="fixed top-0 left-0 h-screen w-[90px] bg-[#111318]/70 border-r border-[#1D2433] backdrop-blur-2xl flex-col items-center py-6 justify-between z-50 hidden md:flex">
             <div className="flex min-h-0 flex-1 flex-col items-center w-full gap-4">

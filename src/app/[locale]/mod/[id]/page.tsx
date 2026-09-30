@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server';
 import { DEMO_BUILD, DEMO_BUILD_ID } from '@/lib/demo-build';
 import { siteLocales, toSiteLocale } from '@/lib/site-pages';
 import { getPublicMod } from '@/lib/public-mod';
+import { JsonLd } from '@/components/JsonLd';
+import { constructionStructuredData } from '@/lib/seo';
 
 type Props = {
   params: Promise<{ id: string; locale: string }>;
@@ -64,7 +66,7 @@ export default async function ModDetailsPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: 'Mod' });
 
   if (id === DEMO_BUILD_ID) {
-    return <ModViewer mod={DEMO_BUILD} locale={locale} />;
+    return <><JsonLd data={constructionStructuredData(DEMO_BUILD, toSiteLocale(locale))} /><ModViewer mod={DEMO_BUILD} locale={locale} /></>;
   }
   
   const data = await getPublicMod(id);
@@ -73,5 +75,5 @@ export default async function ModDetailsPage({ params }: Props) {
     return <div className="p-10 text-white text-center font-bold">{t('notFound')}</div>;
   }
 
-  return <ModViewer mod={data} locale={locale} />;
+  return <><JsonLd data={constructionStructuredData(data, toSiteLocale(locale))} /><ModViewer mod={data} locale={locale} /></>;
 }
