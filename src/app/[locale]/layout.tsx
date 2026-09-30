@@ -66,7 +66,7 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <JsonLd data={siteStructuredData()} />
           <SiteMotion />
-          <aside className="fixed top-0 left-0 h-screen w-[90px] bg-[#111318]/70 border-r border-[#1D2433] backdrop-blur-2xl flex-col items-center py-6 justify-between z-50 hidden md:flex">
+          <aside className="fixed top-0 left-0 h-screen w-[76px] bg-[#111318]/70 border-r border-[#1D2433] backdrop-blur-2xl flex-col items-center py-5 justify-between z-50 hidden md:flex">
             <div className="flex min-h-0 flex-1 flex-col items-center w-full gap-4">
               <Link href={`/${locale}`} className="relative group cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-r from-[#2563EB] to-[#60A5FA] rounded-xl blur-md opacity-75 group-hover:opacity-100 transition duration-300" />
@@ -86,11 +86,11 @@ export default async function RootLayout({
 
           <TopHeader />
 
-          <main data-site-content className="md:pl-[90px] min-h-screen pt-16 pb-20 md:pb-0">
+          <main data-site-content className="md:pl-[76px] min-h-screen pt-16 pb-20 md:pb-0">
             {children}
           </main>
 
-          <div className="md:pl-[90px] pb-20 md:pb-0">
+          <div className="md:pl-[76px] pb-20 md:pb-0">
             <SiteFooter locale={locale} />
           </div>
 

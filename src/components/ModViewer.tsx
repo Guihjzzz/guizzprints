@@ -482,10 +482,10 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   ];
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[2200px] items-start gap-6 p-3 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8">
+    <div className="mx-auto flex min-h-screen w-full max-w-[2200px] lg:max-w-[1540px] items-start gap-6 p-3 sm:gap-6 sm:p-6 lg:gap-7 lg:px-8 lg:py-7 xl:px-9">
 
       {/* --- CONTEÚDO CENTRAL PRINCIPAL --- */}
-      <main className="mx-auto min-w-0 w-full max-w-[1280px] flex-1 basis-0 space-y-6">
+        <main className="mx-auto min-w-0 w-full max-w-[1280px] lg:max-w-[1180px] flex-1 basis-0 space-y-6">
 
         <nav className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
           <Link href={`/${locale}`} className="hover:text-blue-500 transition cursor-pointer">{t('home')}</Link>
@@ -495,9 +495,9 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
           <span className="text-zinc-300 truncate max-w-[200px]">{modData.title}</span>
         </nav>
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(310px,360px)] lg:gap-7 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_330px] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_350px]">
           <section className="min-w-0">
-            <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090d15] shadow-2xl">
+            <div className="relative mx-auto aspect-square w-full max-w-[640px] overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090d15] shadow-2xl lg:max-w-[620px] xl:max-w-[650px]">
               <ProgressiveGalleryImage
                 source={mediaList[activeMedia]?.url || modData.imageUrl}
                 alt={modData.title}
@@ -539,7 +539,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6">
             <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-4 shadow-xl sm:p-5">
               <div className="mb-3"><CategoryBadges category={modData.category} contentCategories={mod.content_categories} contentThemes={mod.content_themes} /></div>
-              <h1 className="break-words text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">{modData.title}</h1>
+              <h1 className="break-words text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-[2.1rem]">{modData.title}</h1>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[#252c3a] py-3 text-sm">
                 <span className="flex items-center gap-2 font-bold text-zinc-200">
@@ -572,7 +572,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
           </aside>
         </div>
 
-            <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 sm:p-8 shadow-xl">
+            <div className="site-motion-panel bg-[#111318] border border-[#1D2433] rounded-2xl p-6 sm:p-8 lg:p-5 shadow-xl">
               <div className="flex gap-6 border-b border-[#1D2433] pb-4 text-sm font-bold mb-6">
                 <button
                   onClick={() => setActiveTab('overview')}
@@ -588,7 +588,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 </button>
               </div>
 
-              <div className="prose prose-invert prose-blue max-w-none text-zinc-300 text-sm sm:text-base leading-relaxed">
+              <div className="prose prose-invert prose-blue max-w-none text-zinc-300 text-sm sm:text-base lg:text-[0.95rem] leading-relaxed">
                 {activeTab === 'overview' ? (
                   <p className="whitespace-pre-line">{modData.description}</p>
                 ) : (
@@ -633,7 +633,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 <Download size={16} /> Baixar prancha
               </a>
             </div>
-            <div className="bg-white p-2 sm:p-4">
+            <div className="bg-white p-2 sm:p-4 lg:px-8">
               <OptimizedImage
                 src={mod.studio_board_url}
                 optimizeWidth={1800}
@@ -643,7 +643,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 alt={`Prancha completa do Guizz Studio para ${modData.title}`}
                 loading="lazy"
                 sizes="(max-width: 640px) calc(100vw - 28px), (max-width: 1280px) calc(100vw - 48px), 1200px"
-                className="h-auto w-full rounded-lg object-contain"
+                 className="mx-auto h-auto w-full max-w-[1000px] rounded-lg object-contain"
               />
             </div>
           </section>

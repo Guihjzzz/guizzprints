@@ -154,10 +154,10 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
   };
 
   return (
-    <div className="w-full flex justify-center gap-6 p-4 sm:p-6 lg:p-8 min-h-screen max-w-[1800px] mx-auto">
+    <div className="w-full flex justify-center gap-6 p-4 sm:p-6 lg:px-9 lg:py-7 min-h-screen max-w-[1800px] lg:max-w-[1480px] mx-auto">
 
       {/* CONTEÚDO PRINCIPAL (CENTRALIZADO) */}
-      <main className="flex-1 max-w-[1200px] min-w-0 flex flex-col">
+      <main className="flex-1 max-w-[1200px] lg:max-w-[1180px] min-w-0 flex flex-col">
 
         {/* CABEÇALHO */}
         <div className="border-b border-[#1D2433] pb-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -191,7 +191,7 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {mods.map((mod) => {
 
                 return (

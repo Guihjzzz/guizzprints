@@ -23,7 +23,7 @@ export function TopHeader() {
   }, []);
 
   return (
-    <header className="fixed top-0 right-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#1D2433] bg-[#07090D]/90 px-3 backdrop-blur-xl md:w-[calc(100%-90px)] md:px-6">
+      <header className="fixed top-0 right-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#1D2433] bg-[#07090D]/90 px-3 backdrop-blur-xl md:w-[calc(100%-76px)] md:px-7 lg:px-9">
       
       {/* Esquerda: Logo Mobile (Oculto no PC) */}
       <div className="flex items-center md:hidden">

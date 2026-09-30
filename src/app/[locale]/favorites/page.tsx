@@ -77,7 +77,7 @@ export default function FavoritesPage({ params }: Props) {
   }, [t]);
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6 min-h-screen">
+    <div className="max-w-[1400px] lg:max-w-[1320px] mx-auto p-4 sm:p-6 lg:px-9 lg:py-7 space-y-6 min-h-screen">
 
       <div className="border-b border-[#1D2433] pb-6">
         <h1 className="text-3xl font-black uppercase text-white flex items-center gap-3">
@@ -100,7 +100,7 @@ export default function FavoritesPage({ params }: Props) {
           {t('empty')}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
           {mods.map((mod) => (
               <InstantLink
               href={`/${locale}/mod/${mod.id}`}

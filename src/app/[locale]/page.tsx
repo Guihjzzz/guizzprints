@@ -190,9 +190,9 @@ export default function Home() {
   }, [isMobileViewport]);
 
   return (
-    <div className="max-w-[1800px] mx-auto p-3 sm:p-6 lg:p-8 min-h-screen flex gap-6 lg:gap-8 items-start">
+    <div className="max-w-[1800px] lg:max-w-[1480px] mx-auto p-3 sm:p-6 lg:px-9 lg:py-7 xl:px-10 min-h-screen flex gap-6 lg:gap-8 items-start">
       
-      <main className="flex-1 min-w-0 space-y-8 pb-20">
+      <main className="flex-1 min-w-0 space-y-8 lg:space-y-7 pb-20">
         
         {!loading && topMods.length > 0 && <HeroCarousel mods={topMods} locale={locale} />}
         {loading && <HomeHeroLoading />}
@@ -296,7 +296,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
           <InstantLink
             href={`/${locale}/mod/${mod.id}`}
             key={`hero-${mod.id}`}
-            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.08/1]"
+            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.4/1] lg:aspect-[2.45/1]"
           >
             {/* Keep the phone composition equal to desktop: two generated
                 images share one compact visual stage, with only the essential
@@ -358,14 +358,14 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
               </div>
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[52%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:block" aria-hidden="true" />
-            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-8 md:left-8 md:max-w-none md:w-[min(34%,360px)] lg:bottom-10 lg:left-10">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[48%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:block" aria-hidden="true" />
+            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-6 md:left-7 md:max-w-none md:w-[min(31%,300px)] lg:bottom-7 lg:left-8">
               <span className="w-fit rounded-md bg-[#2563EB] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-950/40 md:px-2.5 md:py-1 md:text-[10px] md:tracking-[0.16em]">
                 {t('featuredWeek')}
               </span>
-              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-2 md:text-[30px]">{mod.title}</h1>
-              <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-3 md:inline-flex md:min-h-0 md:gap-2 md:rounded-xl md:px-4 md:py-2.5 md:text-sm">
-                <Eye size={14} aria-hidden="true" className="md:size-4" /> {t('viewDetails')}
+              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-1.5 md:text-[26px] lg:text-[28px]">{mod.title}</h1>
+              <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-2.5 md:inline-flex md:min-h-0 md:gap-2 md:rounded-lg md:px-3.5 md:py-2 md:text-xs">
+                <Eye size={14} aria-hidden="true" /> {t('viewDetails')}
               </span>
             </div>
           </InstantLink>
@@ -474,9 +474,9 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex gap-2 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
+      <div ref={scrollRef} className="flex gap-2 md:gap-3.5 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
         {mods.map((mod) => (
-          <InstantLink href={`/${locale}/mod/${mod.id}`} key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
+          <InstantLink href={`/${locale}/mod/${mod.id}`} key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[198px] md:w-[198px] xl:min-w-[208px] xl:w-[208px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
             
             <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0">
               <ContentImage
@@ -486,7 +486,7 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
                 alt={mod.title} 
                 loading="lazy"
                 className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
-                sizes="(max-width: 768px) 160px, 220px"
+                 sizes="(max-width: 768px) 160px, (max-width: 1280px) 198px, 208px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
               <FavoriteButton modId={mod.id} className="absolute left-1.5 top-1.5 md:left-2 md:top-2" />
