@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, FileText, Gamepad2, ImageIcon, Layers3, Loader2, LockKeyhole, Palette, Ruler, Upload } from 'lucide-react';
-import { getClientAuthToken } from '@/lib/client-auth';
+import { getClientAdminAuthToken } from '@/lib/client-auth';
 
 const FORMAT_GROUPS = {
   Bedrock: [
@@ -191,7 +191,7 @@ export default function PublisherPage() {
   ];
 
   const getAccessToken = useCallback(async () => {
-    const token = await getClientAuthToken();
+    const token = await getClientAdminAuthToken();
     if (!token) throw new Error('Faça login com a conta administradora.');
     return token;
   }, []);

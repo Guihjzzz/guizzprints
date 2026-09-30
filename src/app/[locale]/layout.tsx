@@ -16,6 +16,7 @@ import { SiteMotion } from '@/components/SiteMotion';
 import { JsonLd } from '@/components/JsonLd';
 import { siteStructuredData } from '@/lib/seo';
 import { siteLocales, toSiteLocale } from '@/lib/site-pages';
+import { AppFreshness } from '@/components/AppFreshness';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -65,6 +66,7 @@ export default async function RootLayout({
       <body className="bg-[#07090D] text-[#F8FAFC] antialiased">
         <NextIntlClientProvider messages={messages}>
           <JsonLd data={siteStructuredData()} />
+          <AppFreshness />
           <SiteMotion />
           <aside className="fixed top-0 left-0 h-screen w-[76px] bg-[#111318]/70 border-r border-[#1D2433] backdrop-blur-2xl flex-col items-center py-5 justify-between z-50 hidden md:flex">
             <div className="flex min-h-0 flex-1 flex-col items-center w-full gap-4">

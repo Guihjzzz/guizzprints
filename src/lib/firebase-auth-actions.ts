@@ -1,5 +1,5 @@
 import { GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithRedirect, updateProfile, type Auth } from 'firebase/auth';
-import { getFirebaseAuth } from './firebase-client';
+import { getPreparedFirebaseAuth } from './firebase-client';
 import { getSafeReturnPath } from './auth-return';
 import { normalizeAuthEmail, normalizeAuthUsername, type AuthMessageKey, type AuthMode, type AuthOutcome } from './auth-actions';
 
@@ -14,8 +14,8 @@ function errorKey(error: unknown): AuthMessageKey {
   return 'authUnavailable';
 }
 
-function configuredAuth() {
-  const auth = getFirebaseAuth();
+async function configuredAuth() {
+  const auth = await getPreparedFirebaseAuth();
   if (!auth) throw new Error('Firebase Authentication is not configured.');
   return auth;
 }
@@ -38,10 +38,24 @@ function passwordResetUrl(origin: string, locale: string, next: string | null) {
   return url.toString();
 }
 
+async function waitForRedirect(operation: Promise<void>) {
+  let timeout: number | null = null;
+  try {
+    await Promise.race([
+      operation,
+      new Promise<void>((_, reject) => {
+        timeout = window.setTimeout(() => reject(new Error('Firebase redirect timed out.')), 12000);
+      }),
+    ]);
+  } finally {
+    if (timeout !== null) window.clearTimeout(timeout);
+  }
+}
+
 export async function submitFirebaseEmailAuth(input: FirebaseAuthInput): Promise<AuthOutcome> {
   const email = normalizeAuthEmail(input.email);
   if (!email) return { key: 'emailInvalid', success: false };
-  const auth = configuredAuth();
+  const auth = await configuredAuth();
   try {
     if (input.mode === 'reset') {
       await sendPasswordResetEmail(auth, email, { url: passwordResetUrl(input.origin, input.locale, input.next) });
@@ -64,7 +78,7 @@ export async function submitFirebaseEmailAuth(input: FirebaseAuthInput): Promise
 
 export async function resendFirebaseConfirmation(input: Omit<FirebaseAuthInput, 'mode' | 'password' | 'username'>): Promise<AuthOutcome> {
   const email = normalizeAuthEmail(input.email);
-  const auth = configuredAuth();
+  const auth = await configuredAuth();
   if (!email || auth.currentUser?.email?.toLowerCase() !== email) return { key: 'confirmationSent', success: true, confirmation: true, emailAttempt: true };
   try {
     await sendEmailVerification(auth.currentUser, { url: verificationUrl(input.origin, input.locale, input.next) });
@@ -74,13 +88,15 @@ export async function resendFirebaseConfirmation(input: Omit<FirebaseAuthInput, 
   }
 }
 
-export async function signInWithFirebaseGoogle(input: Pick<FirebaseAuthInput, 'locale' | 'next'>): Promise<AuthOutcome> {
-  const auth = configuredAuth();
+export async function signInWithFirebaseGoogle(input: Pick<FirebaseAuthInput, 'locale' | 'next'>): Promise<AuthOutcome | { redirectStarted: true }> {
+  const auth = await configuredAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    await signInWithRedirect(auth, provider);
-    return { redirect: continueTo(input.locale, input.next) };
+    await waitForRedirect(signInWithRedirect(auth, provider));
+    // Firebase owns the browser navigation from this point. Returning the
+    // application's home URL here used to cancel the provider redirect.
+    return { redirectStarted: true };
   } catch (error) {
     return { key: errorKey(error), success: false };
   }

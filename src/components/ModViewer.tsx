@@ -96,6 +96,7 @@ interface ModSuggestion {
   id: string;
   title: string;
   image_url_1: string | null;
+  showcase_cover_url?: string | null;
   category: string;
   subcategory: string | null;
   content_themes?: string[] | null;
@@ -227,7 +228,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     const fetchSuggested = async () => {
       const { data } = await supabase
         .from('public_mods')
-        .select('id, title, category, subcategory, image_url_1, downloads, rating, content_themes, content_categories')
+        .select('id, title, category, subcategory, image_url_1, showcase_cover_url, downloads, rating, content_themes, content_categories')
         .neq('id', mod.id)
         .order('downloads', { ascending: false })
         .limit(24);
@@ -804,7 +805,7 @@ function RecommendationCard({ mod, locale }: { mod: ModSuggestion; locale: strin
   return (
     <InstantLink href={`/${locale}/mod/${mod.id}`} className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
       <div className="relative aspect-video overflow-hidden bg-[#07090D]">
-        <OptimizedImage src={mod.image_url_1 || '/guizz-cover.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-cover opacity-90 group-hover:opacity-100" />
+        <OptimizedImage src={mod.showcase_cover_url || mod.image_url_1 || '/guizz-cover.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-contain opacity-95 group-hover:opacity-100" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <FavoriteButton modId={mod.id} className="absolute left-2 top-2" />
       </div>

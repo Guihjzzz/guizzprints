@@ -286,7 +286,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
   };
 
   return (
-    <section className="relative w-full overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090b10] shadow-2xl">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090b10] shadow-2xl lg:mx-auto lg:max-w-[820px] xl:max-w-[900px]">
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
@@ -296,7 +296,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
           <InstantLink
             href={`/${locale}/mod/${mod.id}`}
             key={`hero-${mod.id}`}
-            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.4/1] lg:aspect-[2.45/1]"
+            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.4/1] lg:aspect-[2.02/1]"
           >
             {/* Keep the phone composition equal to desktop: two generated
                 images share one compact visual stage, with only the essential
@@ -329,13 +329,13 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
                 />
               </div>
             </div>
-            <div className="hidden grid-cols-2 gap-2 bg-[#101722] p-2 md:absolute md:inset-0 md:grid">
-              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+            <div className="hidden grid-cols-2 gap-2 bg-[#101722] p-2 md:absolute md:inset-0 md:grid lg:gap-1 lg:p-1">
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10] lg:rounded-md">
                 <ContentImage
                   src={mod.showcase_cover_url || mod.image_url_1}
                   optimizeWidth={960}
                   optimizeQuality={80}
-                  className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
+                  className="object-contain p-1.5 sm:p-2 lg:p-0 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
                   fetchPriority={index === 0 ? 'high' : 'low'}
@@ -343,12 +343,12 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
                   sizes="(max-width: 767px) 50vw, (max-width: 1200px) 50vw, 900px"
                 />
               </div>
-              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10] lg:rounded-md">
                 <ContentImage
                   src={mod.image_url_2 || mod.image_url_1 || mod.showcase_cover_url}
                   optimizeWidth={960}
                   optimizeQuality={80}
-                  className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
+                  className="object-contain p-1.5 sm:p-2 lg:p-0 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
                   fetchPriority={index === 0 ? 'high' : 'low'}
@@ -358,14 +358,14 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
               </div>
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[48%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:block" aria-hidden="true" />
-            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-6 md:left-7 md:max-w-none md:w-[min(31%,300px)] lg:bottom-7 lg:left-8">
-              <span className="w-fit rounded-md bg-[#2563EB] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-950/40 md:px-2.5 md:py-1 md:text-[10px] md:tracking-[0.16em]">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[42%] bg-gradient-to-t from-[#05070b]/90 via-[#05070b]/34 to-transparent md:block" aria-hidden="true" />
+            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-6 md:left-7 md:max-w-none md:w-[min(31%,300px)] lg:bottom-5 lg:left-5 lg:w-[min(36%,250px)]">
+              <span className="w-fit rounded-md bg-[#2563EB] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-950/40 md:px-2.5 md:py-1 md:text-[10px] md:tracking-[0.16em] lg:px-2 lg:py-0.5 lg:text-[9px]">
                 {t('featuredWeek')}
               </span>
-              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-1.5 md:text-[26px] lg:text-[28px]">{mod.title}</h1>
-              <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-2.5 md:inline-flex md:min-h-0 md:gap-2 md:rounded-lg md:px-3.5 md:py-2 md:text-xs">
-                <Eye size={14} aria-hidden="true" /> {t('viewDetails')}
+              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-1.5 md:text-[26px] lg:text-xl">{mod.title}</h1>
+              <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-2.5 md:inline-flex md:min-h-0 md:gap-2 md:rounded-lg md:px-3.5 md:py-2 md:text-xs lg:mt-1.5 lg:px-2.5 lg:py-1.5 lg:text-[11px]">
+                <Eye size={13} aria-hidden="true" /> {t('viewDetails')}
               </span>
             </div>
           </InstantLink>

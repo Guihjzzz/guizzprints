@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
         ...common,
         id: bedrockId,
         category: 'bedrock',
-        // Download formats belong to download_formats. They are not catalog
-        // categories and should never become a default card label.
-        subcategory: null,
+        // The legacy catalog schema requires a subcategory. Keep it aligned
+        // with the first chosen content category, never with a file format.
+        subcategory: taxonomy.content_categories[0],
         terabox_url: bedrockLinks[0].url,
         download_formats: bedrockLinks,
         available_formats: bedrockLinks.map((link) => link.id),
@@ -121,13 +121,18 @@ export async function POST(request: NextRequest) {
         ...common,
         id: javaId,
         category: 'java',
-        subcategory: null,
+        subcategory: taxonomy.content_categories[0],
         terabox_url: javaLinks[0].url,
         download_formats: javaLinks,
         available_formats: javaLinks.map((link) => link.id),
       },
     ]);
-    if (error) return failure('Não foi possível gravar a publicação no catálogo.', 503);
+    if (error) {
+      // Database details stay server-side; the editor receives an actionable
+      // message without exposing schema or infrastructure information.
+      console.error('publisher-catalog-insert', { code: error.code, message: error.message });
+      return failure('Não foi possível gravar a publicação no catálogo. Confira a categoria e tente novamente.', 503);
+    }
     return NextResponse.json({ data: { bedrockId, javaId } }, { status: 201, headers: noStoreHeaders });
   } catch (error) {
     return failure(error instanceof Error ? error.message : 'Unable to publish this item.', 400);

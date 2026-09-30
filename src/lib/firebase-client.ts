@@ -23,15 +23,32 @@ function getFirebaseApp(): FirebaseApp | null {
 }
 
 let persistenceStarted = false;
+let persistencePromise: Promise<void> | null = null;
+
+function preparePersistence(auth: Auth) {
+  if (!persistenceStarted && typeof window !== 'undefined') {
+    persistenceStarted = true;
+    // A redirect must not begin before Firebase knows where to restore the
+    // session. Keep the failure non-fatal: Firebase's default persistence is
+    // still safer than leaving the login screen blocked forever.
+    persistencePromise = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+  }
+  return persistencePromise ?? Promise.resolve();
+}
 
 export function getFirebaseAuth(): Auth | null {
   const app = getFirebaseApp();
   if (!app) return null;
   const auth = getAuth(app);
-  if (!persistenceStarted && typeof window !== 'undefined') {
-    persistenceStarted = true;
-    void setPersistence(auth, browserLocalPersistence);
-  }
+  void preparePersistence(auth);
+  return auth;
+}
+
+/** Ensures browser persistence is ready before an interactive sign-in starts. */
+export async function getPreparedFirebaseAuth(): Promise<Auth | null> {
+  const auth = getFirebaseAuth();
+  if (!auth) return null;
+  await preparePersistence(auth);
   return auth;
 }
 
@@ -39,11 +56,25 @@ export async function getFirebaseUser(): Promise<User | null> {
   const auth = getFirebaseAuth();
   if (!auth) return null;
   if (auth.currentUser) return auth.currentUser;
+  // Auth state is normally delivered immediately. If browser storage or a
+  // provider is unavailable, resolve as signed out instead of making headers,
+  // navigation, and the admin check wait forever.
   return new Promise((resolve) => {
-    const stop = onAuthStateChanged(auth, (user) => {
+    let settled = false;
+    let stop: () => void = () => undefined;
+    let timeout: number | null = null;
+    const finish = (user: User | null) => {
+      if (settled) return;
+      settled = true;
+      if (timeout !== null) window.clearTimeout(timeout);
       stop();
       resolve(user);
+    };
+    timeout = window.setTimeout(() => finish(null), 3000);
+    stop = onAuthStateChanged(auth, (user) => {
+      finish(user);
     });
+    if (settled) stop();
   });
 }
 

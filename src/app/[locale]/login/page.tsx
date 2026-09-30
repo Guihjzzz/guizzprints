@@ -10,7 +10,7 @@ import { getSafeReturnPath } from '@/lib/auth-return';
 import { googleAuthUrl, resendConfirmation, submitEmailAuth, type AuthMode, type AuthOutcome } from '@/lib/auth-actions';
 import { isFirebaseConfigured } from '@/lib/firebase-client';
 import { getFirebaseAuth } from '@/lib/firebase-client';
-import { getRedirectResult } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { resendFirebaseConfirmation, signInWithFirebaseGoogle, submitFirebaseEmailAuth } from '@/lib/firebase-auth-actions';
 import AuthCaptcha from '@/components/AuthCaptcha';
 
@@ -41,6 +41,8 @@ function LoginForm() {
   const cooldowns = useRef(new Map<string, number>());
   const [cooldownView, setCooldownView] = useState<Record<string, number>>({});
   const firebaseEnabled = isFirebaseConfigured();
+  const redirectStarted = useRef(false);
+  const redirectTimeout = useRef<number | null>(null);
   const captchaEnabled = Boolean(siteKey && !firebaseEnabled);
   const onToken = useCallback((token: string) => setCaptchaToken(token), []);
   const email = form.email.trim().toLowerCase();
@@ -64,9 +66,23 @@ function LoginForm() {
     const auth = getFirebaseAuth();
     if (!auth) return;
     let active = true;
+    const finishRedirect = () => {
+      if (redirectTimeout.current !== null) {
+        window.clearTimeout(redirectTimeout.current);
+        redirectTimeout.current = null;
+      }
+    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!active || !user || redirectStarted.current) return;
+      redirectStarted.current = true;
+      finishRedirect();
+      window.location.replace(next() ?? `/${locale}`);
+    });
     void getRedirectResult(auth).then((result) => {
-      if (!active || !result?.user) return;
-      window.location.assign(next() ?? `/${locale}`);
+      if (!active || !result?.user || redirectStarted.current) return;
+      redirectStarted.current = true;
+      finishRedirect();
+      window.location.replace(next() ?? `/${locale}`);
     }).catch((error: unknown) => {
       if (!active) return;
       const code = (error as { code?: string } | null)?.code || '';
@@ -74,7 +90,7 @@ function LoginForm() {
         ? 'Este domínio ainda não está autorizado no Firebase.'
         : t('googleUnavailable') });
     });
-    return () => { active = false; };
+    return () => { active = false; finishRedirect(); unsubscribe(); };
   }, [firebaseEnabled, locale, t]);
 
   React.useEffect(() => {
@@ -138,6 +154,18 @@ function LoginForm() {
     try {
       if (firebaseEnabled) {
         const outcome = await signInWithFirebaseGoogle({ locale, next: next() });
+        if ('redirectStarted' in outcome) {
+          // Browsers normally leave this page immediately. Recover the button
+          // after a short delay when an extension or blocked provider prevents
+          // that navigation, rather than showing an infinite spinner.
+          redirectTimeout.current = window.setTimeout(() => {
+            busy.current = false;
+            setLoading(false);
+            setMessage({ success: false, text: t('googleUnavailable') });
+          }, 12000);
+          navigating = true;
+          return;
+        }
         if ('redirect' in outcome) { navigating = true; applyOutcome(outcome); return; }
         // Firebase is the configured production identity provider. Never
         // fall back to Supabase Google here: that provider is intentionally

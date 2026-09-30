@@ -129,14 +129,14 @@ export async function PUT(request: NextRequest) {
     const [bedrockResult, javaResult] = await Promise.all([
       admin.supabase.from('mods').update({
         ...common,
-        subcategory: null,
+        subcategory: taxonomy.content_categories[0],
         terabox_url: bedrockLinks[0].url,
         download_formats: bedrockLinks,
         available_formats: bedrockLinks.map((link) => link.id),
       }).eq('id', bedrockId),
       admin.supabase.from('mods').update({
         ...common,
-        subcategory: null,
+        subcategory: taxonomy.content_categories[0],
         terabox_url: javaLinks[0].url,
         download_formats: javaLinks,
         available_formats: javaLinks.map((link) => link.id),

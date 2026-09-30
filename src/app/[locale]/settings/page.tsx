@@ -3,12 +3,19 @@
 import React, { useState, useEffect, use } from 'react';
 import { signOut, updatePassword, updateProfile, type User as FirebaseUser } from 'firebase/auth';
 import { getFirebaseAuth, getFirebaseUser } from '@/lib/firebase-client';
+import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Settings, User, Mail, Lock, LogOut, Loader2, Save, Globe, AtSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isAppLocale } from '@/i18n/routing';
 
 type Props = { params: Promise<{ locale: string }> };
+type Account = {
+  email: string | null;
+  displayName: string | null;
+  provider: 'firebase' | 'supabase';
+  firebaseUser?: FirebaseUser;
+};
 
 export default function SettingsPage({ params }: Props) {
   const { locale } = use(params);
@@ -17,7 +24,7 @@ export default function SettingsPage({ params }: Props) {
   const t = useTranslations('Settings');
   
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<Account | null>(null);
   
   const [username, setUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,17 +38,42 @@ export default function SettingsPage({ params }: Props) {
   const [message, setMessage] = useState<{ type: 'success'|'error', text: string, context: 'profile'|'password'|'account' } | null>(null);
 
   useEffect(() => {
+    let active = true;
     const fetchUser = async () => {
-      const currentUser = await getFirebaseUser();
-      if (!currentUser) {
-        router.replace(`/${locale}/login`);
-      } else {
-        setUser(currentUser);
-        setUsername(currentUser.displayName || '');
+      const currentFirebaseUser = getFirebaseAuth()?.currentUser;
+      if (currentFirebaseUser) {
+        if (!active) return;
+        setUser({ email: currentFirebaseUser.email, displayName: currentFirebaseUser.displayName, provider: 'firebase', firebaseUser: currentFirebaseUser });
+        setUsername(currentFirebaseUser.displayName || '');
         setLoading(false);
+        return;
       }
+
+      // Sessions created before the Firebase migration are immediately
+      // available in Supabase. Keep them usable instead of leaving the
+      // settings page waiting for Firebase's background restoration.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        if (!active) return;
+        const displayName = typeof session.user.user_metadata?.username === 'string' ? session.user.user_metadata.username : null;
+        setUser({ email: session.user.email ?? null, displayName, provider: 'supabase' });
+        setUsername(displayName || '');
+        setLoading(false);
+        return;
+      }
+
+      const restoredFirebaseUser = await getFirebaseUser();
+      if (!active) return;
+      if (!restoredFirebaseUser) {
+        router.replace(`/${locale}/login`);
+        return;
+      }
+      setUser({ email: restoredFirebaseUser.email, displayName: restoredFirebaseUser.displayName, provider: 'firebase', firebaseUser: restoredFirebaseUser });
+      setUsername(restoredFirebaseUser.displayName || '');
+      setLoading(false);
     };
-    fetchUser();
+    void fetchUser();
+    return () => { active = false; };
   }, [locale, router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -52,10 +84,16 @@ export default function SettingsPage({ params }: Props) {
     setMessage(null);
 
     try {
-      const auth = getFirebaseAuth();
-      if (!auth?.currentUser) throw new Error('missing-user');
-      await updateProfile(auth.currentUser, { displayName: username.trim() });
-      setUser(auth.currentUser);
+      if (user?.provider === 'firebase') {
+        const auth = getFirebaseAuth();
+        if (!auth?.currentUser) throw new Error('missing-user');
+        await updateProfile(auth.currentUser, { displayName: username.trim() });
+        setUser({ email: auth.currentUser.email, displayName: auth.currentUser.displayName, provider: 'firebase', firebaseUser: auth.currentUser });
+      } else {
+        const { error } = await supabase.auth.updateUser({ data: { username: username.trim() } });
+        if (error) throw error;
+        setUser((current) => current ? { ...current, displayName: username.trim() } : current);
+      }
       setMessage({ type: 'success', text: t('profileSaved'), context: 'profile' });
     } catch {
       setMessage({ type: 'error', text: t('profileError'), context: 'profile' });
@@ -74,9 +112,14 @@ export default function SettingsPage({ params }: Props) {
     setMessage(null);
     
     try {
-      const auth = getFirebaseAuth();
-      if (!auth?.currentUser) throw new Error('missing-user');
-      await updatePassword(auth.currentUser, newPassword);
+      if (user?.provider === 'firebase') {
+        const auth = getFirebaseAuth();
+        if (!auth?.currentUser) throw new Error('missing-user');
+        await updatePassword(auth.currentUser, newPassword);
+      } else {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+      }
       setMessage({ type: 'success', text: t('passwordSaved'), context: 'password' });
       setNewPassword('');
     } catch {
@@ -90,9 +133,14 @@ export default function SettingsPage({ params }: Props) {
     setSigningOut(true);
     setMessage(null);
     try {
-      const auth = getFirebaseAuth();
-      if (!auth) throw new Error('missing-auth');
-      await signOut(auth);
+      if (user?.provider === 'firebase') {
+        const auth = getFirebaseAuth();
+        if (!auth) throw new Error('missing-auth');
+        await signOut(auth);
+      } else {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      }
     } catch {
       setSigningOut(false);
       setMessage({ type: 'error', text: t('signOutError'), context: 'account' });

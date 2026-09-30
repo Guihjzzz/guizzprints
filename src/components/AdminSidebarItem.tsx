@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
-import { getClientAuthToken, listenToClientAuth } from '@/lib/client-auth';
+import { getClientAdminAuthToken, listenToClientAuth } from '@/lib/client-auth';
 
 interface AdminSidebarItemProps {
   locale: string;
@@ -17,22 +17,8 @@ export function AdminSidebarItem({ locale, label }: AdminSidebarItemProps) {
     let active = true;
 
     const verifySession = async () => {
-      const token = await getClientAuthToken();
-      if (!token) {
-        if (active) setIsAdmin(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/admin/status', {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: 'no-store',
-        });
-
-        if (active) setIsAdmin(response.ok);
-      } catch {
-        if (active) setIsAdmin(false);
-      }
+      const token = await getClientAdminAuthToken();
+      if (active) setIsAdmin(Boolean(token));
     };
 
     void verifySession();

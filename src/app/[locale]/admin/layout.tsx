@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { getClientAuthToken } from '@/lib/client-auth';
+import { getClientAdminAuthToken } from '@/lib/client-auth';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -12,21 +12,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await getClientAuthToken();
+      const token = await getClientAdminAuthToken();
       
       if (!token) {
         router.push(`/${locale}/login`);
         return;
       }
 
-      const response = await fetch('/api/admin/status', {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        router.replace(`/${locale}`);
-        return;
-      }
       setLoading(false);
     };
 

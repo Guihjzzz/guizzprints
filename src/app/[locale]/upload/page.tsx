@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { normalizeModVersion, validateModVersion } from '@/lib/mod-version';
 import { collectCatalogCsv } from '@/lib/catalog-csv';
-import { getClientAuthToken } from '@/lib/client-auth';
+import { getClientAdminAuthToken } from '@/lib/client-auth';
 import { 
   Upload, Link2, FileText, Tag, ArrowLeft, Loader2, 
   Gamepad2, Coffee, Layers, Video,
@@ -110,7 +110,7 @@ class AdminRequestError extends Error {
 async function authenticatedAdminRequest(endpoint: string, path = '', init: RequestInit = {}) {
   let sessionTimer: ReturnType<typeof setTimeout> | undefined;
   const token = await Promise.race([
-    getClientAuthToken(),
+    getClientAdminAuthToken(),
     new Promise<never>((_, reject) => {
       sessionTimer = setTimeout(() => reject(new Error('A sessão demorou para responder. Tente novamente.')), 15_000);
     }),
