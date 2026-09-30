@@ -1,4 +1,4 @@
-import { GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithRedirect, updateProfile, type Auth } from 'firebase/auth';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, updateProfile, type Auth } from 'firebase/auth';
 import { getPreparedFirebaseAuth } from './firebase-client';
 import { getSafeReturnPath } from './auth-return';
 import { normalizeAuthEmail, normalizeAuthUsername, type AuthMessageKey, type AuthMode, type AuthOutcome } from './auth-actions';
@@ -52,6 +52,18 @@ async function waitForRedirect(operation: Promise<void>) {
   }
 }
 
+function shouldUseRedirect() {
+  if (typeof navigator === 'undefined') return true;
+  const mobileBrowser = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return mobileBrowser;
+}
+
+function canFallbackToRedirect(error: unknown) {
+  const code = (error as { code?: string } | null)?.code || '';
+  return code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment';
+}
+
 export async function submitFirebaseEmailAuth(input: FirebaseAuthInput): Promise<AuthOutcome> {
   const email = normalizeAuthEmail(input.email);
   if (!email) return { key: 'emailInvalid', success: false };
@@ -93,6 +105,18 @@ export async function signInWithFirebaseGoogle(input: Pick<FirebaseAuthInput, 'l
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
+    // A popup keeps the complete Google exchange in the first-party window on
+    // desktop browsers. It is less susceptible to third-party storage rules
+    // than redirects. Mobile browsers retain the redirect flow, which is more
+    // reliable when a popup would be blocked or opened in a separate tab.
+    if (!shouldUseRedirect()) {
+      try {
+        await signInWithPopup(auth, provider);
+        return { redirect: continueTo(input.locale, input.next) };
+      } catch (error) {
+        if (!canFallbackToRedirect(error)) return { key: errorKey(error), success: false };
+      }
+    }
     await waitForRedirect(signInWithRedirect(auth, provider));
     // Firebase owns the browser navigation from this point. Returning the
     // application's home URL here used to cancel the provider redirect.

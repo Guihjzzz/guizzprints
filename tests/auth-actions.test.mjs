@@ -18,7 +18,7 @@ function load(path, modules, globals = {}) {
 }
 const api = load('src/lib/auth-actions.ts', { './auth-return': returns });
 const input = { mode: 'register', email: ' Owner@Example.test ', password: 'isolated-only', username: ' Player ',
-  locale: 'pt', origin: 'https://www.example.test', next: '/pt/vip?plan=weekly', captchaToken: 'fixture-token' };
+  locale: 'pt', origin: 'https://www.example.test', next: '/pt/search?edition=java', captchaToken: 'fixture-token' };
 function auth(result = { data: { session: null }, error: null }) {
   const calls = [];
   const methods = Object.fromEntries(['signUp', 'signInWithPassword', 'resetPasswordForEmail', 'resend', 'signInWithOAuth']
@@ -26,7 +26,7 @@ function auth(result = { data: { session: null }, error: null }) {
   return { methods, calls };
 }
 
-test('signup normalizes email, preserves selected locale/VIP and forwards one-use CAPTCHA', async () => {
+test('signup normalizes email, preserves selected catalogue destination and forwards one-use CAPTCHA', async () => {
   const fixture = auth();
   assert.equal((await api.submitEmailAuth(fixture.methods, input)).key, 'confirmationSent');
   const body = fixture.calls[0].args[0];
@@ -122,15 +122,15 @@ test('callback exchanges PKCE using current cookies API and prevents auth respon
   assert.equal(fixture.calls[0].name, 'exchangeCodeForSession');
   assert.deepEqual(fixture.writes[0], ['session', 'fixture', { httpOnly: true }]);
 });
-test('invalid/expired callbacks retain language, recovery mode and safe VIP return without leaking errors', async () => {
+test('invalid/expired callbacks retain language, recovery mode and safe catalogue return without leaking errors', async () => {
   for (const options of [{ error: { message: 'private upstream detail' } }, { throws: true }, { env: { NEXT_PUBLIC_SUPABASE_ANON_KEY: '' } }]) {
     const fixture = callback(options);
-    const query = new URLSearchParams({ token_hash: 'fixture', type: 'recovery', locale: 'es', returnTo: '/es/vip?plan=monthly' });
+    const query = new URLSearchParams({ token_hash: 'fixture', type: 'recovery', locale: 'es', returnTo: '/es/search?edition=java' });
     const response = await fixture.GET(new Request(`https://www.example.test/auth/callback?${query}`));
     const url = new URL(response.headers.get('location'));
     assert.equal(url.pathname, '/es/login');
     assert.equal(url.searchParams.get('mode'), 'reset');
-    assert.equal(url.searchParams.get('next'), '/es/vip?plan=monthly');
+    assert.equal(url.searchParams.get('next'), '/es/search?edition=java');
     assert.equal(url.searchParams.get('error'), 'invalid_token');
     assert.ok(!String(url).includes('private'));
   }
