@@ -6,6 +6,8 @@ native-converter/
 # Never upload local credentials, build products, or local diagnostic output.
 .env*
 .next/
+.next-local/
+.next-build-auth/
 .vercel/
 node_modules/
 *.log
