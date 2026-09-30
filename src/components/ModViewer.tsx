@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
+import { Download, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
 import DownloadFlow, { type DownloadFormat } from './DownloadFlow';
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from 'next-intl';
@@ -168,7 +168,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   // Estados em Tempo Real
   const [userId, setUserId] = useState<string | null>(null);
-  const [isFavorited, setIsFavorited] = useState(false);
   const [liveDownloads] = useState(mod.downloads || 0);
   const [liveRating, setLiveRating] = useState(mod.rating || 0);
   const [userRating, setUserRating] = useState(0);
@@ -297,15 +296,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
       setUserId(session.user.id);
 
-      const { data: favData } = await supabase
-        .from('favorites')
-        .select('id')
-        .eq('mod_id', mod.id)
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (favData) setIsFavorited(true);
-
       const { data: ratData } = await supabase
         .from('ratings')
         .select('score')
@@ -317,31 +307,6 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     };
     checkAuthData();
   }, [mod.id, mod.is_demo]);
-
-  // Handler de Favoritos com Alertas de Erro
-  const toggleFavorite = async () => {
-    if (mod.is_demo) return;
-    if (!userId) {
-      alert(t('loginToFavorite'));
-      return;
-    }
-
-    if (isFavorited) {
-      const { error } = await supabase.from('favorites').delete().eq('mod_id', mod.id).eq('user_id', userId);
-      if (error) {
-        alert(t('favoriteRemoveError'));
-      } else {
-        setIsFavorited(false);
-      }
-    } else {
-      const { error } = await supabase.from('favorites').insert([{ mod_id: mod.id, user_id: userId }]);
-      if (error) {
-        alert(t('favoriteAddError'));
-      } else {
-        setIsFavorited(true);
-      }
-    }
-  };
 
   // Handler de Compartilhamento (Nativo Celular / Copiar Link PC)
   const handleShare = async () => {
@@ -554,9 +519,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button onClick={toggleFavorite} disabled={mod.is_demo} title={mod.is_demo ? 'Disponível quando este item for publicado no catálogo' : undefined} className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-[#090d15] px-3 py-2.5 text-xs font-black text-zinc-200 transition hover:border-red-400/50 hover:bg-red-500/10 disabled:cursor-default disabled:opacity-45">
-                  <Heart size={16} className={`transition-colors ${isFavorited ? 'fill-red-500 text-red-500' : 'group-hover:text-red-400'}`} aria-hidden="true" /> {t('favorite')}
-                </button>
+                <FavoriteButton modId={mod.id} wide disabled={Boolean(mod.is_demo)} title={mod.is_demo ? 'Disponível quando este item for publicado no catálogo' : undefined} />
                 <button onClick={handleShare} className="group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-[#090d15] px-3 py-2.5 text-xs font-black text-zinc-200 transition hover:border-blue-400/50 hover:bg-blue-500/10">
                   <Share2 size={16} className="transition-colors group-hover:text-blue-300" aria-hidden="true" /> {t('share')}
                 </button>

@@ -3,6 +3,8 @@ import { CategoryBadges } from '@/components/CategoryBadges';
 
 import React, { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase';
+import { loadClientFavoriteIds } from '@/lib/favorite-client';
+import { listenToClientAuth } from '@/lib/client-auth';
 import Link from 'next/link';
 import { Heart, Download, Star, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -36,32 +38,29 @@ export default function FavoritesPage({ params }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const fetchFavorites = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
+      setLoading(true);
+      const favoriteState = await loadClientFavoriteIds();
+      if (!favoriteState) {
+        if (!active) return;
+        setMods([]);
         setError(t('loginRequired'));
         setLoading(false);
         return;
       }
-
-      const { data: favorites, error: favoritesError } = await supabase
-        .from('favorites')
-        .select('mod_id')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-
-      if (favoritesError) {
-        setError(favoritesError.message);
-      } else if (favorites && favorites.length > 0) {
-        const favoriteIds = favorites.map((favorite) => favorite.mod_id);
+      const favoriteIds = [...favoriteState.ids];
+      if (favoriteIds.length > 0) {
         const { data: favoriteMods, error: modsError } = await supabase
           .from('public_mods')
           .select('id, title, category, subcategory, content_categories, image_url_1, showcase_cover_url, rating, downloads')
           .in('id', favoriteIds);
 
+        if (!active) return;
         if (modsError) {
-          setError(modsError.message);
+          setError(t('loadError'));
+          setLoading(false);
+          return;
         } else {
           const modsById = new Map((favoriteMods || []).map((mod) => [mod.id, mod]));
           setMods(favoriteIds.flatMap((id) => {
@@ -69,11 +68,20 @@ export default function FavoritesPage({ params }: Props) {
             return mod ? [mod] : [];
           }));
         }
+      } else if (active) {
+        setMods([]);
       }
+      if (!active) return;
+      setError(null);
       setLoading(false);
     };
 
-    fetchFavorites();
+    void fetchFavorites();
+    const stopListening = listenToClientAuth(() => { void fetchFavorites(); });
+    return () => {
+      active = false;
+      stopListening();
+    };
   }, [t]);
 
   return (

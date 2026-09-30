@@ -92,6 +92,7 @@
     "title": "My favorites",
     "count": "{count, plural, =0 {No favorite mods} one {# favorite mod} other {# favorite mods}}.",
     "loginRequired": "Sign in to view your favorites.",
+    "loadError": "We couldn't load your favorites. Please try again.",
     "empty": "You haven't favorited any mods yet."
   },
   "Auth": {

@@ -3,7 +3,8 @@
 import { Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type MouseEvent } from 'react';
-import { supabase } from '@/lib/supabase';
+import { changeClientFavorite, loadClientFavoriteIds } from '@/lib/favorite-client';
+import { listenToClientAuth } from '@/lib/client-auth';
 
 type FavoriteCache = {
   userId: string;
@@ -17,34 +18,33 @@ let authListenerReady = false;
 function ensureFavoriteAuthListener() {
   if (authListenerReady || typeof window === 'undefined') return;
   authListenerReady = true;
-  supabase.auth.onAuthStateChange(() => {
+  listenToClientAuth(() => {
     favoriteCache = null;
     window.dispatchEvent(new Event('guizz-favorites-auth'));
   });
 }
 
 async function loadFavoriteIds() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const state = await loadClientFavoriteIds();
+  if (!state) {
     favoriteCache = null;
     return null;
   }
 
-  if (favoriteCache?.userId === session.user.id && favoriteCache.ids && !favoriteCache.pending) return favoriteCache.ids;
+  if (favoriteCache?.userId === state.userId && favoriteCache.ids && !favoriteCache.pending) return favoriteCache.ids;
 
-  const pending = favoriteCache?.userId === session.user.id && favoriteCache.pending
+  const pending = favoriteCache?.userId === state.userId && favoriteCache.pending
     ? favoriteCache.pending
-    : supabase.from('favorites').select('mod_id').eq('user_id', session.user.id).then(({ data }) => {
-      const ids = new Set((data || []).map(row => row.mod_id as string));
-      favoriteCache = { userId: session.user.id, ids, pending: null };
+    : Promise.resolve(state.ids).then((ids) => {
+      favoriteCache = { userId: state.userId, ids, pending: null };
       return ids;
     });
 
-  favoriteCache = { userId: session.user.id, ids: favoriteCache?.userId === session.user.id ? favoriteCache.ids : new Set(), pending };
+  favoriteCache = { userId: state.userId, ids: favoriteCache?.userId === state.userId ? favoriteCache.ids : new Set(), pending };
   return pending;
 }
 
-export function FavoriteButton({ modId, className = '' }: { modId: string; className?: string }) {
+export function FavoriteButton({ modId, className = '', wide = false, disabled = false, title }: { modId: string; className?: string; wide?: boolean; disabled?: boolean; title?: string }) {
   const t = useTranslations('Mod');
   const [isFavorited, setIsFavorited] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -75,28 +75,27 @@ export function FavoriteButton({ modId, className = '' }: { modId: string; class
     event.stopPropagation();
     if (busy) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    setBusy(true);
+    const nextValue = !isFavorited;
+    const result = await changeClientFavorite(modId, nextValue);
+    if (!result.authenticated) {
       alert(t('loginToFavorite'));
+      setBusy(false);
       return;
     }
 
-    setBusy(true);
-    const nextValue = !isFavorited;
-    const result = nextValue
-      ? await supabase.from('favorites').insert([{ mod_id: modId, user_id: session.user.id }])
-      : await supabase.from('favorites').delete().eq('mod_id', modId).eq('user_id', session.user.id);
-
-    if (result.error) {
+    if (!result.ok) {
       alert(nextValue
         ? t('favoriteAddError')
         : t('favoriteRemoveError'));
     } else {
       setIsFavorited(nextValue);
-      if (favoriteCache?.userId === session.user.id) {
+      const state = await loadClientFavoriteIds();
+      if (state && favoriteCache?.userId === state.userId) {
         if (nextValue) favoriteCache.ids.add(modId);
         else favoriteCache.ids.delete(modId);
       }
+      window.dispatchEvent(new Event('guizz-favorites-auth'));
     }
     setBusy(false);
   };
@@ -105,13 +104,16 @@ export function FavoriteButton({ modId, className = '' }: { modId: string; class
     <button
       type="button"
       onClick={toggleFavorite}
-      disabled={busy}
+      disabled={busy || disabled}
       aria-label={t('favorite')}
       aria-pressed={isFavorited}
-      title={t('favorite')}
-      className={`z-20 inline-flex size-8 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-300 shadow-lg backdrop-blur-sm transition hover:border-red-400/70 hover:bg-black hover:text-red-400 disabled:cursor-wait disabled:opacity-60 ${isFavorited ? 'text-red-400' : ''} ${className}`}
+      title={title || t('favorite')}
+      className={wide
+        ? `group flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#2A3448] bg-[#090d15] px-3 py-2.5 text-xs font-black text-zinc-200 transition hover:border-red-400/50 hover:bg-red-500/10 disabled:cursor-default disabled:opacity-45 ${isFavorited ? 'text-red-400' : ''} ${className}`
+        : `z-20 inline-flex size-8 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-300 shadow-lg backdrop-blur-sm transition hover:border-red-400/70 hover:bg-black hover:text-red-400 disabled:cursor-wait disabled:opacity-60 ${isFavorited ? 'text-red-400' : ''} ${className}`}
     >
-      <Heart size={15} className={isFavorited ? 'fill-current' : ''} aria-hidden="true" />
+      <Heart size={wide ? 16 : 15} className={`${isFavorited ? 'fill-current text-red-500' : wide ? 'group-hover:text-red-400' : ''}`} aria-hidden="true" />
+      {wide && t('favorite')}
     </button>
   );
 }

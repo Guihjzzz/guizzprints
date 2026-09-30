@@ -92,6 +92,7 @@
     "title": "Meus favoritos",
     "count": "{count, plural, =0 {Nenhum mod favoritado} one {# mod favoritado} other {# mods favoritados}}.",
     "loginRequired": "Entre na sua conta para ver seus favoritos.",
+    "loadError": "Não foi possível carregar seus favoritos. Tente novamente.",
     "empty": "Você ainda não favoritou nenhum mod."
   },
   "Auth": {
