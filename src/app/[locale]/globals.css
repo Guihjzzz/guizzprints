@@ -41,6 +41,11 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes guizz-image-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .guizz-download-card, .guizz-download-enter {
     animation: guizz-download-enter 300ms ease-out both;

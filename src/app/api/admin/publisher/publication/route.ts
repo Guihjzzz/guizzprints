@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/admin-auth';
 import { parseAllowedDownloadUrl } from '@/lib/download-url';
+import { parseContentTaxonomy } from '@/lib/mod-categories';
 import { validateModVersion } from '@/lib/mod-version';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,9 @@ type PublishedEdition = {
   download_formats: unknown;
   guide_mcstructure_url: string | null;
   guide_schem_url: string | null;
+  content_themes: string[];
+  content_size: string;
+  content_categories: string[];
 };
 
 function failure(error: string, status: number) {
@@ -67,7 +71,7 @@ function linksForEdition(links: DownloadLink[], formats: Set<string>, generatedI
 }
 
 async function publicationPair(supabase: SupabaseClient, id: string) {
-  const fields = 'id, category, title, description, version, file_size, terabox_url, download_formats, guide_mcstructure_url, guide_schem_url';
+  const fields = 'id, category, title, description, version, file_size, terabox_url, download_formats, guide_mcstructure_url, guide_schem_url, content_themes, content_size, content_categories';
   const { data: selected, error: selectedError } = await supabase.from('mods').select(fields).eq('id', id).maybeSingle();
   if (selectedError) throw new Error('Não foi possível encontrar a publicação.');
   if (!selected || !selected.guide_mcstructure_url) throw new Error('Esta publicação não foi criada pelo Publicador 3D.');
@@ -116,20 +120,23 @@ export async function PUT(request: NextRequest) {
 
     const version = validateModVersion(text(body.version, 50) || '1.0.0');
     const fileSize = text(body.file_size, 80) || 'N/A';
+    const taxonomy = parseContentTaxonomy(body);
     const links = readLinks(body.download_links);
     const bedrockLinks = linksForEdition(links, BEDROCK_FORMATS, 'mcstructure', pair.bedrock.guide_mcstructure_url);
     const javaLinks = linksForEdition(links, JAVA_FORMATS, 'schematic', pair.java.guide_schem_url);
-    const common = { title, description, version, file_size: fileSize };
+    const common = { title, description, version, file_size: fileSize, ...taxonomy };
 
     const [bedrockResult, javaResult] = await Promise.all([
       admin.supabase.from('mods').update({
         ...common,
+        subcategory: null,
         terabox_url: bedrockLinks[0].url,
         download_formats: bedrockLinks,
         available_formats: bedrockLinks.map((link) => link.id),
       }).eq('id', bedrockId),
       admin.supabase.from('mods').update({
         ...common,
+        subcategory: null,
         terabox_url: javaLinks[0].url,
         download_formats: javaLinks,
         available_formats: javaLinks.map((link) => link.id),

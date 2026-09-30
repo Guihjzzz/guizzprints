@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { Download, Heart, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Tag, Gamepad2, Coffee, Search, TrendingUp, type LucideIcon } from "lucide-react";
@@ -13,6 +13,8 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryLabel } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { Guide3DPreview } from '@/components/Guide3DPreview';
+import { optimizedImageUrl } from '@/lib/media-image';
+import { InstantLink } from '@/components/InstantLink';
 
 type SocialIcon = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -58,6 +60,8 @@ interface ModData {
   title?: string;
   category?: string;
   subcategory?: string | null;
+  content_themes?: readonly string[] | null;
+  content_categories?: readonly string[] | null;
   description?: string;
   youtube_trailer_url?: string;
   file_size?: string;
@@ -94,8 +98,49 @@ interface ModSuggestion {
   image_url_1: string | null;
   category: string;
   subcategory: string | null;
+  content_themes?: string[] | null;
+  content_categories?: string[] | null;
   downloads: number | null;
   rating: number | null;
+}
+
+/**
+ * The gallery thumbnails are already cached at 192px. Reuse that exact
+ * variant as a temporary full-frame preview when a visitor selects an image,
+ * then fade the detailed source over it. A selection therefore responds
+ * immediately even on a slower connection.
+ */
+function ProgressiveGalleryImage({ source, alt }: { source: string; alt: string }) {
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
+  const fullImageReady = loadedSource === source;
+
+  return (
+    <>
+      <OptimizedImage
+        src={source}
+        optimizeWidth={192}
+        optimizeQuality={72}
+        alt=""
+        aria-hidden="true"
+        fill
+        loading="eager"
+        fetchPriority="high"
+        sizes="(max-width: 640px) calc(100vw - 24px), (max-width: 1024px) calc(100vw - 48px), 760px"
+        className={`object-contain p-1.5 sm:p-2 ${fullImageReady ? 'opacity-0' : 'opacity-100'}`}
+      />
+      <OptimizedImage
+        src={source}
+        optimizeWidth={1440}
+        optimizeQuality={84}
+        alt={alt}
+        fill
+        priority
+        sizes="(max-width: 640px) calc(100vw - 24px), (max-width: 1024px) calc(100vw - 48px), 760px"
+        onLoad={() => setLoadedSource(source)}
+        className={`object-contain p-1.5 transition-opacity duration-150 sm:p-2 ${fullImageReady ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </>
+  );
 }
 
 const extractYtThumb = (url?: string) => {
@@ -113,6 +158,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'install'>('overview');
   const galleryStripRef = useRef<HTMLDivElement>(null);
   const galleryDragRef = useRef({ pointerId: -1, startX: 0, startY: 0, startScrollLeft: 0, didDrag: false });
+  const preloadedGalleryImagesRef = useRef(new Set<string>());
 
   // Estado para Avaliação e Mods Sugeridos
   const [hoverRating, setHoverRating] = useState(0);
@@ -169,19 +215,24 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   }
 
   function selectGalleryMedia(index: number) {
+    preloadGalleryImage(mediaList[index]?.url);
     setActiveMedia(index);
   }
 
-  // Busca mods sugeridos
+  // Related cards are below the primary image. Start this secondary request
+  // after the first visual paint so it cannot compete with the gallery.
   useEffect(() => {
     if (mod.is_demo) return;
+    let cancelled = false;
     const fetchSuggested = async () => {
       const { data } = await supabase
         .from('public_mods')
-        .select('id, title, category, subcategory, image_url_1, downloads, rating')
+        .select('id, title, category, subcategory, image_url_1, downloads, rating, content_themes, content_categories')
         .neq('id', mod.id)
         .order('downloads', { ascending: false })
         .limit(24);
+
+      if (cancelled) return;
 
       if (data && data.length > 0) {
         const currentCategory = mod.category?.toLowerCase();
@@ -197,7 +248,14 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         setPopularMods([]);
       }
     };
-    fetchSuggested();
+    const timer = window.setTimeout(() => {
+      void fetchSuggested();
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [mod.id, mod.category, mod.is_demo]);
 
   // Imported Marketplace items refresh on first open, with a server-side
@@ -220,8 +278,13 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         // A best-effort refresh must never block the public item page.
       }
     };
-    void refreshSource();
-    return () => controller.abort();
+    const timer = window.setTimeout(() => {
+      void refreshSource();
+    }, 1200);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [mod.id, mod.is_demo, router]);
 
   // Checa Sessão, Favorito e Avaliação Atual
@@ -332,7 +395,24 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
   // The public gallery always starts with the four-view Guide 3D cover.
   // The generated board appears only in its dedicated lower section.
-  const guideViewUrls = [
+  const mediaList = useMemo(() => {
+    const guideViewUrls = [
+      mod.image_url_1,
+      mod.image_url_2,
+      mod.image_url_3,
+      mod.image_url_4,
+      mod.image_url_5,
+      mod.image_url_6,
+      mod.image_url_7,
+      mod.image_url_8,
+    ].filter((url): url is string => Boolean(url));
+
+    return [
+      mod.showcase_cover_url ? { type: 'image', url: mod.showcase_cover_url } : null,
+      ...guideViewUrls.map((url) => ({ type: 'image', url })),
+    ].filter((item): item is { type: string; url: string; thumb?: string } => item !== null);
+  }, [
+    mod.showcase_cover_url,
     mod.image_url_1,
     mod.image_url_2,
     mod.image_url_3,
@@ -341,14 +421,51 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
     mod.image_url_6,
     mod.image_url_7,
     mod.image_url_8,
-  ].filter((url): url is string => Boolean(url));
+  ]);
 
-  const rawMediaList = [
-    mod.showcase_cover_url ? { type: 'image', url: mod.showcase_cover_url } : null,
-    ...guideViewUrls.map((url) => ({ type: 'image', url })),
-  ];
+  // The selected item renders at 1440px. Warm only adjacent full-size images
+  // while the visitor is reading the current view, so a gallery click resolves
+  // from the browser cache without downloading every large source at once.
+  const preloadGalleryImage = useCallback((url?: string) => {
+    if (!url || typeof window === 'undefined') return;
 
-  const mediaList = rawMediaList.filter((item): item is { type: string; url: string; thumb?: string } => item !== null);
+    const source = optimizedImageUrl(url, 1440, undefined, 84);
+    if (preloadedGalleryImagesRef.current.has(source)) return;
+    preloadedGalleryImagesRef.current.add(source);
+
+    const image = new window.Image();
+    image.decoding = 'async';
+    image.fetchPriority = 'low';
+    image.src = source;
+  }, []);
+
+  useEffect(() => {
+    const nearbyUrls = [
+      mediaList[activeMedia + 1]?.url,
+      mediaList[activeMedia - 1]?.url,
+      mediaList[activeMedia + 2]?.url,
+    ];
+    const timer = window.setTimeout(() => {
+      nearbyUrls.forEach(preloadGalleryImage);
+    }, 280);
+
+    return () => window.clearTimeout(timer);
+  }, [activeMedia, mediaList, preloadGalleryImage]);
+
+  // After the detail page settles, quietly warm the remaining gallery in a
+  // staggered sequence. Skip this on data-saving or slow connections: the
+  // instant thumbnail preview above still keeps interactions responsive.
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (connection?.saveData || connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g') return;
+
+    const timers = mediaList
+      .map((media, index) => ({ media, index }))
+      .filter(({ index }) => index !== activeMedia)
+      .map(({ media, index }) => window.setTimeout(() => preloadGalleryImage(media.url), 900 + index * 180));
+
+    return () => timers.forEach(window.clearTimeout);
+  }, [activeMedia, mediaList, preloadGalleryImage]);
 
   const categorySlug = modData.category.toLowerCase().replace(/[^a-z0-9-]+/g, '');
 
@@ -381,15 +498,9 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(310px,360px)] lg:gap-7 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="min-w-0">
             <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-hidden rounded-2xl border border-[#1D2433] bg-[#090d15] shadow-2xl">
-              <OptimizedImage
-                src={mediaList[activeMedia]?.url || modData.imageUrl}
-                optimizeWidth={1440}
-                optimizeQuality={84}
+              <ProgressiveGalleryImage
+                source={mediaList[activeMedia]?.url || modData.imageUrl}
                 alt={modData.title}
-                fill
-                priority
-                sizes="(max-width: 640px) calc(100vw - 24px), (max-width: 1024px) calc(100vw - 48px), 760px"
-                className="object-contain p-1.5 transition-opacity duration-300 sm:p-2"
               />
             </div>
 
@@ -411,11 +522,14 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                     type="button"
                     role="tab"
                     onClick={() => selectGalleryMedia(idx)}
+                    onPointerEnter={() => preloadGalleryImage(media.url)}
+                    onPointerDown={() => preloadGalleryImage(media.url)}
+                    onFocus={() => preloadGalleryImage(media.url)}
                     aria-label={`Mostrar imagem ${idx + 1} de ${mediaList.length} de ${modData.title}`}
                     aria-selected={activeMedia === idx}
                     className={`relative aspect-square w-16 shrink-0 overflow-hidden rounded-xl border-2 transition sm:w-[72px] ${activeMedia === idx ? 'border-blue-500 bg-blue-500/10 shadow-[0_0_0_2px_rgba(37,99,235,.12)]' : 'border-[#1D2433] bg-[#090d15] opacity-65 hover:border-zinc-500 hover:opacity-100'}`}
                   >
-                    <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={192} optimizeQuality={72} fill loading="lazy" sizes="72px" className="object-contain p-1" alt={`${modData.title} preview ${idx + 1}`} />
+                    <OptimizedImage src={media.url || media.thumb || modData.imageUrl} optimizeWidth={192} optimizeQuality={72} fill loading={idx < 3 ? 'eager' : 'lazy'} fetchPriority={idx === activeMedia ? 'high' : 'low'} sizes="72px" className="object-contain p-1" alt={`${modData.title} preview ${idx + 1}`} />
                   </button>
                 ))}
               </div>
@@ -424,7 +538,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-6">
             <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-4 shadow-xl sm:p-5">
-              <div className="mb-3"><CategoryBadges category={modData.category} subcategory={mod.subcategory} /></div>
+              <div className="mb-3"><CategoryBadges category={modData.category} contentCategories={mod.content_categories} contentThemes={mod.content_themes} /></div>
               <h1 className="break-words text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">{modData.title}</h1>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[#252c3a] py-3 text-sm">
@@ -688,20 +802,20 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
 function RecommendationCard({ mod, locale }: { mod: ModSuggestion; locale: string }) {
   return (
-    <Link href={`/${locale}/mod/${mod.id}`} prefetch={false} target="_blank" rel="noopener noreferrer" className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
+    <InstantLink href={`/${locale}/mod/${mod.id}`} className="site-motion-card group block h-full overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318] shadow-lg hover:border-blue-500/70">
       <div className="relative aspect-video overflow-hidden bg-[#07090D]">
         <OptimizedImage src={mod.image_url_1 || '/guizz-cover.jpg'} optimizeWidth={480} optimizeHeight={270} optimizeQuality={70} alt={mod.title} fill loading="lazy" sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="site-motion-image object-cover opacity-90 group-hover:opacity-100" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
         <FavoriteButton modId={mod.id} className="absolute left-2 top-2" />
       </div>
       <div className="p-3 sm:p-4">
-        <div className="mb-2"><CategoryBadges category={mod.category} subcategory={mod.subcategory} /></div>
+        <div className="mb-2"><CategoryBadges category={mod.category} contentCategories={mod.content_categories} contentThemes={mod.content_themes} /></div>
         <h3 className="truncate text-xs font-bold text-zinc-200 transition-colors group-hover:text-white sm:text-sm" title={mod.title}>{mod.title}</h3>
         <div className="mt-2 flex items-center gap-3 text-[10px] font-bold text-zinc-500 sm:text-xs">
           <span className="flex items-center gap-1"><Download size={12} className="text-blue-400" /> {mod.downloads || 0}</span>
           <span className="flex items-center gap-1"><Star size={12} className="fill-yellow-500 text-yellow-500" /> {mod.rating || 'N/A'}</span>
         </div>
       </div>
-    </Link>
+    </InstantLink>
   );
 }

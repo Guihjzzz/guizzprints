@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, FileText, ImageIcon, Layers3, Loader2, LockKeyhole, Upload } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, FileText, Gamepad2, ImageIcon, Layers3, Loader2, LockKeyhole, Palette, Ruler, Upload } from 'lucide-react';
 import { getClientAuthToken } from '@/lib/client-auth';
 
 const FORMAT_GROUPS = {
@@ -26,6 +26,25 @@ const DOWNLOAD_FILE_ACCEPT: Record<string, string> = {
   world: '.zip,.mcworld,application/zip,application/octet-stream',
   mcfunction: '.mcfunction,text/plain,application/octet-stream',
 };
+
+const CONTENT_THEMES = ['Ancestral', 'Asiático', 'Futurista', 'Medieval', 'Moderno', 'Outro'] as const;
+const CONTENT_SIZES = ['Pequeno', 'Médio', 'Grande', 'Enorme'] as const;
+const CONTENT_CATEGORIES = [
+  'Arenas', 'Castelos', 'Masmorras', 'Jogos', 'Casas e lojas', 'Variado',
+  'Pedra vermelha', 'Templos', 'Torres', 'Cidades', 'Ilhas Flutuantes',
+  'Jardins', 'Ilhas', 'Arte em pixel', 'Estátuas e esculturas', 'Barcos',
+  'Máquinas Voadoras', 'Veículos terrestres',
+] as const;
+
+type PublisherForm = {
+  title: string;
+  description: string;
+  version: string;
+  file_size: string;
+  content_themes: string[];
+  content_size: string;
+  content_categories: string[];
+};
 type Generation = {
   source?: File;
   schem?: Blob;
@@ -42,6 +61,9 @@ type PublishedEdition = {
   version: string;
   file_size: string;
   download_formats?: PublishedLink[] | null;
+  content_themes?: unknown;
+  content_size?: unknown;
+  content_categories?: unknown;
 };
 type EditingPair = { bedrockId: string; javaId: string };
 const initialGeneration: Generation = { views: [] };
@@ -58,6 +80,11 @@ type PublisherMessage = {
 
 function slugify(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'construcao-guizz';
+}
+
+function selectedMetadata(value: unknown, allowed: readonly string[]) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === 'string' && allowed.includes(entry));
 }
 
 function linksFromEdition(value: PublishedLink[] | null | undefined) {
@@ -131,7 +158,15 @@ export default function PublisherPage() {
   const [uploadingDownload, setUploadingDownload] = useState<string | null>(null);
   const [publishedItems, setPublishedItems] = useState<PublishedItems | null>(null);
   const [editingPair, setEditingPair] = useState<EditingPair | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', version: '1.21.0', file_size: '' });
+  const [form, setForm] = useState<PublisherForm>({
+    title: '',
+    description: '',
+    version: '1.21.0',
+    file_size: '',
+    content_themes: [],
+    content_size: '',
+    content_categories: [],
+  });
   const [links, setLinks] = useState<Record<string, string>>(() => Object.fromEntries(ALL_FORMATS.map(([id]) => [id, ''])));
   const generationProgressRef = useRef({ studio: false, guide: false });
 
@@ -140,6 +175,14 @@ export default function PublisherPage() {
 
   const fileReady = Boolean(generation.source && generation.schem && generation.cover && generation.views.filter(Boolean).length === 8 && generation.board);
   const slug = useMemo(() => slugify(form.title || generation.source?.name || ''), [form.title, generation.source?.name]);
+  const toggleMetadata = (field: 'content_themes' | 'content_categories', value: string, max = Number.POSITIVE_INFINITY) => {
+    setForm((current) => {
+      const selected = current[field];
+      if (selected.includes(value)) return { ...current, [field]: selected.filter((entry) => entry !== value) };
+      if (selected.length >= max) return current;
+      return { ...current, [field]: [...selected, value] };
+    });
+  };
   const generatedChecks = [
     { label: '.schem · Guia 3D', ready: Boolean(generation.schem) },
     { label: 'Capa 4 vistas · Guia 3D', ready: Boolean(generation.cover) },
@@ -202,6 +245,9 @@ export default function PublisherPage() {
           description: bedrock.description,
           version: bedrock.version || '1.21.0',
           file_size: bedrock.file_size || '',
+          content_themes: selectedMetadata(bedrock.content_themes, CONTENT_THEMES),
+          content_size: typeof bedrock.content_size === 'string' && CONTENT_SIZES.includes(bedrock.content_size as typeof CONTENT_SIZES[number]) ? bedrock.content_size : '',
+          content_categories: selectedMetadata(bedrock.content_categories, CONTENT_CATEGORIES),
         });
         setLinks((current) => ({
           ...current,
@@ -501,6 +547,61 @@ export default function PublisherPage() {
               <div className="mb-5 flex items-center gap-3"><FileText className="text-red-400" /><div><h2 className="font-black">Informações da construção</h2><p className="text-xs text-zinc-500">A descrição aparecerá na página pública.</p></div></div>
               {isEditRoute && <div className="mb-4 flex items-start gap-3 rounded-xl border border-blue-400/25 bg-blue-500/[.05] px-4 py-3 text-sm text-blue-100"><Layers3 className="mt-0.5 shrink-0 text-blue-300" size={18} /><span>Bedrock e Java estão unidos neste editor. Os campos e links serão salvos nas duas páginas, que continuam separadas no catálogo público.</span></div>}
               <div className="grid gap-4 sm:grid-cols-2"><input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Título da construção" className="rounded-xl border border-[#283244] bg-[#07090D] px-4 py-3 text-sm outline-none focus:border-red-400 sm:col-span-2" /><textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Descrição detalhada: o que é a construção, como instalar e o que está incluído." rows={7} className="resize-y rounded-xl border border-[#283244] bg-[#07090D] px-4 py-3 text-sm outline-none focus:border-red-400 sm:col-span-2" /><div className="flex items-center rounded-xl border border-red-400/30 bg-red-500/[.06] px-4 py-3 text-sm font-bold text-red-100 sm:col-span-2">Esta construção será publicada em Bedrock e Java, com downloads próprios para cada edição.</div><input value={form.version} onChange={(event) => setForm((current) => ({ ...current, version: event.target.value }))} placeholder="Versão do Minecraft" className="rounded-xl border border-[#283244] bg-[#07090D] px-4 py-3 text-sm" /><input value={form.file_size} onChange={(event) => setForm((current) => ({ ...current, file_size: event.target.value }))} placeholder="Tamanho do download" className="rounded-xl border border-[#283244] bg-[#07090D] px-4 py-3 text-sm" /></div>
+            </section>
+
+            <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl sm:p-6">
+              <div className="mb-5 flex items-start gap-3">
+                <Gamepad2 className="mt-0.5 text-blue-400" />
+                <div>
+                  <h2 className="font-black">Tema e categorias</h2>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">Escolha como a construção será encontrada no catálogo. Estas escolhas acompanham Bedrock e Java; formatos de arquivo aparecem apenas no download.</p>
+                </div>
+              </div>
+
+              <div className="mb-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-emerald-400/25 bg-emerald-400/[.06] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[.18em] text-emerald-300">Edição publicada</p>
+                  <p className="mt-1 font-black text-emerald-50">Minecraft Bedrock</p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-100/65">Holoprint, `.mcstructure`, `.mcaddon` e `.mcworld`.</p>
+                </div>
+                <div className="rounded-xl border border-orange-400/25 bg-orange-400/[.06] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[.18em] text-orange-300">Edição publicada</p>
+                  <p className="mt-1 font-black text-orange-50">Minecraft Java</p>
+                  <p className="mt-1 text-xs leading-5 text-orange-100/65">`.litematic`, `.schematic/.schem`, World e `.mcfunction`.</p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <div className="mb-2 flex items-center gap-2"><Palette size={16} className="text-blue-300" /><h3 className="text-sm font-black">Tema principal</h3><span className="text-xs text-zinc-500">Obrigatório · escolha um</span></div>
+                  <div className="flex flex-wrap gap-2">
+                    {CONTENT_THEMES.map((theme) => {
+                      const selected = form.content_themes.includes(theme);
+                      return <button key={theme} type="button" aria-pressed={selected} onClick={() => toggleMetadata('content_themes', theme, 1)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${selected ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-950/30' : 'border-[#2b3548] bg-[#0B0F17] text-zinc-300 hover:border-blue-400/70 hover:text-white'}`}>{selected && <CheckCircle2 className="mr-1 inline-block" size={13} />}{theme}</button>;
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center gap-2"><Ruler size={16} className="text-blue-300" /><h3 className="text-sm font-black">Tamanho</h3><span className="text-xs text-zinc-500">Escolha a escala principal</span></div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {CONTENT_SIZES.map((size) => {
+                      const selected = form.content_size === size;
+                      return <button key={size} type="button" aria-pressed={selected} onClick={() => setForm((current) => ({ ...current, content_size: current.content_size === size ? '' : size }))} className={`min-h-11 rounded-xl border px-3 text-xs font-black transition ${selected ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-950/30' : 'border-[#2b3548] bg-[#0B0F17] text-zinc-300 hover:border-blue-400/70 hover:text-white'}`}>{selected && <CheckCircle2 className="mr-1 inline-block" size={13} />}{size}</button>;
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1"><Layers3 size={16} className="text-blue-300" /><h3 className="text-sm font-black">Categorias da construção</h3><span className="text-xs text-zinc-500">Obrigatório · selecione as que representam esta construção. {form.content_categories.length} selecionada{form.content_categories.length === 1 ? '' : 's'}</span></div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {CONTENT_CATEGORIES.map((category) => {
+                      const selected = form.content_categories.includes(category);
+                      return <button key={category} type="button" aria-pressed={selected} onClick={() => toggleMetadata('content_categories', category)} className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-950/30' : 'border-[#2b3548] bg-[#0B0F17] text-zinc-300 hover:border-blue-400/70 hover:text-white'}`}>{selected && <CheckCircle2 className="mr-1 inline-block" size={13} />}{category}</button>;
+                    })}
+                  </div>
+                </div>
+              </div>
             </section>
 
             {!isEditRoute && <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl sm:p-6">

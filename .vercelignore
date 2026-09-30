@@ -2,3 +2,13 @@
 # Only that integrated static copy is deployed with Guizzprints.
 native-converter/
 .work/
+
+# Never upload local credentials, build products, or local diagnostic output.
+.env*
+.next/
+.vercel/
+node_modules/
+*.log
+*.tsbuildinfo
+backups/
+supabase/.temp/

@@ -23,36 +23,36 @@ export function TopHeader() {
   }, []);
 
   return (
-    <header className="fixed top-0 right-0 w-full md:w-[calc(100%-90px)] h-16 bg-[#07090D]/80 backdrop-blur-md border-b border-[#1D2433] z-40 flex items-center justify-between px-4 sm:px-6">
+    <header className="fixed top-0 right-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#1D2433] bg-[#07090D]/90 px-3 backdrop-blur-xl md:w-[calc(100%-90px)] md:px-6">
       
       {/* Esquerda: Logo Mobile (Oculto no PC) */}
-      <div className="md:hidden flex items-center">
-        <Link href={`/${locale}`}>
-          <Image src="/guizz-cover.jpg" alt="Guizzprints" width={32} height={32} className="w-8 h-8 rounded-lg" />
+      <div className="flex items-center md:hidden">
+        <Link href={`/${locale}`} aria-label="Guizzprints" className="flex size-10 items-center justify-center rounded-xl border border-[#253047] bg-[#111318] shadow-[0_6px_18px_rgba(0,0,0,.22)]">
+          <Image src="/guizz-cover.jpg" alt="" width={32} height={32} className="size-8 rounded-lg object-cover" />
         </Link>
       </div>
 
-      <div className="flex-1 px-4">
-        <Link href={`/${locale}`} className="inline-flex items-baseline gap-2 font-black tracking-tight text-white">
-          <span className="text-lg">Guizzprints</span>
+      <div className="min-w-0 flex-1 px-3 sm:px-4">
+        <Link href={`/${locale}`} className="inline-flex max-w-full items-baseline gap-2 truncate font-black tracking-tight text-white">
+          <span className="truncate text-base sm:text-lg">Guizzprints</span>
           <span className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 sm:inline">Bedrock + Java</span>
         </Link>
       </div>
 
       {/* Direita: Auth / Perfil */}
-      <div className="flex items-center gap-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4">
         {user ? (
-          <Link href={`/${locale}/settings`} className="flex items-center gap-2 hover:bg-[#111318] p-2 rounded-xl border border-transparent hover:border-[#1D2433] transition-all cursor-pointer group">
-            <span className="text-sm font-bold text-zinc-300 group-hover:text-white">
+          <Link href={`/${locale}/settings`} className="group flex items-center gap-2 rounded-xl border border-transparent p-2 transition-all hover:border-[#1D2433] hover:bg-[#111318] cursor-pointer">
+            <span className="hidden max-w-28 truncate text-sm font-bold text-zinc-300 group-hover:text-white sm:block">
               {user.displayName || user.email?.split('@')[0] || t('user')}
             </span>
-            <div className="w-8 h-8 bg-[#111318] border border-[#1D2433] rounded-full flex items-center justify-center group-hover:border-blue-500 transition-colors">
+            <div className="flex size-8 items-center justify-center rounded-full border border-[#1D2433] bg-[#111318] transition-colors group-hover:border-blue-500">
               <User size={14} className="text-blue-500" />
             </div>
           </Link>
         ) : (
-          <Link href={`/${locale}/login`} className="flex items-center gap-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors cursor-pointer">
-            <LogIn size={16} /> {t('signIn')}
+          <Link href={`/${locale}/login`} className="flex min-h-10 items-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow-[0_8px_20px_-10px_rgba(37,99,235,.9)] transition-colors hover:bg-blue-500 cursor-pointer sm:px-4">
+            <LogIn size={16} /> <span>{t('signIn')}</span>
           </Link>
         )}
       </div>

@@ -8,7 +8,8 @@ import { useTranslations } from 'next-intl';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { categoryFilter } from '@/lib/mod-categories';
-import { OptimizedImage } from '@/components/OptimizedImage';
+import { ContentImage } from '@/components/ContentImage';
+import { InstantLink } from '@/components/InstantLink';
 import { DEMO_BUILD_SUMMARY } from '@/lib/demo-build';
 
 const ITEMS_PER_PAGE = 20;
@@ -22,6 +23,7 @@ interface ModSummary {
   title: string;
   category: string;
   subcategory: string | null;
+  content_categories?: readonly string[] | null;
   image_url_1: string | null;
   showcase_cover_url?: string | null;
   rating: number | null;
@@ -54,7 +56,7 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
     try {
       const { data, error } = await supabase
         .from('public_mods')
-        .select('id, title, category, subcategory, image_url_1, showcase_cover_url, rating, downloads')
+        .select('id, title, category, subcategory, content_categories, image_url_1, showcase_cover_url, rating, downloads')
         .or(categoryFilter(slug))
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
@@ -153,10 +155,10 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
 
   return (
     <div className="w-full flex justify-center gap-6 p-4 sm:p-6 lg:p-8 min-h-screen max-w-[1800px] mx-auto">
-      
+
       {/* CONTEÚDO PRINCIPAL (CENTRALIZADO) */}
       <main className="flex-1 max-w-[1200px] min-w-0 flex flex-col">
-        
+
         {/* CABEÇALHO */}
         <div className="border-b border-[#1D2433] pb-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -175,7 +177,7 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
 
         {/* GRID DE RESULTADOS */}
         {loading ? (
-          <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
+          <CatalogGridLoading />
         ) : loadError && mods.length === 0 ? (
           <div className="text-center text-zinc-400 py-20 font-bold border border-dashed border-[#1D2433] rounded-2xl flex flex-col items-center gap-4">
             <p>{t('loadError')}</p>
@@ -195,20 +197,16 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
                 return (
                   <React.Fragment key={mod.id}>
                     {/* CARD DO MOD */}
-                    <Link 
-                      href={`/${locale}/mod/${mod.id}`} 
-                      prefetch={false}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      <InstantLink
+                      href={`/${locale}/mod/${mod.id}`}
                       className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl overflow-hidden hover:border-blue-500 shadow-lg flex-shrink-0"
                     >
                       <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0">
-                        <OptimizedImage
-                          src={mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/400/225"}
+                        <ContentImage
+                          src={mod.showcase_cover_url || mod.image_url_1}
                           optimizeWidth={640}
                           optimizeQuality={78}
-                          alt={mod.title} 
-                          fill
+                          alt={mod.title}
                           loading="lazy"
                           className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
                           sizes="(max-width: 768px) 160px, 220px"
@@ -222,15 +220,15 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
 
                       <div className="w-full flex-1 px-2 py-2 md:p-3 bg-[#0a0a0a] border-t border-zinc-800 flex flex-col gap-1 md:gap-1.5">
                         <h3 className="text-[11px] md:text-sm font-bold text-white line-clamp-1 leading-tight" title={mod.title}>{mod.title}</h3>
-                        
+
                         <div className="flex items-center justify-between gap-1 mt-auto">
-                          <CategoryBadges category={mod.category} subcategory={mod.subcategory} />
+                          <CategoryBadges category={mod.category} contentCategories={mod.content_categories} />
                           <div className="flex items-center gap-1 text-[10px] md:text-xs text-zinc-400 font-bold mr-1">
                             <Download size={10} className="text-blue-500 md:w-3.5 md:h-3.5" /> {mod.downloads || 0}
                           </div>
                         </div>
                       </div>
-                    </Link>
+                      </InstantLink>
                   </React.Fragment>
                 );
               })}
@@ -257,6 +255,19 @@ function CategoryCatalog({ slug, locale }: { slug: string; locale: string }) {
         )}
       </main>
 
+    </div>
+  );
+}
+
+function CatalogGridLoading() {
+  return (
+    <div aria-busy="true" aria-label="Carregando construções" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-5">
+      {Array.from({ length: 10 }, (_, index) => (
+        <div key={index} className="overflow-hidden rounded-xl border border-[#1D2433] bg-[#111318]">
+          <div className="aspect-square bg-[linear-gradient(115deg,rgba(10,15,24,.96),rgba(37,99,235,.14),rgba(10,15,24,.96))] bg-[length:200%_100%] motion-safe:animate-[guizz-image-shimmer_1.25s_ease-in-out_infinite]" />
+          <div className="space-y-2 p-3"><div className="h-3 w-3/4 rounded bg-white/10 motion-safe:animate-pulse" /><div className="h-2.5 w-2/5 rounded bg-white/5 motion-safe:animate-pulse" /></div>
+        </div>
+      ))}
     </div>
   );
 }

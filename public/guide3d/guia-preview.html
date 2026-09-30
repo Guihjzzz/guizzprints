@@ -51,7 +51,9 @@
       const send = async () => {
         try {
           setState('Baixando a construção publicada…');
-          const response = await fetch(sourceUrl, { cache: 'no-store' });
+          // The parent starts a low-priority, same-origin prefetch when the
+          // Guide approaches the viewport. Reuse it when it is available.
+          const response = await fetch(sourceUrl, { cache: 'force-cache' });
           if (!response.ok) throw new Error('A construção publicada não pôde ser carregada.');
           const buffer = await response.arrayBuffer();
           if (!buffer.byteLength) throw new Error('A construção publicada está vazia.');

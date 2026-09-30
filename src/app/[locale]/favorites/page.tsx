@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { Heart, Download, Star, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { OptimizedImage } from '@/components/OptimizedImage';
+import { ContentImage } from '@/components/ContentImage';
+import { InstantLink } from '@/components/InstantLink';
 
 export const dynamic = 'force-dynamic'; // Desativa o cache da Vercel para essa rota
 
@@ -20,7 +21,9 @@ type FavoriteMod = {
   title: string;
   category: string;
   subcategory: string | null;
+  content_categories?: readonly string[] | null;
   image_url_1: string | null;
+  showcase_cover_url?: string | null;
   rating: number | null;
   downloads: number | null;
 };
@@ -35,7 +38,7 @@ export default function FavoritesPage({ params }: Props) {
   useEffect(() => {
     const fetchFavorites = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         setError(t('loginRequired'));
         setLoading(false);
@@ -54,7 +57,7 @@ export default function FavoritesPage({ params }: Props) {
         const favoriteIds = favorites.map((favorite) => favorite.mod_id);
         const { data: favoriteMods, error: modsError } = await supabase
           .from('public_mods')
-          .select('id, title, category, subcategory, image_url_1, rating, downloads')
+          .select('id, title, category, subcategory, content_categories, image_url_1, showcase_cover_url, rating, downloads')
           .in('id', favoriteIds);
 
         if (modsError) {
@@ -75,7 +78,7 @@ export default function FavoritesPage({ params }: Props) {
 
   return (
     <div className="max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6 min-h-screen">
-      
+
       <div className="border-b border-[#1D2433] pb-6">
         <h1 className="text-3xl font-black uppercase text-white flex items-center gap-3">
           <Heart className="text-red-500 fill-red-500" size={28} />
@@ -87,7 +90,7 @@ export default function FavoritesPage({ params }: Props) {
       </div>
 
       {loading ? (
-        <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-red-500" size={32} /></div>
+        <div className="py-20 flex flex-col items-center justify-center gap-3 text-center"><Loader2 className="animate-spin text-blue-500" size={32} /><span className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500">Carregando favoritos</span></div>
       ) : error ? (
         <div className="text-center text-zinc-500 py-20 font-bold border border-dashed border-[#1D2433] rounded-2xl uppercase tracking-wider text-sm">
           {error}
@@ -99,22 +102,18 @@ export default function FavoritesPage({ params }: Props) {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
           {mods.map((mod) => (
-            <Link 
-              href={`/${locale}/mod/${mod.id}`} 
-              prefetch={false}
-              target="_blank"
-              rel="noopener noreferrer"
-              key={mod.id} 
+              <InstantLink
+              href={`/${locale}/mod/${mod.id}`}
+              key={mod.id}
               className="site-motion-card group flex flex-col bg-[#111318] border border-[#1D2433] rounded-xl sm:rounded-2xl overflow-hidden hover:border-blue-500 shadow-lg hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]"
             >
               <div className="aspect-video relative bg-[#07090D] overflow-hidden border-b border-[#1D2433] shrink-0">
-                <OptimizedImage
-                  src={mod.image_url_1 || "https://picsum.photos/seed/1/800/450"} 
+                <ContentImage
+                  src={mod.showcase_cover_url || mod.image_url_1}
                   optimizeWidth={480}
                   optimizeHeight={270}
                   optimizeQuality={70}
-                  alt={mod.title} 
-                  fill
+                  alt={mod.title}
                   loading="lazy"
                   sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 20vw"
                   className="site-motion-image object-cover opacity-90 group-hover:opacity-100"
@@ -124,15 +123,15 @@ export default function FavoritesPage({ params }: Props) {
                   <Star size={8} className="text-yellow-500 fill-current sm:w-[10px] sm:h-[10px]" /> {mod.rating || 'N/A'}
                 </div>
               </div>
-              
+
               <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between gap-2 sm:gap-3">
                 <h3 className="text-[11px] sm:text-sm font-bold text-zinc-100 line-clamp-2 group-hover:text-white transition-colors leading-tight">{mod.title}</h3>
                 <div className="flex items-center justify-between text-[10px] sm:text-xs text-zinc-400 font-medium border-t border-[#1D2433] pt-2 sm:pt-3 mt-auto">
                   <span className="flex items-center gap-1 sm:gap-1.5"><Download size={12} className="sm:w-3.5 sm:h-3.5" /> {mod.downloads || 0}</span>
-                  <CategoryBadges category={mod.category} subcategory={mod.subcategory} />
+                  <CategoryBadges category={mod.category} contentCategories={mod.content_categories} />
                 </div>
               </div>
-            </Link>
+              </InstantLink>
           ))}
         </div>
       )}

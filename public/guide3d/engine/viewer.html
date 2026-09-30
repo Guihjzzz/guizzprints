@@ -2,11 +2,8 @@
 <html class="" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<!-- see product-page-demo.html: opened from disk this file caches hard, so an
-     embedding page could keep booting an old viewer no matter how you refresh -->
-<meta content="no-store, no-cache, must-revalidate" http-equiv="Cache-Control"/>
-<meta content="no-cache" http-equiv="Pragma"/>
-<meta content="0" http-equiv="Expires"/>
+<!-- Deployed static files are versioned by the host. Allow the browser to reuse
+     this large viewer document after the Guide has prefetched it. -->
 <title>Guizz — Motor do guia 3D</title>
 <!-- BOOT CLOAK. This one file is both the authoring studio and the member
      viewer, and the studio layout is what the markup says until JavaScript
@@ -889,28 +886,11 @@ function mcBuildSpecialCatalog(){
     if(hasGeometry&&nonCube) MC_SPECIAL_BLOCKS.add(name);
   }
 }
-window.__guizzVanillaAssetsReady=(async function(){
-  try{
-    const base=new URL('../.audit-pack/',location.href);
-    const pair=await Promise.all([
-      fetch(new URL('models.bundle.json',base),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('models '+r.status);return r.json();}),
-      fetch(new URL('blockstates.bundle.json',base),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('blockstates '+r.status);return r.json();})
-    ]);
-    MC_MODEL_DB=pair[0]||{}; MC_STATE_DB=pair[1]||{}; MC_MODEL_CACHE.clear();
-    mcBuildSpecialCatalog(); MC_ASSETS_READY=true;
-    document.documentElement.dataset.guizzModelCatalog=String(MC_SPECIAL_BLOCKS.size);
-    console.info('[Guizz] catálogo geométrico original ativo',{models:Object.keys(MC_MODEL_DB).length,blockstates:Object.keys(MC_STATE_DB).length,modelBlocks:MC_MODEL_BLOCKS.size,nonCubes:MC_SPECIAL_BLOCKS.size});
-    setTimeout(function(){
-      try{
-        if(typeof WORLD!=='undefined'&&WORLD){ computeWorldData(); rebuildScene(cur); render(); }
-      }catch(error){ console.warn('[Guizz] falha ao aplicar catálogo geométrico',error); }
-    },0);
-    return true;
-  }catch(error){
-    console.warn('[Guizz] catálogo geométrico original indisponível; mantendo geometrias internas',error);
-    return false;
-  }
-})();
+/* The optional audit catalogue was never shipped with the embedded viewer.
+   Waiting for two 404 requests delayed every public Guide boot. The bundled
+   texture and geometry tables below are the renderer's supported catalogue, so
+   declare the optional pack unavailable immediately and preserve that fallback. */
+window.__guizzVanillaAssetsReady=Promise.resolve(false);
 /* PUT THE DROPPED PACK BACK ON EVERY BOOT.
    The build already survives a reload (bi_admin_build_z); the pack did not, so
    any reload meant dragging the folder in again. Restored here, right after the

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 import { parseAllowedDownloadUrl } from '@/lib/download-url';
+import { parseContentTaxonomy } from '@/lib/mod-categories';
 import { validateModVersion } from '@/lib/mod-version';
 import { parseMinecraftMarketplaceUrl } from '@/lib/minecraft-marketplace';
 import { logServerFailure } from '@/lib/server-observability';
@@ -37,6 +38,9 @@ type ModPayload = {
   source_creator: string | null;
   source_tags: string[] | null;
   source_published_at: string | null;
+  content_themes: string[];
+  content_size: string;
+  content_categories: string[];
 };
 
 function stringValue(value: unknown, fallback = '') {
@@ -80,6 +84,7 @@ function sanitizePayload(body: Record<string, unknown>): ModPayload {
   const sourceFingerprintInput = nullableString(body.source_fingerprint);
   const sourceFingerprint = sourceFingerprintInput && /^[a-f0-9]{64}$/i.test(sourceFingerprintInput)
     ? sourceFingerprintInput.toLowerCase() : null;
+  const taxonomy = parseContentTaxonomy(body, { required: false });
 
   const formats: Record<string, string[]> = {
     bedrock: ['holoprint', 'mcstructure', 'mcaddon', 'mcworld'],
@@ -117,6 +122,7 @@ function sanitizePayload(body: Record<string, unknown>): ModPayload {
     source_creator: sourceUrl ? nullableString(body.source_creator) : null,
     source_tags: sourceUrl ? nullableTags(body.source_tags) : null,
     source_published_at: sourceUrl ? nullableSourceDate(body.source_published_at) : null,
+    ...taxonomy,
   };
 }
 
@@ -170,7 +176,7 @@ export async function GET(request: NextRequest) {
       // Export is independent of list filters. Keyset pagination avoids offsets
       // and keeps traversing even if Supabase caps batches below our limit.
       let query = admin.supabase.from('mods')
-        .select('id, title, category, subcategory, version, created_at')
+        .select('id, title, category, subcategory, content_themes, content_size, content_categories, version, created_at')
         .order('id', { ascending: true })
         .limit(200);
       if (after) query = query.gt('id', after);
@@ -216,7 +222,7 @@ export async function GET(request: NextRequest) {
     if (search.length > 100) return errorResponse('Search is too long.', 400);
 
     let query = admin.supabase.from('mods')
-      .select('id, title, category, subcategory, version, file_size, downloads, rating, created_at, guide_mcstructure_url, guide_schem_url, source_provider, source_sync_status, source_sync_error, source_sync_failed_at, source_creator, source_tags, source_published_at');
+      .select('id, title, category, subcategory, content_themes, content_size, content_categories, version, file_size, downloads, rating, created_at, guide_mcstructure_url, guide_schem_url, source_provider, source_sync_status, source_sync_error, source_sync_failed_at, source_creator, source_tags, source_published_at');
     // Category is validated against the whitelist above before interpolation.
     if (category !== 'all') query = query.or(`category.ilike.${category},subcategory.ilike.${category}`);
     if (search) {

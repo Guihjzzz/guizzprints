@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(bytes, {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Cache-Control': 'private, no-store',
+        // Release assets are immutable publication files. Caching their bytes
+        // lets the Guide prefetch the selected model before its iframe mounts.
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
         'X-Content-Type-Options': 'nosniff',
       },
     });

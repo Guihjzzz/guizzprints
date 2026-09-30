@@ -11,6 +11,8 @@ import { CategoryBadges } from '@/components/CategoryBadges';
 import { categoryFilter } from '@/lib/mod-categories';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { ContentImage } from '@/components/ContentImage';
+import { InstantLink } from '@/components/InstantLink';
 import { DEMO_BUILD_SUMMARY } from '@/lib/demo-build';
 
 type SocialIcon = React.ComponentType<{ size?: number; className?: string }>;
@@ -20,6 +22,7 @@ interface ModSummary {
   title: string;
   category: string;
   subcategory: string | null;
+  content_categories?: readonly string[] | null;
   image_url_1?: string | null;
   image_url_2?: string | null;
   showcase_cover_url?: string | null;
@@ -32,7 +35,7 @@ interface ModSummary {
 // Home cards only render this bounded summary. Avoid transferring descriptions,
 // private metadata or unused image columns for the 50-item discovery window and
 // the seven category rails.
-const HOME_MOD_FIELDS = 'id, title, category, subcategory, image_url_1, image_url_2, showcase_cover_url, guide_mcstructure_url, rating, downloads, created_at';
+const HOME_MOD_FIELDS = 'id, title, category, subcategory, content_categories, image_url_1, image_url_2, showcase_cover_url, guide_mcstructure_url, rating, downloads, created_at';
 
 // A single 3D publication creates one entry for Bedrock and another for Java.
 // The home-wide discovery areas should feature the construction once, while
@@ -192,7 +195,7 @@ export default function Home() {
       <main className="flex-1 min-w-0 space-y-8 pb-20">
         
         {!loading && topMods.length > 0 && <HeroCarousel mods={topMods} locale={locale} />}
-        {loading && <div className="min-h-[380px] w-full rounded-2xl border border-[#1D2433] bg-[#111318] animate-pulse md:aspect-[2/1] md:min-h-0" />}
+        {loading && <HomeHeroLoading />}
 
         <section>
           <h2 className="text-xl font-black uppercase tracking-tighter mb-4 text-white">{t('marketplace')}</h2>
@@ -290,21 +293,48 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
         className="flex w-full h-full overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {mods.map((mod, index) => (
-          <Link
+          <InstantLink
             href={`/${locale}/mod/${mod.id}`}
-            prefetch={false}
-            target="_blank"
-            rel="noopener noreferrer"
             key={`hero-${mod.id}`}
-            className="group/slide relative grid aspect-[2/1] w-full flex-shrink-0 snap-center overflow-hidden bg-[#080a0f] md:aspect-[2.08/1]"
+            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.08/1]"
           >
-            <div className="grid aspect-[2/1] grid-cols-2 gap-1 bg-[#101722] p-1 sm:p-1.5 md:absolute md:inset-0 md:aspect-auto md:gap-2 md:p-2">
+            {/* Keep the phone composition equal to desktop: two generated
+                images share one compact visual stage, with only the essential
+                title and action floating above the artwork. */}
+            <div className="absolute inset-0 grid grid-cols-2 gap-1 bg-[#101722] p-1.5 md:hidden">
               <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
-                <OptimizedImage
-                  src={mod.image_url_1 || mod.showcase_cover_url || "https://picsum.photos/seed/hero-1/900/900"}
+                <ContentImage
+                  src={mod.showcase_cover_url || mod.image_url_1}
+                  optimizeWidth={640}
+                  optimizeQuality={80}
+                  alt={`${mod.title} — ${t('featuredView', { number: 1 })}`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  priority={index === 0}
+                  fetchPriority={index === 0 ? 'high' : 'low'}
+                  sizes="50vw"
+                  className="object-contain p-1.5 drop-shadow-[0_16px_24px_rgba(0,0,0,.34)]"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+                <ContentImage
+                  src={mod.image_url_2 || mod.image_url_1 || mod.showcase_cover_url}
+                  optimizeWidth={640}
+                  optimizeQuality={80}
+                  alt={`${mod.title} — ${t('featuredView', { number: 2 })}`}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  priority={index === 0}
+                  fetchPriority={index === 0 ? 'high' : 'low'}
+                  sizes="50vw"
+                  className="object-contain p-1.5 drop-shadow-[0_16px_24px_rgba(0,0,0,.34)]"
+                />
+              </div>
+            </div>
+            <div className="hidden grid-cols-2 gap-2 bg-[#101722] p-2 md:absolute md:inset-0 md:grid">
+              <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
+                <ContentImage
+                  src={mod.showcase_cover_url || mod.image_url_1}
                   optimizeWidth={960}
                   optimizeQuality={80}
-                  fill
                   className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
@@ -314,11 +344,10 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
                 />
               </div>
               <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
-                <OptimizedImage
-                  src={mod.image_url_2 || mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/hero-2/900/900"}
+                <ContentImage
+                  src={mod.image_url_2 || mod.image_url_1 || mod.showcase_cover_url}
                   optimizeWidth={960}
                   optimizeQuality={80}
-                  fill
                   className="object-contain p-1.5 sm:p-2 drop-shadow-[0_20px_28px_rgba(0,0,0,.36)] transition-transform duration-500 group-hover/slide:scale-[1.015]"
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
@@ -329,25 +358,27 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
               </div>
             </div>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[58%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:h-[52%]" aria-hidden="true" />
-            <div className="absolute bottom-7 left-0 z-10 flex max-w-[78%] flex-col items-start px-4 sm:bottom-8 sm:px-7 md:bottom-8 md:left-8 md:w-[min(34%,360px)] md:max-w-none md:p-0 lg:bottom-10 lg:left-10">
-              <span className="w-fit rounded-md bg-[#2563EB] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-blue-950/40">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[52%] bg-gradient-to-t from-[#05070b]/95 via-[#05070b]/48 to-transparent md:block" aria-hidden="true" />
+            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-8 md:left-8 md:max-w-none md:w-[min(34%,360px)] lg:bottom-10 lg:left-10">
+              <span className="w-fit rounded-md bg-[#2563EB] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-950/40 md:px-2.5 md:py-1 md:text-[10px] md:tracking-[0.16em]">
                 {t('featuredWeek')}
               </span>
-              <h1 className="mt-2 line-clamp-2 text-2xl font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] sm:text-3xl md:text-[30px]">{mod.title}</h1>
-              <span className="mt-3 inline-flex w-fit items-center gap-2 rounded-xl border border-blue-400/40 bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500">
-                <Eye size={16} aria-hidden="true" /> {t('viewDetails')}
+              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-2 md:text-[30px]">{mod.title}</h1>
+              <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-3 md:inline-flex md:min-h-0 md:gap-2 md:rounded-xl md:px-4 md:py-2.5 md:text-sm">
+                <Eye size={14} aria-hidden="true" className="md:size-4" /> {t('viewDetails')}
               </span>
             </div>
-          </Link>
+          </InstantLink>
         ))}
       </div>
       
-      <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-2 md:z-10">
         {mods.map((_, i) => (
           <button 
             key={`dot-${i}`} 
-            onClick={() => {
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
               if (scrollRef.current) {
                 scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: 'smooth' });
               }
@@ -445,15 +476,14 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
 
       <div ref={scrollRef} className="flex gap-2 md:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
         {mods.map((mod) => (
-          <Link href={`/${locale}/mod/${mod.id}`} prefetch={false} target="_blank" rel="noopener noreferrer" key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
+          <InstantLink href={`/${locale}/mod/${mod.id}`} key={mod.id} className="site-motion-card min-w-[160px] w-[160px] md:min-w-[220px] md:w-[220px] flex-shrink-0 snap-start bg-black border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-600 group cursor-pointer flex flex-col">
             
             <div className="relative aspect-square w-full bg-[#090b10] overflow-hidden flex-shrink-0">
-              <OptimizedImage
-                src={mod.showcase_cover_url || mod.image_url_1 || "https://picsum.photos/seed/1/400/225"}
+              <ContentImage
+                src={mod.showcase_cover_url || mod.image_url_1}
                 optimizeWidth={640}
                 optimizeQuality={78}
                 alt={mod.title} 
-                fill
                 loading="lazy"
                 className="site-motion-image object-contain p-1.5 opacity-95 group-hover:opacity-100"
                 sizes="(max-width: 768px) 160px, 220px"
@@ -469,15 +499,34 @@ function ModList({ title, icon: Icon, iconColor, indicatorColor, mods, loading =
               <h3 className="text-[11px] md:text-sm font-bold text-white line-clamp-1 leading-tight" title={mod.title}>{mod.title}</h3>
               
               <div className="flex items-center justify-between gap-1 mt-auto">
-                <CategoryBadges category={mod.category} subcategory={mod.subcategory} primaryClassName={getCategoryColor(mod.category)} />
+                <CategoryBadges category={mod.category} contentCategories={mod.content_categories} primaryClassName={getCategoryColor(mod.category)} />
                 <div className="flex items-center gap-1 text-[10px] md:text-xs text-zinc-400 font-bold mr-1">
                   <Download size={10} className="text-blue-500 md:w-3.5 md:h-3.5" /> {mod.downloads || 0}
                 </div>
               </div>
             </div>
-          </Link>
+          </InstantLink>
         ))}
       </div>
+    </section>
+  );
+}
+
+function HomeHeroLoading() {
+  return (
+    <section aria-busy="true" aria-label="Carregando destaques" className="relative min-h-[390px] overflow-hidden rounded-2xl border border-[#1D2433] bg-[#111318] md:min-h-0 md:aspect-[2.08/1]">
+      <div className="grid h-full grid-rows-[1fr_145px] md:grid-cols-2 md:grid-rows-1 md:gap-2 md:p-2">
+        <div className="relative overflow-hidden bg-[#0a0f18]">
+          <div className="absolute inset-0 motion-safe:animate-[guizz-image-shimmer_1.25s_ease-in-out_infinite] bg-[linear-gradient(115deg,rgba(10,15,24,.96),rgba(37,99,235,.16),rgba(10,15,24,.96))] bg-[length:200%_100%]" />
+        </div>
+        <div className="hidden bg-[#0a0f18] md:block" />
+        <div className="border-t border-[#1D2433] bg-[#0d121c] p-4 md:absolute md:bottom-8 md:left-8 md:w-72 md:border-0 md:bg-transparent">
+          <div className="h-6 w-32 rounded bg-blue-500/30 motion-safe:animate-pulse" />
+          <div className="mt-3 h-8 w-48 rounded bg-white/15 motion-safe:animate-pulse" />
+          <div className="mt-4 h-10 w-36 rounded-xl bg-blue-500/30 motion-safe:animate-pulse" />
+        </div>
+      </div>
+      <span className="sr-only">Carregando os destaques</span>
     </section>
   );
 }

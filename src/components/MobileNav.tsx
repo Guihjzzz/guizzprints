@@ -37,7 +37,7 @@ export function MobileNav() {
   
   return (
     <nav 
-      className={`fixed bottom-0 left-0 w-full bg-[#111318]/90 border-t border-[#1D2433] backdrop-blur-2xl flex justify-around items-center pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden z-50 transition-transform duration-300 ease-out motion-reduce:transition-none ${
+      className={`fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-[#1D2433] bg-[#0b0f17]/95 px-1 pt-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(0,0,0,.22)] backdrop-blur-2xl md:hidden transition-transform duration-300 ease-out motion-reduce:transition-none ${
         isVisible ? 'translate-y-0' : 'translate-y-full'
       }`}
     >
@@ -53,9 +53,10 @@ export function MobileNav() {
         const finalHref = item.href === '/' ? `/${currentLocale}` : `/${currentLocale}${item.href}`;
         
         return (
-          <Link key={item.id} href={finalHref} aria-current={isActive ? 'page' : undefined} className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 transition-colors">
-            <Icon size={24} className={isActive ? "text-[#2563EB]" : "text-[#94A3B8]"} />
-            <span className={`text-[10px] font-medium ${isActive ? "text-[#2563EB]" : "text-[#94A3B8]"}`}>
+          <Link key={item.id} href={finalHref} aria-current={isActive ? 'page' : undefined} className={`relative flex min-h-12 min-w-[58px] flex-col items-center justify-center gap-1 rounded-2xl transition-colors ${isActive ? 'text-[#60A5FA]' : 'text-[#94A3B8]'}`}>
+            {isActive && <span aria-hidden="true" className="absolute inset-x-1 top-0 h-0.5 rounded-full bg-[#2563EB] shadow-[0_0_12px_rgba(37,99,235,.9)]" />}
+            <span className={`flex size-7 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-blue-500/15 text-[#60A5FA]' : ''}`}><Icon size={21} /></span>
+            <span className={`text-[10px] font-medium ${isActive ? "text-[#60A5FA]" : "text-[#94A3B8]"}`}>
               {item.id === 'bedrock' ? 'Bedrock' : t(item.id)}
             </span>
           </Link>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
 import { isGithubReleaseAssetUrl } from '@/lib/github-releases';
 import { parseAllowedDownloadUrl } from '@/lib/download-url';
+import { parseContentTaxonomy } from '@/lib/mod-categories';
 import { validateModVersion } from '@/lib/mod-version';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
     if (!title || !description) return failure('Title and detailed description are required.', 400);
 
     const version = validateModVersion(text(body.version, 50) || '1.0.0');
+    const taxonomy = parseContentTaxonomy(body);
     const assets = body.assets && typeof body.assets === 'object' && !Array.isArray(body.assets)
       ? body.assets as Record<string, unknown> : {};
     const source = generatedAsset(assets.source);
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
       guide_schem_url: schem,
       studio_board_url: board,
       spin_video_url: null,
+      ...taxonomy,
     };
     const bedrockId = crypto.randomUUID();
     const javaId = crypto.randomUUID();
@@ -107,7 +110,9 @@ export async function POST(request: NextRequest) {
         ...common,
         id: bedrockId,
         category: 'bedrock',
-        subcategory: 'mcstructure',
+        // Download formats belong to download_formats. They are not catalog
+        // categories and should never become a default card label.
+        subcategory: null,
         terabox_url: bedrockLinks[0].url,
         download_formats: bedrockLinks,
         available_formats: bedrockLinks.map((link) => link.id),
@@ -116,7 +121,7 @@ export async function POST(request: NextRequest) {
         ...common,
         id: javaId,
         category: 'java',
-        subcategory: 'schematic',
+        subcategory: null,
         terabox_url: javaLinks[0].url,
         download_formats: javaLinks,
         available_formats: javaLinks.map((link) => link.id),

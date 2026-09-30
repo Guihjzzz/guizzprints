@@ -21,7 +21,7 @@ export function ModCard({ id, title, category, imageUrl }: ModCardProps) {
         <FavoriteButton modId={id} className="absolute top-2 right-2" />
       </div>
       <div className="p-4 flex justify-between items-center">
-        <Link href={`/mod/${id}`} prefetch={false} target="_blank" rel="noopener noreferrer" className="font-bold text-zinc-100 group-hover:text-red-500 transition-colors truncate pr-2 block flex-1">
+        <Link href={`/mod/${id}`} className="font-bold text-zinc-100 group-hover:text-blue-400 transition-colors truncate pr-2 block flex-1">
           {title}
         </Link>
         <button className="p-2 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors cursor-pointer">
