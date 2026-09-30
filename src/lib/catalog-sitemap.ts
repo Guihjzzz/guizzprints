@@ -4,7 +4,7 @@ import type { MetadataRoute } from 'next';
 import { siteLocales } from '@/lib/site-pages';
 import { getPublicCatalogClient } from '@/lib/public-catalog';
 
-export const SITE_URL = 'https://www.guizzprints.xyz';
+export const SITE_URL = 'https://guizzprints.xyz';
 // Supabase projects commonly cap a REST result at 1,000 rows. Keeping one
 // sitemap page within that bound makes the index complete at 20,000+ builds.
 export const MODS_PER_SITEMAP = 1_000;
