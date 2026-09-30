@@ -35,29 +35,54 @@ function guideIsAlreadyRunning() {
   });
 }
 
-const children = [];
-const stop = () => children.forEach((child) => { if (!child.killed) child.kill('SIGTERM'); });
+const children = new Set();
+let stopping = false;
+let studioChild;
+let studioWatchdog;
+
+const track = (child) => {
+  children.add(child);
+  child.once('exit', () => children.delete(child));
+  return child;
+};
+const childIsRunning = (child) => Boolean(child && !child.killed && child.exitCode === null);
+const stop = () => {
+  stopping = true;
+  if (studioWatchdog) clearInterval(studioWatchdog);
+  children.forEach((child) => { if (!child.killed) child.kill('SIGTERM'); });
+};
 process.once('SIGINT', stop);
 process.once('SIGTERM', stop);
 
-if (!await studioIsAlreadyRunning()) {
-  const studio = spawn(process.execPath, [studioEntry], {
+function launchStudio() {
+  if (childIsRunning(studioChild)) return;
+  const studio = track(spawn(process.execPath, [studioEntry], {
     cwd: studioRoot,
     env: { ...process.env, PORT: '5175' },
     stdio: 'inherit',
+  }));
+  studioChild = studio;
+  studio.once('exit', () => {
+    if (studioChild === studio) studioChild = undefined;
   });
-  children.push(studio);
-  studio.once('exit', (code) => { if (code && !process.exitCode) process.exitCode = code; });
 }
 
+async function ensureStudio() {
+  if (stopping || await studioIsAlreadyRunning()) return;
+  launchStudio();
+}
+
+await ensureStudio();
+// The original Studio may finish a stale process just as the site is opening.
+// Keep this local dependency alive so the hidden publisher never waits forever.
+studioWatchdog = setInterval(() => { void ensureStudio(); }, 1500);
+
 if (existsSync(guideEntry) && !await guideIsAlreadyRunning()) {
-  const guide = spawn(process.execPath, [guideEntry], {
+  track(spawn(process.execPath, [guideEntry], {
     cwd: guideRoot,
     env: { ...process.env, PORT: '5180', GUIZZ_EXTERNAL_STUDIO: '1' },
     stdio: 'inherit',
-  });
-  children.push(guide);
-  guide.once('exit', (code) => { if (code && !process.exitCode) process.exitCode = code; });
+  }));
 }
 
 const next = spawn(process.execPath, [nextEntry, ...nextArguments], {
@@ -65,5 +90,5 @@ const next = spawn(process.execPath, [nextEntry, ...nextArguments], {
   env: process.env,
   stdio: 'inherit',
 });
-children.push(next);
+track(next);
 next.once('exit', (code) => { stop(); process.exit(code ?? 0); });

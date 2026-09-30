@@ -8311,7 +8311,7 @@ function applyCamera(){
      plane — clamp the height and let the camera skim along the floor instead of
      clipping through it. GROUND is the world-y of the grid. */
   const floorY=GROUND+.3;
-  if(cy<floorY){
+  if(cy<floorY && !window.__biAllowBelow){
     cy=floorY;
     /* keep the horizontal distance the sphere would have given at this phi, so
        the skim doesn't suddenly zoom */
@@ -10467,7 +10467,10 @@ window.addEventListener('message',function(e){
        narrow-lens, bounding-sphere frame as the cover and vary only rotation. */
     if(d.cmd==='shots'){
       (async function(){
-        const n=Math.max(1,Math.min(24,d.n|0||8));
+        const studioViews=Array.isArray(d.views)&&d.views.length
+          ? d.views.slice(0,24)
+          : null;
+        const n=studioViews ? studioViews.length : Math.max(1,Math.min(24,d.n|0||8));
         const px=Math.max(256,Math.min(2048,d.size|0||1200));
         const keep={
           w:renderer.domElement.width,h:renderer.domElement.height,
@@ -10478,7 +10481,8 @@ window.addEventListener('message',function(e){
           catcherScale:shadowCatcher.scale.clone(),catcherOp:shadowCatcher.material.opacity,
           scam:{l:scam.left,r:scam.right,t:scam.top,b:scam.bottom,f:scam.far},
           spin:spin,tween:camTween,cur:cur,ghost:ghostOn,details:details,
-          meas:measGroup?measGroup.visible:null
+          meas:measGroup?measGroup.visible:null,
+          allowBelow:window.__biAllowBelow
         };
         camTween=null; spin=false;
         sceneryHold=true; /* the field is chrome, not the build */
@@ -10505,8 +10509,11 @@ window.addEventListener('message',function(e){
         const shots=[];
         try{
           for(let i=0;i<n;i++){
-            const deg=Math.round(45+i*(360/n));
-            const dist=biThumbFrame(deg,35.264,1);
+            const view=studioViews&&studioViews[i]||null;
+            const deg=(view&&typeof view.deg==='number') ? view.deg : Math.round(45+i*(360/n));
+            const elevation=(view&&typeof view.el==='number') ? view.el : 35.264;
+            window.__biAllowBelow=!!(view&&view.bottomUp);
+            const dist=biThumbFrame(deg,elevation,1);
             camera.aspect=1;
             camera.far=Math.max(keep.far,dist*3);
             camera.updateProjectionMatrix();
@@ -10520,7 +10527,7 @@ window.addEventListener('message',function(e){
                buffer is wiped as soon as the frame hits the screen, and toBlob
                reads it a tick later. toDataURL reads synchronously, same tick
                as the explicit draw above. */
-            shots.push({deg:deg,label:'Isométrica '+deg+'°',url:renderer.domElement.toDataURL('image/png')});
+            shots.push({deg:deg,label:(view&&view.label)||('Isométrica '+deg+'°'),url:renderer.domElement.toDataURL('image/png')});
             await new Promise(res=>setTimeout(res,0)); /* let the UI breathe between frames */
           }
         }catch(err){ console.error('[shots]',err); }
@@ -10544,6 +10551,7 @@ window.addEventListener('message',function(e){
           if(measGroup&&keep.meas!==null) measGroup.visible=keep.meas;
           cur=keep.cur; aoStage=cur; pendingAOFade=null; chunksDirty=true;
           ghostBuiltFor=-1; measBuiltFor=-1; sceneryHold=false;
+          window.__biAllowBelow=keep.allowBelow;
           try{ resize(); }catch(_e){}
           applyCamera(); render(); renderer.render(scene,camera);
         }catch(_e){}

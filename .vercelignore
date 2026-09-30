@@ -1,4 +1,4 @@
-# The original converter is deployed as its own Vercel project from this folder.
-# Keep the main Guizzprints deployment lean.
+# The source mirror is transformed into public/guide3d/original-converter.
+# Only that integrated static copy is deployed with Guizzprints.
 native-converter/
 .work/

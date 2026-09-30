@@ -254,10 +254,14 @@ export default function AdminUploadPage() {
     };
   }, [fetchMods, activeTab]);
 
+  const handleEditInit = useCallback((modId: string) => {
+    router.push(`/${locale}/admin/publisher?edit=${encodeURIComponent(modId)}`);
+  }, [locale, router]);
+
   useEffect(() => {
     const editId = searchParams.get('edit');
     if (!checkingAccess && editId && !isEditing) void handleEditInit(editId);
-  }, [checkingAccess, isEditing, searchParams]);
+  }, [checkingAccess, isEditing, searchParams, handleEditInit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -316,10 +320,6 @@ export default function AdminUploadPage() {
     setFormData((prev) => ({ ...prev, category: categoryId, subcategory: '' }));
   };
 
-  const handleEditInit = (modId: string) => {
-    router.push(`/${locale}/admin/publisher?edit=${encodeURIComponent(modId)}`);
-  };
-
   const handleDelete = async (mod: AdminModSummary) => {
     if (loading) return;
     const isPublishedPair = Boolean(mod.guide_mcstructure_url || mod.guide_schem_url);
@@ -363,7 +363,7 @@ export default function AdminUploadPage() {
     setMessage(null);
 
     // New items must go through the 3D publisher, which generates the Guide
-    // 3D assets and the Guizz Studio cover/board together. This screen keeps
+    // 3D assets, the Guide four-view cover and the Studio board together. This screen keeps
     // the metadata editor for existing catalog entries only.
     if (!isEditing) {
       setMessage({ type: 'error', text: 'Use o Publicador 3D para criar uma nova publicação.' });

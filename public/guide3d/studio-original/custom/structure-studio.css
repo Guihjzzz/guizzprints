@@ -1,0 +1,160 @@
+:root,
+[data-theme="light"],
+[data-theme="dark"] {
+  --chakra-colors-brand-primary: #dc2626 !important;
+  --chakra-colors-brand-secondary: #ef4444 !important;
+  --chakra-colors-bg-canvas: #09090b !important;
+  --chakra-colors-bg-surface: #18181b !important;
+  --chakra-colors-bg-hover: #27272a !important;
+  --chakra-colors-border-default: #3f3f46 !important;
+  --chakra-colors-text-primary: #fafafa !important;
+  --chakra-colors-text-secondary: #d4d4d8 !important;
+  --chakra-colors-text-tertiary: #a1a1aa !important;
+  color-scheme: dark !important;
+}
+
+html,
+body,
+#__next {
+  background: #09090b !important;
+  color: #fafafa !important;
+}
+
+/*
+ * Form controls are rendered by the browser/Chakra separately from the
+ * canvas.  Give every state the same dark palette so the native option list
+ * never falls back to a white surface with low contrast text.
+ */
+input,
+textarea,
+select,
+.chakra-input,
+.chakra-numberinput__field,
+.chakra-select {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #52525b !important;
+  color-scheme: dark !important;
+}
+
+select option,
+select optgroup {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+select option:checked,
+select option:hover {
+  background-color: #3f3f46 !important;
+  color: #ffffff !important;
+}
+
+/* Chakra popovers, menus and native dialogs used by export settings. */
+[role="dialog"],
+[role="menu"],
+[role="listbox"],
+.chakra-popover__content,
+.chakra-menu__menu-list,
+.chakra-modal__content,
+.chakra-select__menu-list,
+[data-popper-placement] {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+  color-scheme: dark !important;
+}
+
+[role="dialog"] button:not([disabled]),
+[role="menu"] button:not([disabled]),
+[role="listbox"] button:not([disabled]),
+.chakra-popover__content button:not([disabled]),
+.chakra-menu__menu-list button:not([disabled]) {
+  color: #f4f4f5 !important;
+}
+
+.chakra-popover__arrow,
+.chakra-popover__arrow[data-popper-arrow-inner] {
+  background: #18181b !important;
+  --popper-arrow-bg: #18181b !important;
+  --popper-arrow-shadow-color: #3f3f46 !important;
+}
+
+.chakra-modal__content label,
+.chakra-modal__content p,
+.chakra-popover__content label,
+.chakra-popover__content p,
+.chakra-menu__menu-list [role="menuitem"],
+.chakra-menu__menu-list [role="menuitemcheckbox"] {
+  color: #d4d4d8 !important;
+}
+
+[role="option"],
+[role="menuitem"],
+[role="menuitemcheckbox"] {
+  color: #f4f4f5 !important;
+}
+
+[role="option"][aria-selected="true"],
+[role="option"][data-highlighted="true"],
+[role="menuitem"][data-highlighted="true"],
+[role="menuitem"][data-focus="true"],
+[role="menuitemcheckbox"] {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+[role="option"][aria-selected="true"],
+[role="option"][data-highlighted="true"],
+[role="menuitem"][data-highlighted="true"],
+[role="menuitem"][data-focus="true"],
+[role="menuitemcheckbox"]:hover,
+[role="menuitemcheckbox"]:focus,
+[role="menuitemcheckbox"][data-focus="true"] {
+  background-color: #3f3f46 !important;
+  color: #ffffff !important;
+}
+
+/* Keep disabled labels legible against the dark export surface. */
+label,
+fieldset,
+.chakra-form__label {
+  color: #d4d4d8 !important;
+}
+
+button[disabled],
+input[disabled],
+select[disabled] {
+  color: #a1a1aa !important;
+  opacity: 0.72;
+}
+
+/* O menu Chakra permanece montado no DOM mesmo fechado. Usar :has() aqui
+ * escondia o acesso a imagens e vídeos de forma permanente. O dock já fica
+ * abaixo dos popovers do cabeçalho (z-index 15 vs. 20), portanto ele pode
+ * permanecer visível sem competir com os menus nativos. */
+
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.5) !important;
+}
+
+#structure-video-recorder {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 12px;
+  padding: 11px 15px;
+  background: #dc2626;
+  color: white;
+  font: 600 13px/1 system-ui, sans-serif;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+#structure-video-recorder:hover { background: #b91c1c; }
+#structure-video-recorder[data-recording="true"] { background: #450a0a; }
+#structure-video-recorder:disabled { opacity: 0.5; cursor: wait; }

@@ -76,7 +76,7 @@ interface ModData {
   downloads?: number;
   rating?: number;
   guide_schem_url?: string;
-  studio_board_url?: string;
+  studio_board_url?: string | null;
   direct_download_url?: string;
   download_formats?: readonly DownloadFormat[];
   available_formats?: readonly string[] | null;
@@ -330,7 +330,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
   };
 
 
-  // The public gallery always starts with the Guizz Studio four-view cover.
+  // The public gallery always starts with the four-view Guide 3D cover.
   // The generated board appears only in its dedicated lower section.
   const guideViewUrls = [
     mod.image_url_1,
@@ -502,6 +502,34 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
                 modelUrl={mod.guide_mcstructure_url}
                 schemUrl={mod.guide_schem_url}
                 title={modData.title}
+              />
+            </div>
+          </section>
+        )}
+
+        {mod.studio_board_url && (
+          <section className="site-motion-panel overflow-hidden rounded-2xl border border-[#1D2433] bg-[#111318] shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1D2433] px-5 py-5 sm:px-7">
+              <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-400">Guizz Studio</p>
+              <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">Prancha completa da construção</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">Todas as vistas e a lista de blocos em uma única prancha gerada pelo Guizz Studio.</p>
+              </div>
+              <a href={mod.studio_board_url} download="guizz-studio-prancha.png" className="inline-flex items-center gap-2 rounded-xl border border-blue-500/35 bg-blue-500/10 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-blue-200 transition hover:bg-blue-500/20">
+                <Download size={16} /> Baixar prancha
+              </a>
+            </div>
+            <div className="bg-white p-2 sm:p-4">
+              <OptimizedImage
+                src={mod.studio_board_url}
+                optimizeWidth={1800}
+                optimizeQuality={88}
+                width={3000}
+                height={5000}
+                alt={`Prancha completa do Guizz Studio para ${modData.title}`}
+                loading="lazy"
+                sizes="(max-width: 640px) calc(100vw - 28px), (max-width: 1280px) calc(100vw - 48px), 1200px"
+                className="h-auto w-full rounded-lg object-contain"
               />
             </div>
           </section>

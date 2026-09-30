@@ -35,6 +35,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Allows a local validation build to keep its cache separate from an open
+  // preview. Vercel keeps the conventional `.next` directory by default.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   async headers() {
     return [

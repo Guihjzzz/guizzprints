@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Guizzprints · conversor original</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#050608;color:#dbeafe;font-family:system-ui,sans-serif}
+    #converter{position:fixed;inset:auto;left:-10000px;top:0;width:1280px;height:900px;border:0;opacity:0;pointer-events:none}
+    #state{display:grid;place-items:center;min-height:100%;font-size:14px}
+  </style>
+</head>
+<body>
+  <p id="state">Conversor original pronto.</p>
+  <script>
+    (() => {
+      const state = document.querySelector('#state');
+      const allowedParents = new Set([
+        location.origin,
+        'https://guizzprints.vercel.app',
+        'https://www.guizz.xyz',
+        'https://guizz.xyz',
+        'http://127.0.0.1:5183',
+        'http://localhost:5183',
+      ]);
+      const supportedInput = /\.(?:mcstructure|litematic|schem|schematic|nbt|bp|mcstructurezip|zip)$/i;
+      let active = false;
+
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const reply = (target, origin, type, payload = {}, transfer = []) => {
+        target.postMessage({ guizzOriginalConverter: 1, type, ...payload }, origin, transfer);
+      };
+      const waitFor = async (read, timeout, description) => {
+        const started = Date.now();
+        let lastError = null;
+        while (Date.now() - started < timeout) {
+          try {
+            const value = read();
+            if (value) return value;
+          } catch (error) {
+            lastError = error;
+          }
+          await delay(120);
+        }
+        throw new Error(`${description} não respondeu${lastError ? `: ${lastError.message}` : '.'}`);
+      };
+      const setNativeValue = (element, value) => {
+        const descriptor = Object.getOwnPropertyDescriptor(element.ownerDocument.defaultView.HTMLSelectElement.prototype, 'value');
+        descriptor?.set?.call(element, value);
+        element.dispatchEvent(new element.ownerDocument.defaultView.Event('input', { bubbles: true }));
+        element.dispatchEvent(new element.ownerDocument.defaultView.Event('change', { bubbles: true }));
+      };
+      const createFrame = () => {
+        const frame = document.createElement('iframe');
+        frame.id = 'converter';
+        frame.title = 'Conversor original em execução';
+        frame.setAttribute('aria-hidden', 'true');
+        frame.src = './converter-embedded.html?guizz_bridge=1';
+        document.body.appendChild(frame);
+        return frame;
+      };
+      const waitForFrame = (frame) => new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('O conversor original demorou demais para iniciar.')), 120000);
+        frame.addEventListener('load', () => { clearTimeout(timer); resolve(frame.contentWindow); }, { once: true });
+        frame.addEventListener('error', () => { clearTimeout(timer); reject(new Error('Não foi possível carregar o conversor original.')); }, { once: true });
+      });
+      const installDownloadCapture = (converterWindow) => {
+        let resolveDownload;
+        let rejectDownload;
+        let enabled = false;
+        let captured = false;
+        const result = new Promise((resolve, reject) => { resolveDownload = resolve; rejectDownload = reject; });
+        const urls = new Map();
+        const originalCreateObjectURL = converterWindow.URL.createObjectURL.bind(converterWindow.URL);
+        converterWindow.URL.createObjectURL = (object) => {
+          const url = originalCreateObjectURL(object);
+          if (object instanceof converterWindow.Blob) urls.set(url, object);
+          return url;
+        };
+        const capture = async (anchor) => {
+          if (!enabled || captured) return false;
+          const name = String(anchor?.download || '');
+          const href = String(anchor?.href || '');
+          if (!/\.schem$/i.test(name) && !href.startsWith('blob:')) return false;
+          captured = true;
+          try {
+            const blob = urls.get(href) || await converterWindow.fetch(href).then((response) => response.blob());
+            if (!blob?.size) throw new Error('O conversor original gerou um arquivo vazio.');
+            resolveDownload({ blob, name: name || 'conversao.schem' });
+          } catch (error) { rejectDownload(error); }
+          return true;
+        };
+        const anchorPrototype = converterWindow.HTMLAnchorElement.prototype;
+        const originalClick = anchorPrototype.click;
+        anchorPrototype.click = function captureOriginalDownload() {
+          if (enabled && (/\.schem$/i.test(String(this.download || '')) || String(this.href || '').startsWith('blob:'))) {
+            void capture(this);
+            return;
+          }
+          return originalClick.call(this);
+        };
+        converterWindow.document.addEventListener('click', (event) => {
+          const anchor = event.target?.closest?.('a[download]');
+          if (!anchor || !enabled) return;
+          if (/\.schem$/i.test(String(anchor.download || '')) || String(anchor.href || '').startsWith('blob:')) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            void capture(anchor);
+          }
+        }, true);
+        return { start: () => { enabled = true; }, result };
+      };
+      const run = async ({ buffer, name, target, origin, requestId }) => {
+        if (active) throw new Error('O conversor original já está processando outro arquivo.');
+        if (!(buffer instanceof ArrayBuffer) || !buffer.byteLength) throw new Error('O arquivo de origem está vazio.');
+        if (!supportedInput.test(name)) throw new Error('Formato não suportado pelo conversor original.');
+        active = true;
+        const frame = createFrame();
+        const progress = (message) => {
+          state.textContent = message;
+          reply(target, origin, 'status', { requestId, message });
+        };
+        try {
+          progress('Iniciando o conversor original…');
+          const converterWindow = await waitForFrame(frame);
+          const converterDocument = converterWindow.document;
+          const capture = installDownloadCapture(converterWindow);
+          progress('Carregando os recursos originais…');
+          const fileInput = await waitFor(
+            () => [...converterDocument.querySelectorAll('input[type="file"]')]
+              .find((input) => input.multiple && !String(input.accept || '').includes('.jar')),
+            120000,
+            'O campo de importação do conversor original'
+          );
+          const nativeFile = new converterWindow.File([buffer], name, { type: 'application/octet-stream', lastModified: Date.now() });
+          const transfer = new converterWindow.DataTransfer();
+          transfer.items.add(nativeFile);
+          fileInput.files = transfer.files;
+          fileInput.dispatchEvent(new converterWindow.Event('input', { bubbles: true }));
+          fileInput.dispatchEvent(new converterWindow.Event('change', { bubbles: true }));
+          progress(`Identificando ${name}…`);
+          const formatSelect = await waitFor(() => converterDocument.querySelector('#export-format'), 180000, 'A leitura nativa do arquivo');
+          progress('Convertendo com o motor original…');
+          setNativeValue(formatSelect, 'schem');
+          await waitFor(() => formatSelect.value === 'schem', 10000, 'A seleção do formato .schem');
+          const exportButton = await waitFor(
+            () => [...converterDocument.querySelectorAll('button')].find((button) => button.textContent.trim() === 'Export' && !button.disabled),
+            30000,
+            'O botão de exportação original'
+          );
+          capture.start();
+          exportButton.click();
+          const converted = await Promise.race([
+            capture.result,
+            delay(180000).then(() => { throw new Error('A exportação original não terminou dentro do limite de tempo.'); }),
+          ]);
+          const output = await converted.blob.arrayBuffer();
+          if (!output.byteLength) throw new Error('O conversor original retornou um arquivo vazio.');
+          const baseName = name.replace(/\.[^.]+$/u, '') || 'construcao';
+          reply(target, origin, 'converted', { requestId, name: `${baseName}.schem`, buffer: output, mime: converted.blob.type || 'application/octet-stream' }, [output]);
+          state.textContent = 'Conversor original pronto.';
+        } finally {
+          active = false;
+          frame.remove();
+        }
+      };
+      addEventListener('message', (event) => {
+        if (!allowedParents.has(event.origin)) return;
+        const data = event.data;
+        if (!data || data.guizzOriginalConverter !== 1) return;
+        if (data.type === 'hello') {
+          reply(event.source, event.origin, 'ready');
+          return;
+        }
+        if (data.type !== 'convert') return;
+        void run({
+          buffer: data.buffer,
+          name: String(data.name || 'construcao.mcstructure').replace(/[^a-zA-Z0-9._ -]/g, '_'),
+          target: event.source,
+          origin: event.origin,
+          requestId: String(data.requestId || ''),
+        }).catch((error) => {
+          state.textContent = 'Falha na conversão original.';
+          reply(event.source, event.origin, 'error', { requestId: String(data.requestId || ''), message: error?.message || String(error) });
+        });
+      });
+      window.parent !== window && window.parent.postMessage({ guizzOriginalConverter: 1, type: 'ready' }, '*');
+    })();
+  </script>
+</body>
+</html>

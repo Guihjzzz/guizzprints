@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * The original converter and Guizz Studio are complete static applications.
+ * They live in `public` and are served verbatim by Next/Vercel; they are not
+ * source files for the Guizzprints interface. Excluding them here prevents
+ * Tailwind from parsing thousands of bundled vendor files during every build.
+ */
+@source not "../../../public/guide3d/studio-original";
+@source not "../../../public/guide3d/original-converter";
+
 :root {
   /* Guizzprints is intentionally single-theme: ignore the browser preference. */
   color-scheme: dark;

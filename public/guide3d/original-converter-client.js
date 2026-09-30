@@ -1,25 +1,25 @@
-const DEFAULT_ORIGINAL_CONVERTER_ORIGIN = 'https://guizzprints-original-converter.vercel.app';
-const LOCAL_ORIGINS = new Set(['http://127.0.0.1:5183', 'http://localhost:5183']);
+const DEFAULT_ORIGINAL_CONVERTER_PATH = '/guide3d/original-converter';
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-function converterOrigin() {
-  const requested = new URLSearchParams(location.search).get('converterOrigin');
-  return String(requested || DEFAULT_ORIGINAL_CONVERTER_ORIGIN).replace(/\/$/, '');
+function converterBaseUrl() {
+  return new URL(DEFAULT_ORIGINAL_CONVERTER_PATH, location.origin).toString().replace(/\/$/, '');
 }
 
-function converterFrame(origin) {
+function converterFrame(baseUrl) {
   const frame = document.createElement('iframe');
   frame.title = 'Conversor original Guizzprints';
   frame.setAttribute('aria-hidden', 'true');
   frame.allow = '';
   frame.tabIndex = -1;
   frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1280px;height:900px;border:0;opacity:0;pointer-events:none';
-  frame.src = `${origin}/bridge.html`;
+  frame.src = `${baseUrl}/bridge.html`;
   document.body.appendChild(frame);
   return frame;
 }
 
 function ownOriginIsSupported() {
-  return location.protocol === 'https:' || LOCAL_ORIGINS.has(location.origin);
+  return location.protocol === 'https:'
+    || (location.protocol === 'http:' && LOCAL_HOSTS.has(location.hostname));
 }
 
 /**
@@ -33,8 +33,9 @@ export async function convertWithOriginalEngine(file, onProgress = () => {}) {
 
   if (/\.schem$/i.test(file.name)) return file;
 
-  const origin = converterOrigin();
-  const frame = converterFrame(origin);
+  const baseUrl = converterBaseUrl();
+  const origin = new URL(baseUrl).origin;
+  const frame = converterFrame(baseUrl);
   const requestId = `guizz-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const timeoutMs = 5 * 60 * 1000;
 
