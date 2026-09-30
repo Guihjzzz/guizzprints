@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const languages = Object.fromEntries(siteLocales.map((item) => [item, `/${item}`]));
 
   return {
-    metadataBase: new URL('https://www.guizz.xyz'),
+    metadataBase: new URL('https://www.guizzprints.xyz'),
     title: { default: title, template: '%s | Guizzprints' },
     description,
     applicationName: 'Guizzprints',

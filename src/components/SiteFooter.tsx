@@ -14,7 +14,7 @@ export function SiteFooter({ locale }: { locale: string }) {
         <Link className="font-semibold text-zinc-300 hover:text-white" href={`/${safeLocale}/contact`}>{copy.contact}</Link>
       </nav>
       <p className="mx-auto max-w-3xl font-semibold uppercase tracking-wide text-zinc-400">{copy.disclaimer}</p>
-      <p className="mt-3">© {new Date().getFullYear()} Guizzprints · www.guizz.xyz. {copy.rights}</p>
+      <p className="mt-3">© {new Date().getFullYear()} Guizzprints · www.guizzprints.xyz. {copy.rights}</p>
     </footer>
   );
 }
