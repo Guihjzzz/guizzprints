@@ -4,7 +4,10 @@
       "localhost",
       "127.0.0.1",
       "guizz.xyz",
-      "www.guizz.xyz"
+      "www.guizz.xyz",
+      "guizzprints.vercel.app",
+      "guizzprints-guizzs-projects.vercel.app",
+      "guizzprints-kqtmxaeee-guizzs-projects.vercel.app"
     ],
     "providers": {
       "emailPassword": true,

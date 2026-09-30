@@ -139,6 +139,11 @@ function LoginForm() {
       if (firebaseEnabled) {
         const outcome = await signInWithFirebaseGoogle({ locale, next: next() });
         if ('redirect' in outcome) { navigating = true; applyOutcome(outcome); return; }
+        // Firebase is the configured production identity provider. Never
+        // fall back to Supabase Google here: that provider is intentionally
+        // disabled and would hide a Firebase configuration error.
+        applyOutcome(outcome);
+        return;
       }
       const url = await googleAuthUrl(supabase.auth, { origin: window.location.origin, locale, next: next(),
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL! });
