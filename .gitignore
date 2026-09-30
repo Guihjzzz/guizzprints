@@ -17,6 +17,7 @@
 /.next/
 /.next-local/
 /.next-build-auth/
+/.next-build-*/
 /out/
 
 # production

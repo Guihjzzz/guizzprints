@@ -8,6 +8,7 @@ native-converter/
 .next/
 .next-local/
 .next-build-auth/
+.next-build-*/
 .vercel/
 node_modules/
 *.log

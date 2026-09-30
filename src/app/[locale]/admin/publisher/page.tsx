@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, FileText, Gamepad2, ImageIcon, Layers3, Loader2, LockKeyhole, Palette, Ruler, Upload } from 'lucide-react';
 import { getClientAdminAuthToken } from '@/lib/client-auth';
+import { PUBLISHER_CHUNK_BYTES } from '@/lib/publisher-assets';
 
 const FORMAT_GROUPS = {
   Bedrock: [
@@ -439,13 +440,39 @@ export default function PublisherPage() {
     guideRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'generate', title: form.title || 'Construção Guizzprints' }, window.location.origin);
   }, [generation.source, guideLoaded, guideReady, guideWarmed, studioGenerated, form.title]);
 
-  const uploadAsset = async (kind: string, file: Blob, fileName: string, token: string) => {
-    const body = new FormData();
-    body.set('kind', kind); body.set('slug', slug); body.set('file', new File([file], fileName, { type: file.type || 'application/octet-stream' }));
-    const response = await fetchWithTimeout('/api/admin/publisher/assets', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body }, 180_000, 'O envio de um arquivo gerado demorou demais. Tente publicar novamente.');
-    const result = await readApiResult<{ data: { url: string } }>(response, 'Falha ao enviar um arquivo gerado');
+  const uploadPublisherFile = async (kind: string, file: Blob, fileName: string, token: string, format = '', timeoutMessage = 'O envio do arquivo demorou demais. Tente novamente.') => {
+    const contentType = file.type || 'application/octet-stream';
+    if (file.size <= PUBLISHER_CHUNK_BYTES) {
+      const body = new FormData();
+      body.set('kind', kind); body.set('format', format); body.set('slug', slug);
+      body.set('file', new File([file], fileName, { type: contentType }));
+      const response = await fetchWithTimeout('/api/admin/publisher/assets', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body }, 180_000, timeoutMessage);
+      const result = await readApiResult<{ data: { url: string } }>(response, 'Falha ao enviar o arquivo');
+      return result.data.url as string;
+    }
+
+    const uploadId = crypto.randomUUID();
+    const totalBytes = file.size;
+    const totalChunks = Math.ceil(totalBytes / PUBLISHER_CHUNK_BYTES);
+    for (let index = 0; index < totalChunks; index += 1) {
+      const chunk = file.slice(index * PUBLISHER_CHUNK_BYTES, Math.min(totalBytes, (index + 1) * PUBLISHER_CHUNK_BYTES), contentType);
+      const body = new FormData();
+      body.set('uploadId', uploadId); body.set('index', String(index)); body.set('totalChunks', String(totalChunks)); body.set('totalBytes', String(totalBytes));
+      body.set('chunk', new File([chunk], `${fileName}.part`, { type: contentType }));
+      const response = await fetchWithTimeout('/api/admin/publisher/assets/chunk', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body }, 180_000, timeoutMessage);
+      await readApiResult<{ data: { uploadId: string; index: number } }>(response, 'Falha ao enviar uma parte do arquivo');
+      setStatus(`Enviando ${fileName}: ${index + 1}/${totalChunks} partes…`);
+    }
+    const response = await fetchWithTimeout('/api/admin/publisher/assets/complete', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, format, slug, uploadId, fileName, contentType, totalChunks, totalBytes }),
+    }, 180_000, timeoutMessage);
+    const result = await readApiResult<{ data: { url: string } }>(response, 'Falha ao finalizar o envio do arquivo');
     return result.data.url as string;
   };
+
+  const uploadAsset = async (kind: string, file: Blob, fileName: string, token: string) => uploadPublisherFile(kind, file, fileName, token, '', 'O envio de um arquivo gerado demorou demais. Tente publicar novamente.');
 
   const uploadDownloadFile = async (formatId: string, file: File | undefined) => {
     if (!file || uploadingDownload) return;
@@ -453,18 +480,8 @@ export default function PublisherPage() {
     setError(null);
     try {
       const token = await getAccessToken();
-      const body = new FormData();
-      body.set('kind', 'download');
-      body.set('format', formatId);
-      body.set('slug', slug);
-      body.set('file', file);
-      const response = await fetchWithTimeout('/api/admin/publisher/assets', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body,
-      }, 180_000, 'O envio do arquivo demorou demais. Tente novamente.');
-      const result = await readApiResult<{ data: { url: string } }>(response, 'Não foi possível enviar este arquivo de download');
-      setLinks((current) => ({ ...current, [formatId]: result.data.url }));
+      const url = await uploadPublisherFile('download', file, file.name, token, formatId, 'O envio do arquivo demorou demais. Tente novamente.');
+      setLinks((current) => ({ ...current, [formatId]: url }));
       const label = ALL_FORMATS.find(([id]) => id === formatId)?.[1] || formatId;
       setStatus(`${label} enviado para o armazenamento do catálogo. O link foi preenchido automaticamente.`);
     } catch (uploadError) {
