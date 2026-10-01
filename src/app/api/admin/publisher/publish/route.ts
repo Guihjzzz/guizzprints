@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' };
 const MAX_BODY_BYTES = 128 * 1024;
 const BEDROCK_FORMATS = new Set(['holoprint', 'mcstructure', 'mcaddon', 'mcworld']);
-const JAVA_FORMATS = new Set(['litematic', 'schematic', 'world', 'mcfunction']);
+const JAVA_FORMATS = new Set(['litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 const ALL_FORMATS = new Set([...BEDROCK_FORMATS, ...JAVA_FORMATS]);
 
 function failure(error: string, status: number) {
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const bedrockLinks = links.filter((link) => BEDROCK_FORMATS.has(link.id));
     const javaLinks = links.filter((link) => JAVA_FORMATS.has(link.id));
     if (!bedrockLinks.some((link) => link.id === 'mcstructure')) bedrockLinks.push({ id: 'mcstructure', url: source });
-    if (!javaLinks.some((link) => link.id === 'schematic')) javaLinks.push({ id: 'schematic', url: schem });
+    if (!javaLinks.some((link) => link.id === 'schem')) javaLinks.push({ id: 'schem', url: schem });
 
     const common = {
       title,
