@@ -12,7 +12,7 @@ const FORMAT_GROUPS = {
     ['holoprint', 'Holoprint'], ['mcstructure', '.mcstructure'], ['mcaddon', '.mcaddon'], ['mcworld', '.mcworld'],
   ],
   Java: [
-    ['litematic', '.litematic'], ['schematic', '.schematic / .schem'], ['world', 'World'], ['mcfunction', '.mcfunction'],
+    ['litematic', '.litematic'], ['schem', '.schem'], ['schematic', '.schematic'], ['world', 'World'], ['mcfunction', '.mcfunction'],
   ],
 } as const;
 
@@ -23,7 +23,8 @@ const DOWNLOAD_FILE_ACCEPT: Record<string, string> = {
   mcaddon: '.mcaddon,application/octet-stream',
   mcworld: '.mcworld,application/octet-stream',
   litematic: '.litematic,application/octet-stream',
-  schematic: '.schematic,.schem,application/octet-stream',
+  schem: '.schem,application/octet-stream',
+  schematic: '.schematic,application/octet-stream',
   world: '.zip,.mcworld,application/zip,application/octet-stream',
   mcfunction: '.mcfunction,text/plain,application/octet-stream',
 };
@@ -531,7 +532,7 @@ export default function PublisherPage() {
       }
       const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
       if (!downloadLinks.some((link) => link.id === 'mcstructure')) downloadLinks.push({ id: 'mcstructure', url: source });
-      if (!downloadLinks.some((link) => link.id === 'schematic')) downloadLinks.push({ id: 'schematic', url: schem });
+      if (!downloadLinks.some((link) => link.id === 'schem')) downloadLinks.push({ id: 'schem', url: schem });
       const response = await fetchWithTimeout('/api/admin/publisher/publish', {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, assets: { source, schem, cover, views, board }, download_links: downloadLinks }),
@@ -584,7 +585,7 @@ export default function PublisherPage() {
                 <div className="rounded-xl border border-orange-400/25 bg-orange-400/[.06] p-4">
                   <p className="text-[10px] font-black uppercase tracking-[.18em] text-orange-300">Edição publicada</p>
                   <p className="mt-1 font-black text-orange-50">Minecraft Java</p>
-                  <p className="mt-1 text-xs leading-5 text-orange-100/65">`.litematic`, `.schematic/.schem`, World e `.mcfunction`.</p>
+                  <p className="mt-1 text-xs leading-5 text-orange-100/65">`.litematic`, `.schem`, `.schematic`, World e `.mcfunction`.</p>
                 </div>
               </div>
 
