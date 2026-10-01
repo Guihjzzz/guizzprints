@@ -40,8 +40,8 @@ function inferFormatId(url?: string, fileName?: string) {
   if (source.includes('.mcaddon')) return 'mcaddon';
   if (source.includes('.mcworld')) return 'mcworld';
   if (source.includes('.litematic')) return 'litematic';
-  if (source.includes('.schem')) return 'schem';
   if (source.includes('.schematic')) return 'schematic';
+  if (source.includes('.schem')) return 'schem';
   if (source.includes('.mcfunction')) return 'mcfunction';
   if (source.includes('holoprint')) return 'holoprint';
   if (source.includes('world')) return 'world';
