@@ -30,6 +30,15 @@ export const CONTENT_CATEGORIES = [
   'Veículos terrestres',
 ] as const;
 
+/** Local presentation keeps the persisted Portuguese category stable for filters and old catalog rows. */
+export function contentCategoryLabel(value?: string | null, locale = 'pt') {
+  const label = value?.trim() || '';
+  if (locale.toLowerCase().split('-')[0] === 'pt' && label.toLocaleLowerCase('pt-BR') === 'pedra vermelha') {
+    return 'Redstone';
+  }
+  return label;
+}
+
 export type ContentTheme = typeof CONTENT_THEMES[number];
 export type ContentSize = typeof CONTENT_SIZES[number];
 export type ContentCategory = typeof CONTENT_CATEGORIES[number];
