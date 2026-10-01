@@ -20,7 +20,8 @@ export const publisherDownloadExtensions: Record<string, RegExp> = {
   mcaddon: /\.mcaddon$/i,
   mcworld: /\.mcworld$/i,
   litematic: /\.litematic$/i,
-  schematic: /\.(?:schematic|schem)$/i,
+  schem: /\.schem$/i,
+  schematic: /\.schematic$/i,
   world: /\.(?:zip|mcworld)$/i,
   mcfunction: /\.mcfunction$/i,
 };
