@@ -6,6 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, FileText, Gamepad2, ImageIcon, Layers3, Loader2, LockKeyhole, Palette, Ruler, Upload } from 'lucide-react';
 import { getClientAdminAuthToken } from '@/lib/client-auth';
 import { PUBLISHER_CHUNK_BYTES } from '@/lib/publisher-assets';
+import { contentCategoryLabel } from '@/lib/mod-categories';
 
 const FORMAT_GROUPS = {
   Bedrock: [
@@ -615,7 +616,7 @@ export default function PublisherPage() {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {CONTENT_CATEGORIES.map((category) => {
                       const selected = form.content_categories.includes(category);
-                      return <button key={category} type="button" aria-pressed={selected} onClick={() => toggleMetadata('content_categories', category)} className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-950/30' : 'border-[#2b3548] bg-[#0B0F17] text-zinc-300 hover:border-blue-400/70 hover:text-white'}`}>{selected && <CheckCircle2 className="mr-1 inline-block" size={13} />}{category}</button>;
+                      return <button key={category} type="button" aria-pressed={selected} onClick={() => toggleMetadata('content_categories', category)} className={`min-h-11 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${selected ? 'border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-950/30' : 'border-[#2b3548] bg-[#0B0F17] text-zinc-300 hover:border-blue-400/70 hover:text-white'}`}>{selected && <CheckCircle2 className="mr-1 inline-block" size={13} />}{contentCategoryLabel(category, locale)}</button>;
                     })}
                   </div>
                 </div>
