@@ -4,7 +4,7 @@ import { createRemoteJWKSet, jwtVerify } from 'npm:jose@6';
 const PROJECT_ID = 'ghuizz-hololab';
 const ADMIN_EMAILS = new Set(['junindacosta00241@gmail.com']);
 const BEDROCK_FORMATS = new Set(['holoprint', 'mcstructure', 'mcaddon', 'mcworld']);
-const JAVA_FORMATS = new Set(['litematic', 'schematic', 'world', 'mcfunction']);
+const JAVA_FORMATS = new Set(['litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 const ALL_FORMATS = new Set([...BEDROCK_FORMATS, ...JAVA_FORMATS]);
 const FORMAT_IDS = new Set(['default', ...ALL_FORMATS]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -160,7 +160,7 @@ async function publish(request: Request, body: Record<string, unknown>) {
     const bedrockLinks = links.filter((link) => BEDROCK_FORMATS.has(link.id));
     const javaLinks = links.filter((link) => JAVA_FORMATS.has(link.id));
     if (!bedrockLinks.some((link) => link.id === 'mcstructure')) bedrockLinks.push({ id: 'mcstructure', url: source });
-    if (!javaLinks.some((link) => link.id === 'schematic')) javaLinks.push({ id: 'schematic', url: schem });
+    if (!javaLinks.some((link) => link.id === 'schem')) javaLinks.push({ id: 'schem', url: schem });
 
     const common = {
       title, description, version, file_size: text(body.file_size, 80) || 'N/A', price: 'Free',
