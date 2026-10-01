@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0' };
 const MAX_BODY_BYTES = 32 * 1024;
 const BEDROCK_FORMATS = new Set(['holoprint', 'mcstructure', 'mcaddon', 'mcworld']);
-const JAVA_FORMATS = new Set(['litematic', 'schematic', 'world', 'mcfunction']);
+const JAVA_FORMATS = new Set(['litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 const ALL_FORMATS = new Set([...BEDROCK_FORMATS, ...JAVA_FORMATS]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest) {
     const taxonomy = parseContentTaxonomy(body);
     const links = readLinks(body.download_links);
     const bedrockLinks = linksForEdition(links, BEDROCK_FORMATS, 'mcstructure', pair.bedrock.guide_mcstructure_url);
-    const javaLinks = linksForEdition(links, JAVA_FORMATS, 'schematic', pair.java.guide_schem_url);
+    const javaLinks = linksForEdition(links, JAVA_FORMATS, 'schem', pair.java.guide_schem_url);
     const common = { title, description, version, file_size: fileSize, ...taxonomy };
 
     const [bedrockResult, javaResult] = await Promise.all([
