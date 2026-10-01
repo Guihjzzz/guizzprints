@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0', 'Referrer-Policy': 'no-referrer' };
 const MAX_BODY_BYTES = 2048;
-const FORMAT_IDS = new Set(['default', 'holoprint', 'mcstructure', 'mcaddon', 'mcworld', 'litematic', 'schematic', 'world', 'mcfunction']);
+const FORMAT_IDS = new Set(['default', 'holoprint', 'mcstructure', 'mcaddon', 'mcworld', 'litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 
 function crossSite(request: NextRequest) {
   const origin = request.headers.get('origin')?.trim();
