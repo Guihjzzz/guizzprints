@@ -1,4 +1,7 @@
-import { categoryLabel } from '@/lib/mod-categories';
+'use client';
+
+import { useLocale } from 'next-intl';
+import { categoryLabel, contentCategoryLabel } from '@/lib/mod-categories';
 
 type CategoryBadgesProps = {
   category?: string | null;
@@ -22,10 +25,11 @@ export function CategoryBadges({
 }: CategoryBadgesProps) {
   const selectedCategory = contentCategories?.find((value) => value.trim());
   const selectedTheme = contentThemes?.find((value) => value.trim());
+  const locale = useLocale();
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1 text-[8px] font-bold uppercase tracking-wide md:text-[9px]">
       {category && <span className={`max-w-full break-words rounded border px-1.5 py-0.5 ${primaryClassName}`}>{categoryLabel(category)}</span>}
-      {selectedCategory && <span className="max-w-[10rem] truncate rounded border border-violet-500/30 bg-violet-600/20 px-1.5 py-0.5 text-violet-200">{selectedCategory}</span>}
+      {selectedCategory && <span className="max-w-[10rem] truncate rounded border border-violet-500/30 bg-violet-600/20 px-1.5 py-0.5 text-violet-200">{contentCategoryLabel(selectedCategory, locale)}</span>}
       {selectedTheme && <span className="max-w-[8rem] truncate rounded border border-sky-400/25 bg-sky-500/10 px-1.5 py-0.5 text-sky-200">{selectedTheme}</span>}
     </div>
   );
