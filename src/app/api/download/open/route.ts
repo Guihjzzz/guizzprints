@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const noStoreHeaders = { 'Cache-Control': 'no-store, max-age=0', 'Referrer-Policy': 'no-referrer' };
-const FORMAT_IDS = new Set(['default', 'holoprint', 'mcstructure', 'mcaddon', 'mcworld', 'litematic', 'schematic', 'world', 'mcfunction']);
+const FORMAT_IDS = new Set(['default', 'holoprint', 'mcstructure', 'mcaddon', 'mcworld', 'litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 
 function failure(error: string, status: number) {
   return NextResponse.json({ error }, { status, headers: noStoreHeaders });
