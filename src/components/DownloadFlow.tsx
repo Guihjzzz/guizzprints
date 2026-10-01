@@ -27,7 +27,8 @@ const STANDARD_FORMATS: ReadonlyArray<Omit<DownloadFormat, 'url'>> = [
   { id: 'mcaddon', label: '.mcaddon', family: 'Bedrock' },
   { id: 'mcworld', label: '.mcworld', family: 'Bedrock' },
   { id: 'litematic', label: '.litematic', family: 'Java' },
-  { id: 'schematic', label: '.schematic / .schem', family: 'Java' },
+  { id: 'schem', label: '.schem', family: 'Java' },
+  { id: 'schematic', label: '.schematic', family: 'Java' },
   { id: 'world', label: 'World', family: 'Java' },
   { id: 'mcfunction', label: '.mcfunction', family: 'Java' },
 ];
@@ -38,7 +39,8 @@ function inferFormatId(url?: string, fileName?: string) {
   if (source.includes('.mcaddon')) return 'mcaddon';
   if (source.includes('.mcworld')) return 'mcworld';
   if (source.includes('.litematic')) return 'litematic';
-  if (source.includes('.schematic') || source.includes('.schem')) return 'schematic';
+  if (source.includes('.schem')) return 'schem';
+  if (source.includes('.schematic')) return 'schematic';
   if (source.includes('.mcfunction')) return 'mcfunction';
   if (source.includes('holoprint')) return 'holoprint';
   if (source.includes('world')) return 'world';
