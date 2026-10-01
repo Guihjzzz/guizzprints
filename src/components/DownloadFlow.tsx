@@ -21,6 +21,7 @@ interface DownloadFlowProps {
   availableFormatIds?: readonly string[] | null;
 }
 
+// Keep .schem and .schematic as distinct Java download options.
 const STANDARD_FORMATS: ReadonlyArray<Omit<DownloadFormat, 'url'>> = [
   { id: 'holoprint', label: 'Holoprint', family: 'Bedrock' },
   { id: 'mcstructure', label: '.mcstructure', family: 'Bedrock' },
