@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parseAllowedDownloadUrl } from '../src/lib/download-url.ts';
 import { validateModVersion, normalizeModVersion } from '../src/lib/mod-version.ts';
+import { contentCategoryLabel } from '../src/lib/mod-categories.ts';
 
 test('Terabox aliases work without allowing lookalikes, credentials or insecure links', () => {
   for (const host of ['terabox.com', 'www.terabox.com', 'terabox.app', '1024terabox.com', 'www.1024terabox.com']) {
@@ -23,5 +25,23 @@ test('Version prefix is normalized once and release identifiers support prerelea
   assert.equal(normalizeModVersion('# vBeta'), 'Beta');
   for (const version of ['', '# v', '<script>', '1 2', 'a'.repeat(51)]) {
     assert.throws(() => validateModVersion(version), version);
+  }
+});
+
+test('Portuguese Redstone label preserves the stored category and other locales', () => {
+  assert.equal(contentCategoryLabel('Pedra vermelha', 'pt'), 'Redstone');
+  assert.equal(contentCategoryLabel('pedra vermelha', 'pt-BR'), 'Redstone');
+  assert.equal(contentCategoryLabel('Pedra vermelha', 'en'), 'Pedra vermelha');
+  assert.equal(contentCategoryLabel('Arenas', 'pt'), 'Arenas');
+});
+
+test('separate .schem downloads are accepted by the UI, API and catalog function', () => {
+  const flow = readFileSync('src/components/DownloadFlow.tsx', 'utf8');
+  const sessionRoute = readFileSync('src/app/api/download/session/route.ts', 'utf8');
+  const catalog = readFileSync('supabase/functions/guizz-catalog/index.ts', 'utf8');
+  for (const id of ['schem', 'schematic']) {
+    assert.ok(flow.includes(`{ id: '${id}'`), `DownloadFlow is missing ${id}`);
+    assert.ok(sessionRoute.includes(`'${id}'`), `download session route is missing ${id}`);
+    assert.ok(catalog.includes(`'${id}'`), `catalog edge function is missing ${id}`);
   }
 });
