@@ -62,12 +62,8 @@ function readLinks(value: unknown) {
   return links;
 }
 
-function linksForEdition(links: DownloadLink[], formats: Set<string>, generatedId: string, generatedUrl: string) {
-  const editionLinks = links.filter((link) => formats.has(link.id));
-  if (!editionLinks.some((link) => link.id === generatedId)) {
-    editionLinks.push({ id: generatedId, url: parseAllowedDownloadUrl(generatedUrl).toString() });
-  }
-  return editionLinks;
+function linksForEdition(links: DownloadLink[], formats: Set<string>) {
+  return links.filter((link) => formats.has(link.id));
 }
 
 async function publicationPair(supabase: SupabaseClient, id: string) {
@@ -122,8 +118,11 @@ export async function PUT(request: NextRequest) {
     const fileSize = text(body.file_size, 80) || 'N/A';
     const taxonomy = parseContentTaxonomy(body);
     const links = readLinks(body.download_links);
-    const bedrockLinks = linksForEdition(links, BEDROCK_FORMATS, 'mcstructure', pair.bedrock.guide_mcstructure_url);
-    const javaLinks = linksForEdition(links, JAVA_FORMATS, 'schem', pair.java.guide_schem_url);
+    const bedrockLinks = linksForEdition(links, BEDROCK_FORMATS);
+    const javaLinks = linksForEdition(links, JAVA_FORMATS);
+    if (!bedrockLinks.length || !javaLinks.length) {
+      return failure('Adicione pelo menos um link HTTPS de download para Bedrock e outro para Java.', 400);
+    }
     const common = { title, description, version, file_size: fileSize, ...taxonomy };
 
     const [bedrockResult, javaResult] = await Promise.all([
