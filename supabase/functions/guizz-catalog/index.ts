@@ -7,6 +7,14 @@ const BEDROCK_FORMATS = new Set(['holoprint', 'mcstructure', 'mcaddon', 'mcworld
 const JAVA_FORMATS = new Set(['litematic', 'schem', 'schematic', 'world', 'mcfunction']);
 const ALL_FORMATS = new Set([...BEDROCK_FORMATS, ...JAVA_FORMATS]);
 const FORMAT_IDS = new Set(['default', ...ALL_FORMATS]);
+const CONTENT_THEMES = new Set(['Ancestral', 'Asiático', 'Futurista', 'Medieval', 'Moderno', 'Outro']);
+const CONTENT_SIZES = new Set(['Pequeno', 'Médio', 'Grande', 'Enorme']);
+const CONTENT_CATEGORIES = new Set([
+  'Arenas', 'Castelos', 'Masmorras', 'Jogos', 'Casas e lojas', 'Variado',
+  'Pedra vermelha', 'Templos', 'Torres', 'Cidades', 'Ilhas Flutuantes',
+  'Jardins', 'Ilhas', 'Arte em pixel', 'Estátuas e esculturas', 'Barcos',
+  'Máquinas Voadoras', 'Veículos terrestres',
+]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FIREBASE_KEYS = createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
 
@@ -79,6 +87,23 @@ function validVersion(value: string) {
   return value;
 }
 
+function selectedLabels(value: unknown, allowed: Set<string>, label: string) {
+  if (!Array.isArray(value)) throw new Error(`Escolha ${label} válidos para a construção.`);
+  const values = value.map((entry) => typeof entry === 'string' ? entry.trim() : '');
+  if (!values.length || values.some((entry) => !allowed.has(entry))) {
+    throw new Error(`Escolha ${label} válidos para a construção.`);
+  }
+  return [...new Set(values)];
+}
+
+function parseContentTaxonomy(body: Record<string, unknown>) {
+  const themes = selectedLabels(body.content_themes, CONTENT_THEMES, 'os temas');
+  const categories = selectedLabels(body.content_categories, CONTENT_CATEGORIES, 'as categorias');
+  const size = typeof body.content_size === 'string' ? body.content_size.trim() : '';
+  if (!CONTENT_SIZES.has(size)) throw new Error('Escolha um tamanho válido para a construção.');
+  return { content_themes: themes, content_size: size, content_categories: categories };
+}
+
 function linksFrom(value: unknown) {
   if (!Array.isArray(value)) return [] as LinkEntry[];
   const output: LinkEntry[] = [];
@@ -139,8 +164,10 @@ async function publish(request: Request, body: Record<string, unknown>) {
   let version: string;
   let assets: AssetUrls;
   let links: LinkEntry[];
+  let taxonomy: ReturnType<typeof parseContentTaxonomy>;
   try {
     version = validVersion(text(body.version, 50) || '1.0.0');
+    taxonomy = parseContentTaxonomy(body);
     assets = body.assets && typeof body.assets === 'object' && !Array.isArray(body.assets) ? body.assets as AssetUrls : {};
     links = linksFrom(body.download_links);
   } catch (error) {
@@ -159,20 +186,22 @@ async function publish(request: Request, body: Record<string, unknown>) {
     const views = assets.views.map((value) => githubReleaseAsset(value));
     const bedrockLinks = links.filter((link) => BEDROCK_FORMATS.has(link.id));
     const javaLinks = links.filter((link) => JAVA_FORMATS.has(link.id));
-    if (!bedrockLinks.some((link) => link.id === 'mcstructure')) bedrockLinks.push({ id: 'mcstructure', url: source });
-    if (!javaLinks.some((link) => link.id === 'schem')) javaLinks.push({ id: 'schem', url: schem });
+    if (!bedrockLinks.length || !javaLinks.length) {
+      return response({ error: 'Adicione pelo menos um link HTTPS de download para Bedrock e outro para Java.' }, 400);
+    }
 
     const common = {
       title, description, version, file_size: text(body.file_size, 80) || 'N/A', price: 'Free',
       image_url_1: views[0], image_url_2: views[1], image_url_3: views[2], image_url_4: views[3],
       image_url_5: views[4], image_url_6: views[5], image_url_7: views[6], image_url_8: views[7],
       showcase_cover_url: cover, guide_mcstructure_url: source, guide_schem_url: schem, studio_board_url: board, spin_video_url: null,
+      ...taxonomy,
     };
     const bedrockId = crypto.randomUUID();
     const javaId = crypto.randomUUID();
     const { error } = await admin().from('mods').insert([
-      { ...common, id: bedrockId, category: 'bedrock', subcategory: 'mcstructure', terabox_url: bedrockLinks[0].url, download_formats: bedrockLinks, available_formats: bedrockLinks.map((link) => link.id) },
-      { ...common, id: javaId, category: 'java', subcategory: 'schematic', terabox_url: javaLinks[0].url, download_formats: javaLinks, available_formats: javaLinks.map((link) => link.id) },
+      { ...common, id: bedrockId, category: 'bedrock', subcategory: taxonomy.content_categories[0], terabox_url: bedrockLinks[0].url, download_formats: bedrockLinks, available_formats: bedrockLinks.map((link) => link.id) },
+      { ...common, id: javaId, category: 'java', subcategory: taxonomy.content_categories[0], terabox_url: javaLinks[0].url, download_formats: javaLinks, available_formats: javaLinks.map((link) => link.id) },
     ]);
     if (error) throw new Error('Unable to publish this item.');
     return response({ data: { bedrockId, javaId } }, 201);
