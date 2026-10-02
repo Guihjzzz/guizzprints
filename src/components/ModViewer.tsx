@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { categoryLabel } from '@/lib/mod-categories';
+import { categoryLabel, contentCategoryLabel } from '@/lib/mod-categories';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { Guide3DPreview } from '@/components/Guide3DPreview';
 import { optimizedImageUrl } from '@/lib/media-image';
@@ -620,7 +620,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
 
           <dl className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
             <SpecItem icon={Tag} label={t('category')} value={categoryLabel(modData.category)} valueClassName="text-blue-300" />
-            {mod.subcategory?.trim() && <SpecItem icon={Tag} label={t('subcategory')} value={categoryLabel(mod.subcategory)} valueClassName="text-violet-300" />}
+            {mod.subcategory?.trim() && <SpecItem icon={Tag} label={t('subcategory')} value={contentCategoryLabel(mod.subcategory, locale)} valueClassName="text-violet-300" />}
             <SpecItem icon={Tag} label={t('version')} value={mod.version ? `# v${mod.version.replace(/^(?:#\s*v\s*|v(?=\d))/i, '')}` : 'N/A'} valueClassName="break-all text-blue-300" />
             <SpecItem icon={HardDrive} label={t('size')} value={modData.size} />
             <SpecItem icon={Tag} label={t('price')} value={t('free')} valueClassName="text-emerald-300" />
