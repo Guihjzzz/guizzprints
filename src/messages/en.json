@@ -51,7 +51,9 @@
       "guideDescription": "Open the hologram to rotate, zoom, and inspect its layers.",
       "downloadTitle": "3. Download the right format",
       "downloadDescription": "Choose only the formats published for your edition."
-    }
+    },
+    "catalogLoadError": "Some catalog sections could not load. Check your connection and try again.",
+    "retry": "Try again"
   },
   "Promotion": {
     "appTitle": "Guizz on your home screen",
