@@ -51,7 +51,9 @@
       "guideDescription": "Abre el holograma para girar, acercar e inspeccionar sus capas.",
       "downloadTitle": "3. Descarga el formato correcto",
       "downloadDescription": "Elige solo los formatos publicados para tu edición."
-    }
+    },
+    "catalogLoadError": "No se pudieron cargar algunas secciones del catálogo. Comprueba tu conexión e inténtalo de nuevo.",
+    "retry": "Intentar de nuevo"
   },
   "Promotion": {
     "appTitle": "Guizz en tu pantalla de inicio",
