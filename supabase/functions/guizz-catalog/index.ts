@@ -119,24 +119,19 @@ function linksFrom(value: unknown) {
   return output;
 }
 
-function hasFormat(downloadFormats: unknown, format: string, fallback: unknown, primary: unknown) {
+function hasFormat(downloadFormats: unknown, format: string, fallback: unknown) {
   if (format === 'default') return typeof fallback === 'string' && Boolean(fallback.trim());
-  if (Array.isArray(downloadFormats)) {
-    const entry = downloadFormats.find((item) => item && typeof item === 'object' && (item as { id?: unknown }).id === format) as { url?: unknown } | undefined;
-    if (typeof entry?.url === 'string') {
-      try { publicHttps(entry.url); return true; } catch { return false; }
-    }
-  }
-  return format === primary && typeof fallback === 'string' && Boolean(fallback.trim());
+  if (!Array.isArray(downloadFormats)) return false;
+  const entry = downloadFormats.find((item) => item && typeof item === 'object' && (item as { id?: unknown }).id === format) as { url?: unknown } | undefined;
+  if (typeof entry?.url !== 'string') return false;
+  try { publicHttps(entry.url); return true; } catch { return false; }
 }
 
-function destination(downloadFormats: unknown, format: string, fallback: unknown, primary: unknown) {
+function destination(downloadFormats: unknown, format: string, fallback: unknown) {
   if (format === 'default') return typeof fallback === 'string' ? publicHttps(fallback).toString() : null;
-  if (Array.isArray(downloadFormats)) {
-    const entry = downloadFormats.find((item) => item && typeof item === 'object' && (item as { id?: unknown }).id === format) as { url?: unknown } | undefined;
-    if (typeof entry?.url === 'string') return publicHttps(entry.url).toString();
-  }
-  return format === primary && typeof fallback === 'string' ? publicHttps(fallback).toString() : null;
+  if (!Array.isArray(downloadFormats)) return null;
+  const entry = downloadFormats.find((item) => item && typeof item === 'object' && (item as { id?: unknown }).id === format) as { url?: unknown } | undefined;
+  return typeof entry?.url === 'string' ? publicHttps(entry.url).toString() : null;
 }
 
 async function isFirebaseAdmin(request: Request) {
@@ -215,9 +210,9 @@ async function createDownloadSession(body: Record<string, unknown>) {
   const format = text(body.format, 32).toLowerCase() || 'default';
   if (!UUID.test(modId) || !FORMAT_IDS.has(format)) return response({ error: 'Invalid mod.' }, 400);
   const client = admin();
-  const { data: mod, error } = await client.from('mods').select('id, terabox_url, download_formats, subcategory').eq('id', modId).maybeSingle();
+  const { data: mod, error } = await client.from('mods').select('id, terabox_url, download_formats').eq('id', modId).maybeSingle();
   if (error) return response({ error: 'The catalog is temporarily unavailable.' }, 503);
-  if (!mod || !hasFormat(mod.download_formats, format, mod.terabox_url, mod.subcategory)) return response({ error: 'Mod not found.' }, 404);
+  if (!mod || !hasFormat(mod.download_formats, format, mod.terabox_url)) return response({ error: 'Mod not found.' }, 404);
   const now = Date.now();
   const expiresAt = now + 10 * 60 * 1000;
   const nonce = crypto.randomUUID();
@@ -234,10 +229,10 @@ async function openDownload(body: Record<string, unknown>) {
   const nonce = text(body.nonce, 128);
   if (!UUID.test(modId) || !FORMAT_IDS.has(format) || !UUID.test(nonce)) return response({ error: 'This download must be started from its mod page.' }, 403);
   const client = admin();
-  const { data: mod, error } = await client.from('mods').select('terabox_url, download_formats, subcategory').eq('id', modId).maybeSingle();
+  const { data: mod, error } = await client.from('mods').select('terabox_url, download_formats').eq('id', modId).maybeSingle();
   if (error || !mod) return response({ error: 'The download is unavailable.' }, 404);
   let url: string | null;
-  try { url = destination(mod.download_formats, format, mod.terabox_url, mod.subcategory); } catch { url = null; }
+  try { url = destination(mod.download_formats, format, mod.terabox_url); } catch { url = null; }
   if (!url) return response({ error: 'The requested download format is unavailable.' }, 404);
   const now = new Date().toISOString();
   const { data: consumed, error: consumeError } = await client.from('download_access_sessions')
