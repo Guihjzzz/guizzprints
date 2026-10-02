@@ -18,8 +18,8 @@ const FORMAT_GROUPS = {
 } as const;
 
 const ALL_FORMATS = Object.values(FORMAT_GROUPS).flat();
-const BEDROCK_FORMATS = new Set(FORMAT_GROUPS.Bedrock.map(([id]) => id));
-const JAVA_FORMATS = new Set(FORMAT_GROUPS.Java.map(([id]) => id));
+const BEDROCK_FORMATS: ReadonlySet<string> = new Set(FORMAT_GROUPS.Bedrock.map(([id]) => id));
+const JAVA_FORMATS: ReadonlySet<string> = new Set(FORMAT_GROUPS.Java.map(([id]) => id));
 
 const CONTENT_THEMES = ['Ancestral', 'Asiático', 'Futurista', 'Medieval', 'Moderno', 'Outro'] as const;
 const CONTENT_SIZES = ['Pequeno', 'Médio', 'Grande', 'Enorme'] as const;
