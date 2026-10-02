@@ -45,3 +45,10 @@ test('separate .schem downloads are accepted by the UI, API and catalog function
     assert.ok(catalog.includes(`'${id}'`), `catalog edge function is missing ${id}`);
   }
 });
+
+
+test('Portuguese Redstone remains display-only for existing catalog filters', () => {
+  const taxonomy = readFileSync('src/lib/mod-categories.ts', 'utf8');
+  assert.match(taxonomy, /'Pedra vermelha'/);
+  assert.equal(contentCategoryLabel('Pedra vermelha', 'pt'), 'Redstone');
+});
