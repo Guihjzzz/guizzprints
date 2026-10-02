@@ -119,6 +119,7 @@ function linksFrom(value: unknown) {
   return output;
 }
 
+// The catalog subcategory is taxonomy; only a stored direct link can authorize a format.
 function hasFormat(downloadFormats: unknown, format: string, fallback: unknown) {
   if (format === 'default') return typeof fallback === 'string' && Boolean(fallback.trim());
   if (!Array.isArray(downloadFormats)) return false;
