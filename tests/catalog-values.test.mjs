@@ -52,3 +52,7 @@ test('Portuguese Redstone remains display-only for existing catalog filters', ()
   assert.match(taxonomy, /'Pedra vermelha'/);
   assert.equal(contentCategoryLabel('Pedra vermelha', 'pt'), 'Redstone');
 });
+test('Portuguese Redstone is localized in technical specs', () => {
+  const viewer = readFileSync('src/components/ModViewer.tsx', 'utf8');
+  assert.ok(viewer.includes('contentCategoryLabel(mod.subcategory, locale)'));
+});
