@@ -79,8 +79,9 @@ export async function POST(request: NextRequest) {
     if (!links.length) return failure('Adicione pelo menos um link de download direto.', 400);
     const bedrockLinks = links.filter((link) => BEDROCK_FORMATS.has(link.id));
     const javaLinks = links.filter((link) => JAVA_FORMATS.has(link.id));
-    if (!bedrockLinks.some((link) => link.id === 'mcstructure')) bedrockLinks.push({ id: 'mcstructure', url: source });
-    if (!javaLinks.some((link) => link.id === 'schem')) javaLinks.push({ id: 'schem', url: schem });
+    if (!bedrockLinks.length || !javaLinks.length) {
+      return failure('Adicione pelo menos um link HTTPS de download para Bedrock e outro para Java.', 400);
+    }
 
     const common = {
       title,

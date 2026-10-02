@@ -531,7 +531,7 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
               directUrl={mod.direct_download_url}
               fileName={`${modData.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'guizzprints'}.mcstructure`}
               formats={mod.download_formats}
-              availableFormatIds={mod.available_formats?.length ? mod.available_formats : (mod.subcategory ? [mod.subcategory] : [])}
+              availableFormatIds={mod.available_formats || []}
             />
           </aside>
         </div>

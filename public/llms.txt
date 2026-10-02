@@ -4,19 +4,19 @@
 
 ## Main pages
 
-- [Home](https://guizz.xyz/en/): featured and latest community builds.
-- [About](https://guizz.xyz/en/about/): information about Guizzprints.
-- [Contact](https://guizz.xyz/en/contact/): public contact channels.
-- [Privacy](https://guizz.xyz/en/privacy/): privacy policy.
-- [Terms](https://guizz.xyz/en/terms/): terms of use.
+- [Home](https://guizzprints.xyz/en/): featured and latest community builds.
+- [About](https://guizzprints.xyz/en/about/): information about Guizzprints.
+- [Contact](https://guizzprints.xyz/en/contact/): public contact channels.
+- [Privacy](https://guizzprints.xyz/en/privacy/): privacy policy.
+- [Terms](https://guizzprints.xyz/en/terms/): terms of use.
 
 ## Catalog
 
-- [Minecraft Bedrock](https://guizz.xyz/en/category/bedrock/): Holoprint, MCStructure, MCAddon and MCWorld.
-- [Minecraft Java](https://guizz.xyz/en/category/java/): Litematic, Schematic, World and MC Function.
+- [Minecraft Bedrock](https://guizzprints.xyz/en/category/bedrock/): Holoprint, MCStructure, MCAddon and MCWorld.
+- [Minecraft Java](https://guizzprints.xyz/en/category/java/): Litematic, Schematic, World and MC Function.
 
 ## Languages
 
-- [English](https://guizz.xyz/en/)
-- [Español](https://guizz.xyz/es/)
-- [Português](https://guizz.xyz/pt/)
+- [English](https://guizzprints.xyz/en/)
+- [Español](https://guizzprints.xyz/es/)
+- [Português](https://guizzprints.xyz/pt/)

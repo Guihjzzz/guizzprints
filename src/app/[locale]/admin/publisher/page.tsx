@@ -18,17 +18,8 @@ const FORMAT_GROUPS = {
 } as const;
 
 const ALL_FORMATS = Object.values(FORMAT_GROUPS).flat();
-const DOWNLOAD_FILE_ACCEPT: Record<string, string> = {
-  holoprint: '.mcstructure,application/octet-stream',
-  mcstructure: '.mcstructure,application/octet-stream',
-  mcaddon: '.mcaddon,application/octet-stream',
-  mcworld: '.mcworld,application/octet-stream',
-  litematic: '.litematic,application/octet-stream',
-  schem: '.schem,application/octet-stream',
-  schematic: '.schematic,application/octet-stream',
-  world: '.zip,.mcworld,application/zip,application/octet-stream',
-  mcfunction: '.mcfunction,text/plain,application/octet-stream',
-};
+const BEDROCK_FORMATS: ReadonlySet<string> = new Set(FORMAT_GROUPS.Bedrock.map(([id]) => id));
+const JAVA_FORMATS: ReadonlySet<string> = new Set(FORMAT_GROUPS.Java.map(([id]) => id));
 
 const CONTENT_THEMES = ['Ancestral', 'Asiático', 'Futurista', 'Medieval', 'Moderno', 'Outro'] as const;
 const CONTENT_SIZES = ['Pequeno', 'Médio', 'Grande', 'Enorme'] as const;
@@ -139,7 +130,6 @@ export default function PublisherPage() {
   const studioRef = useRef<HTMLIFrameElement>(null);
   const guideRef = useRef<HTMLIFrameElement>(null);
   const sourceRef = useRef<HTMLInputElement>(null);
-  const downloadUploadRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const deliveredSourceRef = useRef<File | null>(null);
   const studioGenerationSourceRef = useRef<File | null>(null);
   const guideWarmupSourceRef = useRef<File | null>(null);
@@ -158,7 +148,6 @@ export default function PublisherPage() {
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [uploadingDownload, setUploadingDownload] = useState<string | null>(null);
   const [publishedItems, setPublishedItems] = useState<PublishedItems | null>(null);
   const [editingPair, setEditingPair] = useState<EditingPair | null>(null);
   const [form, setForm] = useState<PublisherForm>({
@@ -476,30 +465,15 @@ export default function PublisherPage() {
 
   const uploadAsset = async (kind: string, file: Blob, fileName: string, token: string) => uploadPublisherFile(kind, file, fileName, token, '', 'O envio de um arquivo gerado demorou demais. Tente publicar novamente.');
 
-  const uploadDownloadFile = async (formatId: string, file: File | undefined) => {
-    if (!file || uploadingDownload) return;
-    setUploadingDownload(formatId);
-    setError(null);
-    try {
-      const token = await getAccessToken();
-      const url = await uploadPublisherFile('download', file, file.name, token, formatId, 'O envio do arquivo demorou demais. Tente novamente.');
-      setLinks((current) => ({ ...current, [formatId]: url }));
-      const label = ALL_FORMATS.find(([id]) => id === formatId)?.[1] || formatId;
-      setStatus(`${label} enviado para o armazenamento do catálogo. O link foi preenchido automaticamente.`);
-    } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Não foi possível enviar este arquivo de download.');
-    } finally {
-      setUploadingDownload(null);
-    }
-  };
-
   const publish = async () => {
     if (editingPair) {
       if (!form.title.trim() || !form.description.trim()) { setError('Informe o título e a descrição detalhada.'); return; }
+      const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
+      if (!downloadLinks.some((link) => BEDROCK_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Bedrock.'); return; }
+      if (!downloadLinks.some((link) => JAVA_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Java.'); return; }
       setIsPublishing(true); setError(null); setStatus('Salvando Bedrock e Java juntos no editor…');
       try {
         const token = await getAccessToken();
-        const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
         const response = await fetchWithTimeout('/api/admin/publisher/publication', {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -518,6 +492,9 @@ export default function PublisherPage() {
     if (publishingConfigured === false) { setError('A publicação ainda não está configurada. Configure o catálogo Supabase e o GitHub Releases antes de publicar.'); return; }
     if (!form.title.trim() || !form.description.trim()) { setError('Informe o título e a descrição detalhada.'); return; }
     if (!fileReady || !generation.source || !generation.schem || !generation.cover || !generation.board) { setError('Gere a capa, as oito vistas e a prancha do Guizz Studio antes de publicar.'); return; }
+    const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
+    if (!downloadLinks.some((link) => BEDROCK_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Bedrock.'); return; }
+    if (!downloadLinks.some((link) => JAVA_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Java.'); return; }
     setIsPublishing(true); setError(null); setStatus('Enviando arquivos gerados para o catálogo…');
     try {
       const token = await getAccessToken();
@@ -531,9 +508,6 @@ export default function PublisherPage() {
         if (!view) throw new Error('Uma das oito vistas não foi gerada pelo Guia 3D.');
         views.push(await uploadAsset('view', view, slug + '-vista-' + String(index + 1).padStart(2, '0') + '.png', token));
       }
-      const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
-      if (!downloadLinks.some((link) => link.id === 'mcstructure')) downloadLinks.push({ id: 'mcstructure', url: source });
-      if (!downloadLinks.some((link) => link.id === 'schem')) downloadLinks.push({ id: 'schem', url: schem });
       const response = await fetchWithTimeout('/api/admin/publisher/publish', {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, assets: { source, schem, cover, views, board }, download_links: downloadLinks }),
@@ -647,7 +621,7 @@ export default function PublisherPage() {
           </div>
 
           <aside className="space-y-6">
-            <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl"><div className="mb-4 flex items-center gap-3"><LinkIcon /><div><h2 className="font-black">Arquivos e links de download</h2><p className="text-xs text-zinc-500">Envie o arquivo diretamente ou cole um link HTTPS. O `.mcstructure` e o `.schem` gerados entram automaticamente.</p></div></div>{Object.entries(FORMAT_GROUPS).map(([family, formats]) => <div key={family} className="mb-5"><p className={`mb-2 text-[10px] font-black uppercase tracking-[.2em] ${family === 'Bedrock' ? 'text-emerald-300' : 'text-orange-300'}`}>{family}</p><div className="space-y-3">{formats.map(([id, label]) => <div key={id}><label className="block"><span className="mb-1 block text-xs font-bold text-zinc-300">{label}</span><input type="url" value={links[id]} onChange={(event) => setLinks((current) => ({ ...current, [id]: event.target.value }))} placeholder="https://…" className="w-full rounded-lg border border-[#283244] bg-[#07090D] px-3 py-2 text-xs outline-none focus:border-red-400" /></label><input ref={(node) => { downloadUploadRefs.current[id] = node; }} type="file" accept={DOWNLOAD_FILE_ACCEPT[id]} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; void uploadDownloadFile(id, file); }} /><button type="button" disabled={Boolean(uploadingDownload)} onClick={() => downloadUploadRefs.current[id]?.click()} className="mt-2 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#33435f] bg-[#0b1220] px-3 py-2 text-xs font-bold text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/10 disabled:cursor-wait disabled:opacity-55"><Upload size={14} /> {uploadingDownload === id ? 'Enviando arquivo…' : 'Enviar arquivo'}</button></div>)}</div></div>)}</section>
+            <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl"><div className="mb-4 flex items-center gap-3"><LinkIcon /><div><h2 className="font-black">Arquivos e links de download</h2><p className="text-xs text-zinc-500">Informe somente links HTTPS de download que você escolheu. Os arquivos gerados para o Guia 3D não entram como downloads.</p></div></div>{Object.entries(FORMAT_GROUPS).map(([family, formats]) => <div key={family} className="mb-5"><p className={`mb-2 text-[10px] font-black uppercase tracking-[.2em] ${family === 'Bedrock' ? 'text-emerald-300' : 'text-orange-300'}`}>{family}</p><div className="space-y-3">{formats.map(([id, label]) => <div key={id}><label className="block"><span className="mb-1 block text-xs font-bold text-zinc-300">{label}</span><input type="url" value={links[id]} onChange={(event) => setLinks((current) => ({ ...current, [id]: event.target.value }))} placeholder="https://…" className="w-full rounded-lg border border-[#283244] bg-[#07090D] px-3 py-2 text-xs outline-none focus:border-red-400" /></label></div>)}</div></div>)}</section>
             <button type="button" disabled={(!isEditing && !fileReady) || isPublishing || (publishingConfigured === false && !isEditing)} onClick={() => void publish()} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-4 text-sm font-black shadow-lg shadow-red-950/40 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-45"><Upload size={18} /> {isPublishing ? (isEditing ? 'Salvando as duas edições…' : 'Publicando…') : isEditing ? 'Salvar Bedrock + Java' : publishingConfigured === false ? 'Configure o armazenamento para publicar' : 'Publicar no catálogo'}</button>
             <p className="text-center text-xs leading-5 text-zinc-600">{isEditing ? 'Uma única ação atualiza os dados e os links das duas páginas relacionadas.' : 'Cada material gerado sobe para o lote GitHub atual. Ao atingir 1.000 arquivos, o próximo lote é escolhido automaticamente.'}</p>
           </aside>

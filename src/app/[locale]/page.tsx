@@ -68,6 +68,8 @@ export default function Home() {
   const promotion = useTranslations('Promotion');
 
   const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [topMods, setTopMods] = useState<ModSummary[]>([]);
   const [mostDownloaded, setMostDownloaded] = useState<ModSummary[]>([]);
   
@@ -114,6 +116,9 @@ export default function Home() {
     let cancelled = false;
 
     const fetchHomeData = async () => {
+      setLoading(true);
+      setCatalogError(false);
+
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const railLimit = isMobileViewport ? 6 : 8;
@@ -140,16 +145,18 @@ export default function Home() {
 
       if (cancelled) return;
 
-      const latest = latestResult.data;
-      let trending = trendingResult.data;
+      const latest = latestResult.error ? null : latestResult.data;
+      let trending = trendingResult.error ? null : trendingResult.data;
+      let fallbackTrendingError = false;
 
-      if (!trending || trending.length < 3) {
-        const { data: fallbackTrending } = await supabase
+      if (!trendingResult.error && (!trending || trending.length < 3)) {
+        const { data: fallbackTrending, error: fallbackError } = await supabase
           .from('public_mods')
           .select(HOME_MOD_FIELDS)
           .order('downloads', { ascending: false })
           .limit(3);
-        trending = fallbackTrending;
+        trending = fallbackError ? null : fallbackTrending;
+        fallbackTrendingError = Boolean(fallbackError);
       }
 
       if (cancelled) return;
@@ -161,33 +168,44 @@ export default function Home() {
       // newer items from other categories filled that window first.
       const categoryItems = Object.fromEntries(categoryNames.map((category, index) => [category, categoryResults[index].data || []]));
       const demo = DEMO_BUILD_SUMMARY as ModSummary;
-      const topItems = withoutPublicationDuplicates(trending && trending.length > 0 ? trending : [demo]);
-      const downloadedItems = all.length > 0
-        ? withoutPublicationDuplicates([...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0))).slice(0, railLimit)
-        : [demo];
-      const bedrockItems = categoryItems.bedrock.length > 0 ? categoryItems.bedrock : [demo];
+      const topItems = trending && trending.length > 0
+        ? withoutPublicationDuplicates(trending)
+        : trendingResult.error || fallbackTrendingError ? [] : [demo];
+      const downloadedItems = latestResult.error
+        ? []
+        : all.length > 0
+          ? withoutPublicationDuplicates([...all].sort((a, b) => (b.downloads || 0) - (a.downloads || 0))).slice(0, railLimit)
+          : [demo];
+      const bedrockItems = categoryResults[0].error
+        ? []
+        : categoryItems.bedrock.length > 0 ? categoryItems.bedrock : [demo];
 
       setTopMods(topItems);
       setMostDownloaded(downloadedItems);
       setLatestBedrock(bedrockItems);
-      setLatestJava(categoryItems.java);
-      
+      setLatestJava(categoryResults[1].error ? [] : categoryItems.java);
+      setCatalogError(Boolean(
+        latestResult.error ||
+        trendingResult.error ||
+        fallbackTrendingError ||
+        categoryResults.some((result) => result.error)
+      ));
       setLoading(false);
     };
 
     void fetchHomeData().catch(() => {
       if (cancelled) return;
-      const demo = DEMO_BUILD_SUMMARY as ModSummary;
-      setTopMods([demo]);
-      setMostDownloaded([demo]);
-      setLatestBedrock([demo]);
+      setTopMods([]);
+      setMostDownloaded([]);
+      setLatestBedrock([]);
       setLatestJava([]);
+      setCatalogError(true);
       setLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [isMobileViewport]);
+  }, [isMobileViewport, retryAttempt]);
 
   return (
     <div className="max-w-[1800px] lg:max-w-[1480px] mx-auto p-3 sm:p-6 lg:px-9 lg:py-7 xl:px-10 min-h-screen flex gap-6 lg:gap-8 items-start">
@@ -196,6 +214,21 @@ export default function Home() {
         
         {!loading && topMods.length > 0 && <HeroCarousel mods={topMods} locale={locale} />}
         {loading && <HomeHeroLoading />}
+        {!loading && catalogError && (
+          <div role="alert" className="flex flex-col gap-3 rounded-xl border border-red-500/30 bg-red-950/20 px-4 py-3 text-sm text-red-200 sm:flex-row sm:items-center sm:justify-between">
+            <p>{t('catalogLoadError')}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setRetryAttempt((attempt) => attempt + 1);
+              }}
+              className="w-fit rounded-lg border border-red-300/30 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-500/10"
+            >
+              {t('retry')}
+            </button>
+          </div>
+        )}
 
         <section>
           <h2 className="text-xl font-black uppercase tracking-tighter mb-4 text-white">{t('marketplace')}</h2>
@@ -296,12 +329,12 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
           <InstantLink
             href={`/${locale}/mod/${mod.id}`}
             key={`hero-${mod.id}`}
-            className="group/slide relative flex aspect-[1.95/1] min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:grid md:aspect-[2.4/1] lg:aspect-[2.02/1]"
+            className="group/slide relative flex min-h-0 w-full flex-shrink-0 snap-center flex-col overflow-hidden bg-[#080a0f] md:aspect-[2.4/1] md:grid lg:aspect-[2.02/1]"
           >
-            {/* Keep the phone composition equal to desktop: two generated
-                images share one compact visual stage, with only the essential
-                title and action floating above the artwork. */}
-            <div className="absolute inset-0 grid grid-cols-2 gap-1 bg-[#101722] p-1.5 md:hidden">
+            {/* On phones, keep the two images in their own visual stage and
+                place the compact title panel beneath them. Desktop retains its
+                original overlay composition. */}
+            <div className="relative grid aspect-[1.95/1] w-full flex-none grid-cols-2 gap-1 bg-[#101722] p-1.5 md:hidden">
               <div className="relative overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,.14),transparent_68%),#090b10]">
                 <ContentImage
                   src={mod.showcase_cover_url || mod.image_url_1}
@@ -359,11 +392,11 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
             </div>
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] hidden h-[42%] bg-gradient-to-t from-[#05070b]/90 via-[#05070b]/34 to-transparent md:block" aria-hidden="true" />
-            <div className="absolute bottom-3 left-4 z-10 flex max-w-[56%] flex-col items-start md:bottom-6 md:left-7 md:max-w-none md:w-[min(31%,300px)] lg:bottom-5 lg:left-5 lg:w-[min(36%,250px)]">
+            <div className="relative z-10 flex w-full flex-col items-start px-4 py-2.5 pb-5 md:absolute md:bottom-6 md:left-7 md:max-w-none md:w-[min(31%,300px)] md:px-0 md:py-0 md:pb-0 lg:bottom-5 lg:left-5 lg:w-[min(36%,250px)]">
               <span className="w-fit rounded-md bg-[#2563EB] px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-lg shadow-blue-950/40 md:px-2.5 md:py-1 md:text-[10px] md:tracking-[0.16em] lg:px-2 lg:py-0.5 lg:text-[9px]">
                 {t('featuredWeek')}
               </span>
-              <h1 className="mt-1 line-clamp-2 text-lg font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-1.5 md:text-[26px] lg:text-xl">{mod.title}</h1>
+              <h1 className="mt-1 line-clamp-2 text-base font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,.72)] md:mt-1.5 md:text-[26px] lg:text-xl">{mod.title}</h1>
               <span className="mt-2 hidden min-h-9 w-fit items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-600 px-3 text-xs font-black text-white shadow-[0_10px_28px_-16px_rgba(37,99,235,.95)] transition-colors group-hover/slide:bg-blue-500 md:mt-2.5 md:inline-flex md:min-h-0 md:gap-2 md:rounded-lg md:px-3.5 md:py-2 md:text-xs lg:mt-1.5 lg:px-2.5 lg:py-1.5 lg:text-[11px]">
                 <Eye size={13} aria-hidden="true" /> {t('viewDetails')}
               </span>
@@ -372,7 +405,7 @@ function HeroCarousel({ mods, locale }: { mods: ModSummary[]; locale: string }) 
         ))}
       </div>
       
-      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-2 md:z-10">
+      <div className="relative bottom-auto left-auto z-20 flex translate-x-0 justify-center gap-2 py-2 md:absolute md:bottom-3 md:left-1/2 md:z-10 md:-translate-x-1/2 md:py-0">
         {mods.map((_, i) => (
           <button 
             key={`dot-${i}`} 

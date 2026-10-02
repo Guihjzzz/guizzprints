@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Check production liveness endpoint
         env:
-          HEALTH_URL: https://www.guizz.xyz/api/health
+          HEALTH_URL: https://guizzprints.xyz/api/health
         run: |
           set -euo pipefail
           response="$(curl --fail-with-body --silent --show-error --location \
