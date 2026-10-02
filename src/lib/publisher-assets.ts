@@ -6,7 +6,7 @@ export const MAX_PUBLISHER_FILE_BYTES = 100 * 1024 * 1024;
 export const PUBLISHER_CHUNK_BYTES = 2 * 1024 * 1024;
 export const MAX_PUBLISHER_CHUNKS = Math.ceil(MAX_PUBLISHER_FILE_BYTES / PUBLISHER_CHUNK_BYTES);
 
-export const publisherAssetKinds = new Set(['source', 'schem', 'cover', 'view', 'board', 'download']);
+export const publisherAssetKinds = new Set(['source', 'schem', 'cover', 'view', 'board']);
 export const publisherAssetExtensions: Record<string, RegExp> = {
   source: /\.mcstructure$/i,
   schem: /\.schem$/i,
