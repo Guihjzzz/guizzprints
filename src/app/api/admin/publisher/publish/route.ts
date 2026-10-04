@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
     const source = generatedAsset(assets.source);
     const schem = generatedAsset(assets.schem);
     const cover = generatedAsset(assets.cover);
-    const board = generatedAsset(assets.board);
     const rawViews = Array.isArray(assets.views) ? assets.views : [];
     if (rawViews.length !== 8) return failure('Gere as oito vistas antes de publicar.', 400);
     const views = rawViews.map(generatedAsset);
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest) {
       showcase_cover_url: cover,
       guide_mcstructure_url: source,
       guide_schem_url: schem,
-      studio_board_url: board,
+      studio_board_url: null,
       spin_video_url: null,
       ...taxonomy,
     };

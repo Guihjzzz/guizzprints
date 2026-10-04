@@ -19,7 +19,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const FIREBASE_KEYS = createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
 
 type LinkEntry = { id: string; url: string; fileName?: string };
-type AssetUrls = { source?: string; schem?: string; cover?: string; views?: string[]; board?: string };
+type AssetUrls = { source?: string; schem?: string; cover?: string; views?: string[] };
 
 function response(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -169,8 +169,8 @@ async function publish(request: Request, body: Record<string, unknown>) {
   } catch (error) {
     return response({ error: error instanceof Error ? error.message : 'Invalid publication.' }, 400);
   }
-  if (!assets.source || !assets.schem || !assets.cover || !Array.isArray(assets.views) || assets.views.length !== 8 || !assets.board) {
-    return response({ error: 'Generate and upload the .mcstructure, .schem, four-view cover, eight views and Guizz Studio board before publishing.' }, 400);
+  if (!assets.source || !assets.schem || !assets.cover || !Array.isArray(assets.views) || assets.views.length !== 8) {
+    return response({ error: 'Generate and upload the .mcstructure, .schem, four-view cover and eight views before publishing.' }, 400);
   }
   if (!links.length) return response({ error: 'Add at least one direct download link.' }, 400);
 
@@ -178,7 +178,6 @@ async function publish(request: Request, body: Record<string, unknown>) {
     const source = githubReleaseAsset(assets.source);
     const schem = githubReleaseAsset(assets.schem);
     const cover = githubReleaseAsset(assets.cover);
-    const board = githubReleaseAsset(assets.board);
     const views = assets.views.map((value) => githubReleaseAsset(value));
     const bedrockLinks = links.filter((link) => BEDROCK_FORMATS.has(link.id));
     const javaLinks = links.filter((link) => JAVA_FORMATS.has(link.id));
@@ -190,7 +189,7 @@ async function publish(request: Request, body: Record<string, unknown>) {
       title, description, version, file_size: text(body.file_size, 80) || 'N/A', price: 'Free',
       image_url_1: views[0], image_url_2: views[1], image_url_3: views[2], image_url_4: views[3],
       image_url_5: views[4], image_url_6: views[5], image_url_7: views[6], image_url_8: views[7],
-      showcase_cover_url: cover, guide_mcstructure_url: source, guide_schem_url: schem, studio_board_url: board, spin_video_url: null,
+      showcase_cover_url: cover, guide_mcstructure_url: source, guide_schem_url: schem, studio_board_url: null, spin_video_url: null,
       ...taxonomy,
     };
     const bedrockId = crypto.randomUUID();

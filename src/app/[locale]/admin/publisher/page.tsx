@@ -44,9 +44,8 @@ type Generation = {
   schem?: Blob;
   cover?: Blob;
   views: Blob[];
-  board?: Blob;
 };
-type ActiveViewer = 'guide' | 'studio' | null;
+type ActiveViewer = 'guide' | null;
 type PublishedItems = { bedrockId: string; javaId: string };
 type PublishedLink = { id?: unknown; url?: unknown };
 type PublishedEdition = {
@@ -128,25 +127,19 @@ export default function PublisherPage() {
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || 'pt';
   const editId = searchParams.get('edit')?.trim() || '';
-  const studioRef = useRef<HTMLIFrameElement>(null);
   const guideRef = useRef<HTMLIFrameElement>(null);
   const sourceRef = useRef<HTMLInputElement>(null);
   const selectedSourceRef = useRef<File | null>(null);
-  const pendingStudioSchemRef = useRef<{ source: File; name: string; title: string; buffer: ArrayBuffer } | null>(null);
+  const schemReadyRef = useRef(false);
   const deliveredSourceRef = useRef<File | null>(null);
-  const studioLoadSourceRef = useRef<File | null>(null);
-  const studioGenerationSourceRef = useRef<File | null>(null);
   const guideWarmupSourceRef = useRef<File | null>(null);
   const guideGenerationSourceRef = useRef<File | null>(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [publishingConfigured, setPublishingConfigured] = useState<boolean | null>(null);
-  const [studioReady, setStudioReady] = useState(false);
   const [guideReady, setGuideReady] = useState(false);
-  const [studioLoaded, setStudioLoaded] = useState(false);
   const [guideLoaded, setGuideLoaded] = useState(false);
   const [guideWarmed, setGuideWarmed] = useState(false);
   const [activeViewer, setActiveViewer] = useState<ActiveViewer>(null);
-  const [startStudioAfterGuide, setStartStudioAfterGuide] = useState(false);
   const [generation, setGeneration] = useState<Generation>(initialGeneration);
   const [status, setStatus] = useState('Aguardando um arquivo .mcstructure.');
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +161,7 @@ export default function PublisherPage() {
   const isEditing = Boolean(editingPair);
   const isEditRoute = Boolean(editId);
 
-  const fileReady = Boolean(generation.source && generation.schem && generation.cover && generation.views.filter(Boolean).length === 8 && generation.board);
+  const fileReady = Boolean(generation.source && generation.schem && generation.cover && generation.views.filter(Boolean).length === 8);
   const slug = useMemo(() => slugify(form.title || generation.source?.name || ''), [form.title, generation.source?.name]);
   const toggleMetadata = (field: 'content_themes' | 'content_categories', value: string, max = Number.POSITIVE_INFINITY) => {
     setForm((current) => {
@@ -182,7 +175,6 @@ export default function PublisherPage() {
     { label: '.schem · Guia 3D', ready: Boolean(generation.schem) },
     { label: 'Capa 4 vistas · Guia 3D', ready: Boolean(generation.cover) },
     { label: '8 vistas · Guia 3D', ready: generation.views.filter(Boolean).length === 8 },
-    { label: 'Prancha · Guizz Studio', ready: Boolean(generation.board) },
   ];
 
   const getAccessToken = useCallback(async () => {
@@ -261,9 +253,8 @@ export default function PublisherPage() {
 
   useEffect(() => {
     const listener = (event: MessageEvent) => {
-      const fromStudio = event.origin === window.location.origin && event.source === studioRef.current?.contentWindow;
       const fromGuide = event.origin === window.location.origin && event.source === guideRef.current?.contentWindow;
-      if (!fromStudio && !fromGuide) return;
+      if (!fromGuide) return;
 
       const envelope = event.data as { guizzPublisher?: number } & PublisherMessage;
       if (!envelope?.guizzPublisher) return;
@@ -271,40 +262,17 @@ export default function PublisherPage() {
 
       if (data.type === 'status' && data.message) setStatus(data.message);
       if (data.type === 'error') {
-        setError(data.message || 'Um dos visualizadores retornou um erro.');
+        setError(data.message || 'O Guia 3D retornou um erro.');
         setIsGenerating(false);
-        setStartStudioAfterGuide(false);
         setActiveViewer(null);
-        return;
-      }
-
-      if (fromStudio) {
-        if (data.type === 'ready') { setStudioReady(true); setStatus('Guizz Studio pronto para gerar a prancha.'); }
-        if (data.type === 'loaded') { setStudioLoaded(true); setStatus('Construção carregada no Guizz Studio.'); }
-        if (data.type === 'board' && data.buffer) {
-          setGeneration((current) => ({ ...current, board: new Blob([data.buffer!], { type: data.mime || 'image/png' }) }));
-        }
-        if (data.type === 'generated') {
-          setIsGenerating(false);
-          setStatus('Capa, oito vistas, arquivo .schem e prancha do Guizz Studio estão prontos.');
-          setActiveViewer(null);
-        }
         return;
       }
 
       if (data.type === 'ready') { setGuideReady(true); setStatus('Guia 3D pronto para converter e gerar as oito vistas.'); }
       if (data.type === 'converted' && data.buffer) {
         setGeneration((current) => ({ ...current, schem: new Blob([data.buffer!], { type: data.mime || 'application/octet-stream' }) }));
-        const source = selectedSourceRef.current;
-        if (source) {
-          pendingStudioSchemRef.current = {
-            source,
-            name: data.name || 'construcao.schem',
-            title: data.name || 'Construção Guizzprints',
-            buffer: data.buffer.slice(0),
-          };
-        }
-        setStatus('Conversor do Guia 3D concluiu o .schem; o Guizz Studio abrirá após o fim das imagens.');
+        schemReadyRef.current = true;
+        setStatus('Conversor do Guia 3D concluiu o .schem; as imagens continuam sendo preparadas.');
       }
       if (data.type === 'cover' && data.buffer) {
         setGeneration((current) => ({ ...current, cover: new Blob([data.buffer!], { type: data.mime || 'image/png' }) }));
@@ -320,55 +288,35 @@ export default function PublisherPage() {
       }
       if (data.type === 'generated') {
         const source = selectedSourceRef.current;
-        if (!source || pendingStudioSchemRef.current?.source !== source) {
-          setError('O Guia 3D terminou, mas não entregou o .schem para iniciar o Guizz Studio. Selecione o arquivo novamente.');
+        if (!source || !schemReadyRef.current) {
+          setError('O Guia 3D terminou, mas não entregou o arquivo .schem. Selecione o arquivo novamente.');
           setIsGenerating(false);
           setActiveViewer(null);
           return;
         }
-        setStatus('Guia 3D concluiu capa e oito vistas. Liberando-o antes de abrir o Guizz Studio…');
-        setGuideReady(false);
-        setGuideLoaded(false);
-        setGuideWarmed(false);
-        setStudioReady(false);
-        setStudioLoaded(false);
+        setIsGenerating(false);
+        setStatus('Capa, oito vistas e arquivo .schem estão prontos.');
         setActiveViewer(null);
-        setStartStudioAfterGuide(true);
       }
     };
     window.addEventListener('message', listener);
     return () => window.removeEventListener('message', listener);
   }, []);
 
-  // Wait until React has committed the Guide iframe's unmount before mounting
-  // Studio. The renderers therefore never share an active WebGL context.
-  useEffect(() => {
-    if (!startStudioAfterGuide || activeViewer !== null) return;
-    const frame = window.requestAnimationFrame(() => {
-      setStartStudioAfterGuide(false);
-      setStudioReady(false);
-      setStudioLoaded(false);
-      setActiveViewer('studio');
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [activeViewer, startStudioAfterGuide]);
-
-  // Give only the currently active renderer time to initialize. The next one
-  // is not mounted until the previous renderer has been removed.
+  // Give the single active renderer time to initialize before reporting failure.
   useEffect(() => {
     const source = generation.source;
     if (!source || !activeViewer) return;
-    const ready = activeViewer === 'guide' ? guideReady : studioReady;
+    const ready = guideReady;
     if (ready) return;
-    const label = activeViewer === 'guide' ? 'Guia 3D' : 'Guizz Studio';
     const timeout = window.setTimeout(() => {
       setIsGenerating(false);
-      setError(`${label} não iniciou. O arquivo não foi enviado; selecione-o novamente para tentar outra vez.`);
-      setStatus(`${label} não respondeu dentro do tempo esperado.`);
+      setError('O Guia 3D não iniciou. O arquivo não foi enviado; selecione-o novamente para tentar outra vez.');
+      setStatus('O Guia 3D não respondeu dentro do tempo esperado.');
       setActiveViewer(null);
     }, 20_000);
     return () => window.clearTimeout(timeout);
-  }, [activeViewer, generation.source, guideReady, studioReady]);
+  }, [activeViewer, generation.source, guideReady]);
 
   const selectSource = (file: File | undefined) => {
     if (!file || isGenerating || isPublishing) return;
@@ -376,22 +324,18 @@ export default function PublisherPage() {
     if (file.size > 100 * 1024 * 1024) { setError('O arquivo precisa ter no máximo 100 MB.'); return; }
     const guideWasMounted = activeViewer === 'guide';
     selectedSourceRef.current = file;
-    pendingStudioSchemRef.current = null;
+    schemReadyRef.current = false;
     deliveredSourceRef.current = null;
-    studioLoadSourceRef.current = null;
-    studioGenerationSourceRef.current = null;
     guideWarmupSourceRef.current = null;
     guideGenerationSourceRef.current = null;
-    setStartStudioAfterGuide(false);
     setActiveViewer('guide');
-    setError(null); setPublishedItems(null); setIsGenerating(true); setStudioReady(false); setStudioLoaded(false); setGuideLoaded(false); setGuideWarmed(false);
+    setError(null); setPublishedItems(null); setIsGenerating(true); setGuideLoaded(false); setGuideWarmed(false);
     if (!guideWasMounted) setGuideReady(false);
     setGeneration({ source: file, views: [] });
     setStatus('Preparando o arquivo para geração automática…');
   };
 
-  // The selected structure goes to Guide first. Studio stays unmounted until
-  // the Guide has delivered the exact .schem, cover, and eight views.
+  // The selected structure is sent to the Guide 3D renderer.
   useEffect(() => {
     const source = generation.source;
     if (!source || activeViewer !== 'guide' || !guideReady || deliveredSourceRef.current === source) return;
@@ -400,7 +344,6 @@ export default function PublisherPage() {
 
     const deliver = async () => {
       try {
-        setStudioLoaded(false);
         setGuideLoaded(false);
         setStatus('Enviando o .mcstructure para o Guia 3D…');
         const buffer = await source.arrayBuffer();
@@ -414,35 +357,6 @@ export default function PublisherPage() {
     void deliver();
     return () => { cancelled = true; };
   }, [activeViewer, generation.source, guideReady, form.title]);
-
-  // Hand Studio the converted .schem only after its iframe is ready, then
-  // start its board after the source has loaded.
-  useEffect(() => {
-    const source = generation.source;
-    const pending = pendingStudioSchemRef.current;
-    if (!source || activeViewer !== 'studio' || !studioReady || !pending || pending.source !== source || studioLoadSourceRef.current === source) return;
-    studioLoadSourceRef.current = source;
-    setStudioLoaded(false);
-    setStatus('Abrindo o .schem já convertido no Guizz Studio…');
-    const buffer = pending.buffer.slice(0);
-    studioRef.current?.contentWindow?.postMessage({
-      guizzPublisher: 1,
-      type: 'load',
-      name: pending.name,
-      title: pending.title,
-      buffer,
-    }, window.location.origin, [buffer]);
-  }, [activeViewer, generation.source, studioReady]);
-
-  useEffect(() => {
-    const source = generation.source;
-    if (!source || activeViewer !== 'studio' || !studioReady || !studioLoaded || studioGenerationSourceRef.current === source) return;
-    studioGenerationSourceRef.current = source;
-    setError(null);
-    setIsGenerating(true);
-    setStatus('Guizz Studio criando a prancha…');
-    studioRef.current?.contentWindow?.postMessage({ guizzPublisher: 1, type: 'generateStudio', title: form.title || 'Construção Guizzprints' }, window.location.origin);
-  }, [activeViewer, generation.source, studioLoaded, studioReady, form.title]);
 
   useEffect(() => {
     const source = generation.source;
@@ -520,7 +434,7 @@ export default function PublisherPage() {
     }
     if (publishingConfigured === false) { setError('A publicação ainda não está configurada. Configure o catálogo Supabase e o GitHub Releases antes de publicar.'); return; }
     if (!form.title.trim() || !form.description.trim()) { setError('Informe o título e a descrição detalhada.'); return; }
-    if (!fileReady || !generation.source || !generation.schem || !generation.cover || !generation.board) { setError('Gere a capa, as oito vistas e a prancha do Guizz Studio antes de publicar.'); return; }
+    if (!fileReady || !generation.source || !generation.schem || !generation.cover) { setError('Gere o arquivo .schem, a capa e as oito vistas antes de publicar.'); return; }
     const downloadLinks = ALL_FORMATS.map(([id]) => ({ id, url: links[id].trim() })).filter((link) => Boolean(link.url));
     if (!downloadLinks.some((link) => BEDROCK_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Bedrock.'); return; }
     if (!downloadLinks.some((link) => JAVA_FORMATS.has(link.id))) { setError('Adicione ao menos um link de download para Java.'); return; }
@@ -530,7 +444,6 @@ export default function PublisherPage() {
       const source = await uploadAsset('source', generation.source, `${slug}.mcstructure`, token);
       const schem = await uploadAsset('schem', generation.schem, `${slug}.schem`, token);
       const cover = await uploadAsset('cover', generation.cover, `${slug}-capa-4-vistas.png`, token);
-      const board = await uploadAsset('board', generation.board, `${slug}-prancha.png`, token);
       const views: string[] = [];
       for (let index = 0; index < 8; index += 1) {
         const view = generation.views[index];
@@ -539,7 +452,7 @@ export default function PublisherPage() {
       }
       const response = await fetchWithTimeout('/api/admin/publisher/publish', {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, assets: { source, schem, cover, views, board }, download_links: downloadLinks }),
+        body: JSON.stringify({ ...form, assets: { source, schem, cover, views }, download_links: downloadLinks }),
       }, 60_000, 'A criação no catálogo demorou demais. Tente novamente.');
       const result = await readApiResult<{ data: { bedrockId: string; javaId: string } }>(response, 'Não foi possível publicar este item');
       setPublishedItems({ bedrockId: result.data.bedrockId, javaId: result.data.javaId }); setStatus('Publicado nas categorias Bedrock e Java.');
@@ -627,9 +540,9 @@ export default function PublisherPage() {
             </section>
 
             {!isEditRoute && <section className="rounded-2xl border border-[#1D2433] bg-[#111318] p-5 shadow-xl sm:p-6">
-              <div className="mb-4 flex items-center gap-3"><Layers3 className="text-red-400" /><div><h2 className="font-black">Arquivo e geração automática</h2><p className="text-xs text-zinc-500">Envie um `.mcstructure` uma única vez. O Guia 3D gera o `.schem`, a capa e as oito imagens primeiro; depois que ele fecha, o Guizz Studio cria a prancha.</p></div></div>
+              <div className="mb-4 flex items-center gap-3"><Layers3 className="text-red-400" /><div><h2 className="font-black">Arquivo e geração automática</h2><p className="text-xs text-zinc-500">Envie um `.mcstructure` uma única vez. O Guia 3D prepara o `.schem`, a capa e as oito imagens em uma única etapa.</p></div></div>
               <input ref={sourceRef} type="file" accept=".mcstructure,application/octet-stream" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; event.currentTarget.value = ''; selectSource(file); }} />
-              <button type="button" disabled={isGenerating || isPublishing} onClick={() => sourceRef.current?.click()} className="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-red-400/50 bg-red-500/[.06] px-4 py-5 text-center text-sm font-bold text-red-100 transition hover:bg-red-500/[.12] disabled:cursor-not-allowed disabled:opacity-50"><Upload size={21} /> <span>{generation.source ? `Trocar ${generation.source.name} e gerar novamente` : 'Selecionar .mcstructure e gerar tudo'}</span><span className="text-xs font-medium text-red-200/70">Capa com 4 vistas pelo Guia 3D; depois, prancha pelo Guizz Studio; `.schem` e oito imagens são preparados automaticamente.</span></button>
+              <button type="button" disabled={isGenerating || isPublishing} onClick={() => sourceRef.current?.click()} className="flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-red-400/50 bg-red-500/[.06] px-4 py-5 text-center text-sm font-bold text-red-100 transition hover:bg-red-500/[.12] disabled:cursor-not-allowed disabled:opacity-50"><Upload size={21} /> <span>{generation.source ? `Trocar ${generation.source.name} e gerar novamente` : 'Selecionar .mcstructure e gerar tudo'}</span><span className="text-xs font-medium text-red-200/70">O Guia 3D prepara a capa com 4 vistas, o `.schem` e as oito imagens automaticamente.</span></button>
               <div aria-hidden="true">
                 {activeViewer === 'guide' && <iframe
                   ref={guideRef}
@@ -642,10 +555,9 @@ export default function PublisherPage() {
                   onLoad={() => setGuideReady(true)}
                   className="pointer-events-none fixed left-0 top-0 h-[720px] w-[1200px] border-0 opacity-0"
                 />}
-                {activeViewer === 'studio' && <iframe ref={studioRef} tabIndex={-1} title="Gerador de prancha Guizz Studio" src="/guide3d/studio-publisher.html" className="pointer-events-none fixed left-0 top-0 h-[720px] w-[1200px] border-0 opacity-0" />}
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3"><p className="text-sm text-zinc-400">{status}</p>{isGenerating && <span className="inline-flex items-center gap-2 text-xs font-bold text-red-200"><Loader2 size={14} className="animate-spin" /> Gerando materiais</span>}</div>
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">{generatedChecks.map(({ label, ready }) => <span key={label} className={`flex items-center gap-1 rounded-lg border px-2 py-2 ${ready ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-[#283244] text-zinc-600'}`}><CheckCircle2 size={13} /> {label}</span>)}</div>
+              <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">{generatedChecks.map(({ label, ready }) => <span key={label} className={`flex items-center gap-1 rounded-lg border px-2 py-2 ${ready ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-[#283244] text-zinc-600'}`}><CheckCircle2 size={13} /> {label}</span>)}</div>
             </section>}
           </div>
 
