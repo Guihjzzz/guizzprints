@@ -8,6 +8,7 @@ type GitHubAsset = {
   id: number;
   name: string;
   browser_download_url: string;
+  size?: number;
 };
 
 type GitHubRelease = {
@@ -20,6 +21,8 @@ type GitHubRelease = {
 };
 
 type GithubApiFailure = Error & { status?: number };
+
+const MAX_ASSET_UPLOAD_ATTEMPTS = 3;
 
 export type UploadedReleaseAsset = {
   url: string;
@@ -98,6 +101,12 @@ function nextBatchNumber(releases: GitHubRelease[]) {
   return releases.reduce((maximum, release) => Math.max(maximum, batchNumber(release) || 0), 0) + 1;
 }
 
+export function githubReleaseErrorStatus(error: unknown) {
+  if (!error || typeof error !== 'object' || !('status' in error)) return null;
+  const status = (error as GithubApiFailure).status;
+  return typeof status === 'number' ? status : null;
+}
+
 function releaseTitle(number: number) {
   return `Guizzprints · Lote ${String(number).padStart(3, '0')}`;
 }
@@ -121,9 +130,9 @@ async function createBatchRelease(number: number) {
   });
 }
 
-async function selectReleaseWithSpace() {
+async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   const releases = await listBatchReleases();
-  const existing = releases.find((release) => release.assets.length < MAX_ASSETS_PER_RELEASE);
+  const existing = releases.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
   if (existing) return existing;
 
   const number = nextBatchNumber(releases);
@@ -134,20 +143,33 @@ async function selectReleaseWithSpace() {
     // listing and POST. Read the list again and use its available release.
     if ((error as GithubApiFailure).status !== 422) throw error;
     const refreshed = await listBatchReleases();
-    const createdElsewhere = refreshed.find((release) => release.assets.length < MAX_ASSETS_PER_RELEASE);
+    const createdElsewhere = refreshed.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
     if (createdElsewhere) return createdElsewhere;
     throw error;
   }
 }
 
+async function getRelease(releaseId: number) {
+  const repository = githubReleaseRepository();
+  return await githubRequest<GitHubRelease>(`${GITHUB_API}/repos/${repository}/releases/${releaseId}`);
+}
+
 async function publishRelease(release: GitHubRelease) {
   if (!release.draft) return release;
   const repository = githubReleaseRepository();
-  return await githubRequest<GitHubRelease>(`${GITHUB_API}/repos/${repository}/releases/${release.id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ draft: false, prerelease: false }),
-  });
+  try {
+    return await githubRequest<GitHubRelease>(`${GITHUB_API}/repos/${repository}/releases/${release.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ draft: false, prerelease: false }),
+    });
+  } catch (error) {
+    // Another request may have published this shared batch first.
+    if (githubReleaseErrorStatus(error) !== 422) throw error;
+    const refreshed = await getRelease(release.id);
+    if (!refreshed.draft) return refreshed;
+    throw error;
+  }
 }
 
 function safeAssetName(value: string) {
@@ -166,16 +188,52 @@ function safeAssetName(value: string) {
  */
 export async function uploadReleaseAsset(file: ArrayBuffer, fileName: string, contentType: string): Promise<UploadedReleaseAsset> {
   let release = await selectReleaseWithSpace();
-  const uploadBase = release.upload_url.replace(/\{\?.*$/, '');
   const assetName = safeAssetName(fileName);
-  const url = new URL(uploadBase);
-  url.searchParams.set('name', assetName);
+  const attemptedReleaseIds = new Set<number>();
+  let asset: GitHubAsset | null = null;
 
-  const asset = await githubRequest<GitHubAsset>(url.toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': contentType || 'application/octet-stream' },
-    body: file,
-  });
+  for (let attempt = 0; attempt < MAX_ASSET_UPLOAD_ATTEMPTS; attempt += 1) {
+    const uploadBase = release.upload_url.replace(/\{\?.*$/, '');
+    const url = new URL(uploadBase);
+    url.searchParams.set('name', assetName);
+
+    try {
+      asset = await githubRequest<GitHubAsset>(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': contentType || 'application/octet-stream' },
+        body: file,
+      });
+      break;
+    } catch (error) {
+      if (githubReleaseErrorStatus(error) !== 422) throw error;
+
+      // A timed-out/retried request may already have created this exact
+      // asset. Reuse it instead of failing the publication or duplicating it.
+      let refreshed: GitHubRelease;
+      try {
+        refreshed = await getRelease(release.id);
+      } catch {
+        // Keep the actionable upload rejection if GitHub's follow-up read is
+        // temporarily unavailable; do not replace it with a second error.
+        throw error;
+      }
+      const existing = refreshed.assets.find((candidate) => candidate.name === assetName && (candidate.size === undefined || candidate.size === file.byteLength));
+      if (existing) {
+        release = refreshed;
+        asset = existing;
+        break;
+      }
+
+      // GitHub rejects duplicate asset names with 422. Retry the same asset
+      // name in another batch when the selected release changed concurrently
+      // or already contains an incompatible asset with that name.
+      attemptedReleaseIds.add(release.id);
+      if (attempt + 1 >= MAX_ASSET_UPLOAD_ATTEMPTS) throw error;
+      release = await selectReleaseWithSpace(attemptedReleaseIds);
+    }
+  }
+
+  if (!asset) throw new Error('GitHub Releases could not store the generated asset.');
   release = await publishRelease(release);
 
   return { url: asset.browser_download_url, releaseTag: release.tag_name, assetName: asset.name };

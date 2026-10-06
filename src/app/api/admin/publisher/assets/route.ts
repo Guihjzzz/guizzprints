@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { hasGithubReleasesConfig, uploadReleaseAsset } from '@/lib/github-releases';
+import { githubReleaseErrorStatus, hasGithubReleasesConfig, uploadReleaseAsset } from '@/lib/github-releases';
 import {
   MAX_PUBLISHER_FILE_BYTES,
   cleanPublisherFormat,
@@ -21,6 +21,9 @@ function fail(error: string, status: number) {
 
 function publishingFailure(error: unknown) {
   const message = error instanceof Error ? error.message : '';
+  if (githubReleaseErrorStatus(error) === 422) {
+    return fail('O GitHub recusou o arquivo (422). O envio foi tentado novamente em outro lote; tente novamente se o erro persistir.', 422);
+  }
   if (message.includes('GitHub Releases storage is not configured')) {
     return fail('O armazenamento GitHub Releases ainda não está configurado. Adicione GITHUB_RELEASES_TOKEN ao ambiente do servidor.', 503);
   }

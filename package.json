@@ -12,7 +12,8 @@
     "test": "npm run build",
     "test:smoke": "npm run build",
     "test:client-security": "node tests/client-secret-scan.mjs",
-    "test:security-matrix": "node --test tests/security-route-matrix.test.mjs"
+    "test:security-matrix": "node --test tests/security-route-matrix.test.mjs",
+    "test:github-releases": "node --test tests/github-releases.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { uploadReleaseAsset } from '@/lib/github-releases';
+import { githubReleaseErrorStatus, uploadReleaseAsset } from '@/lib/github-releases';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
   MAX_PUBLISHER_CHUNKS,
@@ -82,7 +82,11 @@ export async function POST(request: NextRequest) {
     const stored = await uploadReleaseAsset(assembled.buffer, assetName, contentType || publisherContentType(kind, format));
     return NextResponse.json({ data: stored }, { headers: noStoreHeaders });
   } catch (error) {
-    console.error('publisher-upload-complete-failure', { kind: error instanceof Error ? error.name : 'unknown' });
+    const githubStatus = githubReleaseErrorStatus(error);
+    console.error('publisher-upload-complete-failure', { kind: error instanceof Error ? error.name : 'unknown', githubStatus });
+    if (githubStatus === 422) {
+      return fail('O GitHub recusou o arquivo (422). O envio foi tentado novamente em outro lote; tente novamente se o erro persistir.', 422);
+    }
     return fail('Não foi possível finalizar o envio do arquivo.', 500);
   } finally {
     if (paths.length) {
