@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { isGithubReleaseAssetUrl } from '@/lib/github-releases';
+import { isGithubReleaseAssetUrl, isGithubReleaseTransportFailure } from '@/lib/github-releases';
 import { parseAllowedDownloadUrl } from '@/lib/download-url';
 import { parseContentTaxonomy } from '@/lib/mod-categories';
 import { validateModVersion } from '@/lib/mod-version';
@@ -135,6 +135,11 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ data: { bedrockId, javaId } }, { status: 201, headers: noStoreHeaders });
   } catch (error) {
+    if (isGithubReleaseTransportFailure(error)) {
+      console.error('publisher-catalog-transport-failure', { kind: error instanceof Error ? error.name : 'unknown' });
+      return failure('A conexão com o catálogo falhou temporariamente. Aguarde e confira se a publicação apareceu antes de tentar novamente.', 503);
+    }
+    console.error('publisher-catalog-request-failure', { kind: error instanceof Error ? error.name : 'unknown' });
     return failure(error instanceof Error ? error.message : 'Unable to publish this item.', 400);
   }
 }

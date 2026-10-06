@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { githubReleaseErrorStatus, hasGithubReleasesConfig, uploadReleaseAsset } from '@/lib/github-releases';
+import { githubReleaseErrorStatus, hasGithubReleasesConfig, isGithubReleaseTransportFailure, uploadReleaseAsset } from '@/lib/github-releases';
 import {
   MAX_PUBLISHER_FILE_BYTES,
   cleanPublisherFormat,
@@ -27,7 +27,12 @@ function publishingFailure(error: unknown) {
   if (message.includes('GitHub Releases storage is not configured')) {
     return fail('O armazenamento GitHub Releases ainda não está configurado. Adicione GITHUB_RELEASES_TOKEN ao ambiente do servidor.', 503);
   }
-  return fail(message || 'Não foi possível enviar este arquivo gerado.', 500);
+  if (isGithubReleaseTransportFailure(error)) {
+    console.error('publisher-github-transport-failure', { kind: error instanceof Error ? error.name : 'unknown' });
+    return fail('A conexão com o armazenamento de arquivos falhou temporariamente. Aguarde alguns segundos e tente publicar novamente.', 503);
+  }
+  console.error('publisher-asset-upload-failure', { kind: error instanceof Error ? error.name : 'unknown', githubStatus: githubReleaseErrorStatus(error) });
+  return fail('Não foi possível enviar este arquivo gerado.', 500);
 }
 
 export async function GET(request: NextRequest) {

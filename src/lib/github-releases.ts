@@ -3,6 +3,17 @@ import 'server-only';
 const GITHUB_API = 'https://api.github.com';
 const MAX_ASSETS_PER_RELEASE = 1_000;
 const BATCH_TAG = /^assets-batch-(\d{3,})$/;
+const MAX_GITHUB_REQUEST_ATTEMPTS = 3;
+const RETRYABLE_GITHUB_STATUSES = new Set([408, 500, 502, 503, 504]);
+const RETRYABLE_NETWORK_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'ETIMEDOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
 
 type GitHubAsset = {
   id: number;
@@ -63,25 +74,67 @@ function githubHeaders(contentType?: string) {
   };
 }
 
-async function githubRequest<T>(url: string, init: RequestInit = {}) {
-  const response = await fetch(url, {
-    ...init,
-    headers: { ...githubHeaders(), ...init.headers },
-    cache: 'no-store',
-  });
-  if (response.ok) return await response.json() as T;
-
-  let detail = '';
-  try {
-    const payload = await response.json() as { message?: unknown };
-    if (typeof payload.message === 'string') detail = payload.message;
-  } catch {
-    // GitHub occasionally sends an empty non-JSON error body. Keep the
-    // server response useful without leaking credentials or response data.
+function nestedNetworkCode(error: unknown): string | null {
+  let current = error;
+  for (let depth = 0; depth < 4 && current && typeof current === 'object'; depth += 1) {
+    if ('code' in current && typeof current.code === 'string') return current.code;
+    current = 'cause' in current ? current.cause : null;
   }
-  const error = new Error(`GitHub Releases request failed (${response.status})${detail ? `: ${detail}` : ''}`) as GithubApiFailure;
-  error.status = response.status;
-  throw error;
+  return null;
+}
+
+export function isGithubReleaseTransportFailure(error: unknown) {
+  if (!error || typeof error !== 'object' || 'status' in error) return false;
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
+  const code = nestedNetworkCode(error);
+  return (error instanceof TypeError && /fetch failed|failed to fetch|networkerror/i.test(message))
+    || Boolean(code && RETRYABLE_NETWORK_CODES.has(code));
+}
+
+function retryableRequestFailure(error: unknown) {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const status = (error as GithubApiFailure).status;
+    return typeof status === 'number' && RETRYABLE_GITHUB_STATUSES.has(status);
+  }
+  return isGithubReleaseTransportFailure(error);
+}
+
+function retryDelay(attempt: number) {
+  return new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+}
+
+async function githubRequest<T>(url: string, init: RequestInit = {}) {
+  for (let attempt = 1; attempt <= MAX_GITHUB_REQUEST_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        ...init,
+        headers: { ...githubHeaders(), ...init.headers },
+        cache: 'no-store',
+      });
+      if (response.ok) return await response.json() as T;
+
+      let detail = '';
+      try {
+        const payload = await response.json() as { message?: unknown };
+        if (typeof payload.message === 'string') detail = payload.message;
+      } catch {
+        // GitHub occasionally sends an empty non-JSON error body. Keep the
+        // server response useful without leaking credentials or response data.
+      }
+      const error = new Error(`GitHub Releases request failed (${response.status})${detail ? `: ${detail}` : ''}`) as GithubApiFailure;
+      error.status = response.status;
+      throw error;
+    } catch (error) {
+      if (attempt >= MAX_GITHUB_REQUEST_ATTEMPTS || !retryableRequestFailure(error)) throw error;
+      console.warn('github-releases-transient-retry', {
+        attempt,
+        status: githubReleaseErrorStatus(error),
+        networkCode: nestedNetworkCode(error),
+      });
+      await retryDelay(attempt);
+    }
+  }
+  throw new Error('GitHub Releases request failed after retries.');
 }
 
 function batchNumber(release: GitHubRelease) {

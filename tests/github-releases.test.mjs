@@ -60,6 +60,61 @@ test('a 422 upload retry reuses the same asset if GitHub already stored it', asy
   }
 });
 
+test('a transient fetch failure is retried before uploading an asset', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const currentRelease = release(7, 'assets-batch-007');
+  const uploaded = { id: 77, name: 'cover.png', browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-007/cover.png', size: 4 };
+  const originalFetch = globalThis.fetch;
+  let releaseListAttempts = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/releases') && !init.method) {
+      releaseListAttempts += 1;
+      if (releaseListAttempts === 1) throw new TypeError('fetch failed');
+      return jsonResponse([currentRelease]);
+    }
+    if (url.pathname.endsWith('/releases/7/assets') && init.method === 'POST') return jsonResponse(uploaded, 201);
+    if (url.pathname.endsWith('/releases/7') && init.method === 'PATCH') return jsonResponse({ ...currentRelease, draft: false });
+    throw new Error(`Unexpected GitHub request: ${init.method || 'GET'} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.url, uploaded.browser_download_url);
+    assert.equal(releaseListAttempts, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('a lost upload response reuses the asset created by the first request', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const uploaded = { id: 88, name: 'cover.png', browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-008/cover.png', size: 4 };
+  const currentRelease = release(8, 'assets-batch-008');
+  const originalFetch = globalThis.fetch;
+  let uploadAttempts = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/releases') && !init.method) return jsonResponse([currentRelease]);
+    if (url.pathname.endsWith('/releases/8/assets') && init.method === 'POST') {
+      uploadAttempts += 1;
+      if (uploadAttempts === 1) throw new TypeError('fetch failed');
+      return jsonResponse({ message: 'Validation Failed', errors: [{ code: 'already_exists' }] }, 422);
+    }
+    if (url.pathname.endsWith('/releases/8') && !init.method) return jsonResponse({ ...currentRelease, assets: [uploaded] });
+    if (url.pathname.endsWith('/releases/8') && init.method === 'PATCH') return jsonResponse({ ...currentRelease, draft: false });
+    throw new Error(`Unexpected GitHub request: ${init.method || 'GET'} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.url, uploaded.browser_download_url);
+    assert.equal(uploadAttempts, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('a 422 upload conflict moves the asset to a different batch and publishes it', async () => {
   const { uploadReleaseAsset } = loadGithubReleases();
   const firstRelease = release(1, 'assets-batch-001');

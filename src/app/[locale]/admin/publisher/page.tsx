@@ -115,6 +115,9 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (controller.signal.aborted) throw new Error(timeoutMessage);
+    if (error instanceof TypeError && /fetch failed|failed to fetch|networkerror/i.test(error.message)) {
+      throw new Error('A conexão com o servidor foi interrompida. Verifique a internet e tente novamente.');
+    }
     throw error;
   } finally {
     window.clearTimeout(timer);
