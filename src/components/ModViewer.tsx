@@ -15,6 +15,9 @@ import { OptimizedImage } from '@/components/OptimizedImage';
 import { Guide3DPreview } from '@/components/Guide3DPreview';
 import { optimizedImageUrl } from '@/lib/media-image';
 import { InstantLink } from '@/components/InstantLink';
+import { ModReportForm } from '@/components/ModReportForm';
+import { GuizzWorldsBanner } from '@/components/GuizzWorldsBanner';
+import { DownloadTutorialsCard } from '@/components/DownloadTutorialsCard';
 
 type SocialIcon = React.ComponentType<{ size?: number; className?: string }>;
 
@@ -532,6 +535,14 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
               fileName={`${modData.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'guizzprints'}.mcstructure`}
               formats={mod.download_formats}
               availableFormatIds={mod.available_formats || []}
+            />
+            <DownloadTutorialsCard />
+            {mod.category?.toLowerCase() !== 'java' && <GuizzWorldsBanner className="w-full" />}
+            <ModReportForm
+              modId={mod.id}
+              title={modData.title}
+              edition={mod.category?.toLowerCase() === 'java' ? 'java' : 'bedrock'}
+              isDemo={Boolean(mod.is_demo)}
             />
           </aside>
         </div>

@@ -82,7 +82,7 @@ export default async function RootLayout({
             </div>
             <div className="flex shrink-0 flex-col items-center gap-1 w-full px-2 pt-2">
               {SIDEBAR_ITEMS.filter((item) => item.id === 'favorites' || item.id === 'settings').map((item) => <SidebarItem key={item.id} item={item} label={t(item.id)} locale={locale} />)}
-              <AdminSidebarItem locale={locale} label={t('admin')} />
+              <AdminSidebarItem locale={locale} label={t('admin')} reportsLabel={t('reports')} />
             </div>
           </aside>
 

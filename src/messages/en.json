@@ -13,7 +13,8 @@
     "skins": "Skins",
     "favorites": "Favorites",
     "settings": "Settings",
-    "admin": "Admin panel"
+    "admin": "Admin panel",
+    "reports": "Player reports"
   },
   "Header": {
     "signIn": "Sign in",
@@ -163,6 +164,9 @@
     "home": "Home",
     "overview": "Overview",
     "installation": "Installation",
+    "worldsTitle": "Guizz Worlds",
+    "worldsDescription": "Recover Bedrock achievements after using Creative mode or cheats.",
+    "worldsAction": "Visit",
     "favorite": "Favorite",
     "share": "Share",
     "technicalSpecs": "Technical specifications",
@@ -207,6 +211,70 @@
     "installStep2": "If it is a .zip file, extract it.",
     "installStep3": "Open the file to import it into Minecraft."
   },
+  "Report": {
+    "title": "Report a problem",
+    "description": "Found something wrong? Report this {edition} listing. No account is needed; the report is linked only to this item and edition.",
+    "bedrock": "Bedrock",
+    "java": "Java",
+    "openForm": "Report an issue with this item",
+    "itemEdition": "Item: {title} · Edition: {edition}",
+    "reasonLabel": "What happened?",
+    "detailsLabel": "Details (optional)",
+    "detailsPlaceholder": "Describe what happened and, if possible, how to reproduce it.",
+    "close": "Close report form",
+    "privacy": "No sign-in is needed. If you are signed in, the report is associated with your account; otherwise, a protected access identifier limits spam. We do not store your raw IP address.",
+    "send": "Send report",
+    "sending": "Sending…",
+    "success": "Report sent. Thanks for helping improve the catalog.",
+    "submitError": "The report could not be sent right now. Please try again.",
+    "rateLimit": "You have reached the report limit for now. Please try again later.",
+    "reasons": {
+      "downloadBroken": "The download will not open or fails",
+      "wrongFile": "The file does not match this listing",
+      "wrongImages": "The images do not match the item",
+      "wrongDescription": "The title or description is incorrect",
+      "wrongEdition": "Incompatible edition or version",
+      "other": "Other problem"
+    },
+    "admin": {
+      "eyebrow": "Catalog administration",
+      "title": "Player reports",
+      "description": "Each report is tied to the exact listing and edition. Review the details and update its status to track resolution.",
+      "publisher": "Publisher",
+      "refresh": "Refresh",
+      "listTitle": "All reports",
+      "total": "{count} reports found",
+      "filter": "Filter",
+      "loading": "Loading reports…",
+      "empty": "No reports found for this filter.",
+      "loadError": "Could not load reports.",
+      "updateError": "Could not update the report status.",
+      "accessDenied": "This page is for administrators only.",
+      "backToAdmin": "Back to admin panel",
+      "openItem": "Open listing",
+      "status": "Report status",
+      "saving": "Saving…",
+      "pagination": "Report pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pages}",
+      "statuses": {
+        "all": "All statuses",
+        "open": "New",
+        "reviewing": "Under review",
+        "resolved": "Resolved",
+        "dismissed": "Archived"
+      },
+      "reasons": {
+        "download_broken": "The download will not open or fails",
+        "wrong_file": "The file does not match this listing",
+        "wrong_images": "The images do not match the item",
+        "wrong_description": "The title or description is incorrect",
+        "wrong_edition_or_version": "Incompatible edition or version",
+        "other": "Other problem"
+      }
+    }
+  },
   "Download": {
     "title": "Direct, free download",
     "description": "Choose a format published for this edition. No ads, countdowns, or intermediate pages.",
@@ -218,6 +286,7 @@
     "downloadFormat": "Download {format}",
     "formatInPreparation": "Format in preparation",
     "formatUnavailable": "This item does not have a file published in this format yet.",
+    "tutorialsTitle": "Download tutorials",
     "readyLink": "Download link ready",
     "sessionError": "Unable to start the protected download. Please try again.",
     "preparing": "Preparing...",

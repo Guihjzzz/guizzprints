@@ -13,7 +13,8 @@
     "skins": "Skins",
     "favorites": "Favoritos",
     "settings": "Configurações",
-    "admin": "Painel admin"
+    "admin": "Painel admin",
+    "reports": "Reportes de jogadores"
   },
   "Header": {
     "signIn": "Entrar",
@@ -163,6 +164,9 @@
     "home": "Início",
     "overview": "Visão geral",
     "installation": "Instalação",
+    "worldsTitle": "Guizz Worlds",
+    "worldsDescription": "Recupere conquistas do Bedrock após usar o Criativo ou trapaças.",
+    "worldsAction": "Acessar",
     "favorite": "Favoritar",
     "share": "Compartilhar",
     "technicalSpecs": "Especificações técnicas",
@@ -207,6 +211,70 @@
     "installStep2": "Se for um arquivo .zip, extraia-o.",
     "installStep3": "Abra o arquivo para importá-lo no Minecraft."
   },
+  "Report": {
+    "title": "Reporte um problema",
+    "description": "Encontrou algo errado? Envie um reporte sobre esta publicação {edition}. Não precisa entrar na conta; o reporte fica ligado somente a este item e edição.",
+    "bedrock": "Bedrock",
+    "java": "Java",
+    "openForm": "Reportar erro deste item",
+    "itemEdition": "Item: {title} · Edição: {edition}",
+    "reasonLabel": "O que aconteceu?",
+    "detailsLabel": "Detalhes (opcional)",
+    "detailsPlaceholder": "Conte o que aconteceu e, se puder, como reproduzir o problema.",
+    "close": "Fechar formulário de reporte",
+    "privacy": "Não precisa entrar. Se estiver conectado, o reporte fica associado à conta; sem login, usamos um identificador protegido do acesso para limitar spam. O IP bruto não é salvo.",
+    "send": "Enviar reporte",
+    "sending": "Enviando…",
+    "success": "Reporte enviado. Obrigado por ajudar a melhorar o catálogo.",
+    "submitError": "Não foi possível enviar o reporte agora. Tente novamente.",
+    "rateLimit": "Você atingiu o limite de reportes por enquanto. Tente novamente mais tarde.",
+    "reasons": {
+      "downloadBroken": "O download não abre ou falha",
+      "wrongFile": "O arquivo não corresponde a esta publicação",
+      "wrongImages": "As imagens não correspondem ao item",
+      "wrongDescription": "Título ou descrição incorretos",
+      "wrongEdition": "Edição ou versão incompatível",
+      "other": "Outro problema"
+    },
+    "admin": {
+      "eyebrow": "Administração do catálogo",
+      "title": "Reportes dos jogadores",
+      "description": "Cada reporte está associado à publicação e à edição exatas. Analise o relato e atualize o estado para acompanhar a resolução.",
+      "publisher": "Publicador",
+      "refresh": "Atualizar",
+      "listTitle": "Todos os reportes",
+      "total": "{count} reportes encontrados",
+      "filter": "Filtrar",
+      "loading": "Carregando reportes…",
+      "empty": "Nenhum reporte encontrado para este filtro.",
+      "loadError": "Não foi possível carregar os reportes.",
+      "updateError": "Não foi possível atualizar o estado do reporte.",
+      "accessDenied": "Esta página é exclusiva para administradores.",
+      "backToAdmin": "Voltar ao painel admin",
+      "openItem": "Abrir publicação",
+      "status": "Estado do reporte",
+      "saving": "Salvando…",
+      "pagination": "Paginação dos reportes",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "page": "Página {page} de {pages}",
+      "statuses": {
+        "all": "Todos os estados",
+        "open": "Novo",
+        "reviewing": "Em análise",
+        "resolved": "Resolvido",
+        "dismissed": "Arquivado"
+      },
+      "reasons": {
+        "download_broken": "O download não abre ou falha",
+        "wrong_file": "O arquivo não corresponde a esta publicação",
+        "wrong_images": "As imagens não correspondem ao item",
+        "wrong_description": "Título ou descrição incorretos",
+        "wrong_edition_or_version": "Edição ou versão incompatível",
+        "other": "Outro problema"
+      }
+    }
+  },
   "Download": {
     "title": "Download direto e gratuito",
     "description": "Escolha um formato publicado para esta edição. Sem anúncios, contagem regressiva ou página intermediária.",
@@ -218,6 +286,7 @@
     "downloadFormat": "Baixar {format}",
     "formatInPreparation": "Formato em preparação",
     "formatUnavailable": "Este item ainda não possui arquivo publicado neste formato.",
+    "tutorialsTitle": "Tutoriais de download",
     "readyLink": "Link de download pronto",
     "sessionError": "Não foi possível iniciar o download protegido. Tente novamente.",
     "preparing": "Preparando...",
