@@ -1,11 +1,16 @@
 'use client';
 
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
-import { browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, type Auth, type User } from 'firebase/auth';
+import { browserLocalPersistence, browserSessionPersistence, getAuth, setPersistence, type Auth, type User } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  // Keep redirect sign-in first-party on the canonical production domain.
+  // Preview/local hosts must keep Firebase's configured domain because they
+  // are not registered as Google OAuth callback origins.
+  authDomain: typeof window !== 'undefined' && window.location.hostname === 'guizzprints.xyz'
+    ? 'guizzprints.xyz'
+    : process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -31,7 +36,11 @@ function preparePersistence(auth: Auth) {
     // A redirect must not begin before Firebase knows where to restore the
     // session. Keep the failure non-fatal: Firebase's default persistence is
     // still safer than leaving the login screen blocked forever.
-    persistencePromise = setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+    persistencePromise = setPersistence(auth, browserLocalPersistence)
+      // Private/mobile browsers may reject localStorage while still allowing
+      // sessionStorage, which is enough to survive the same-tab OAuth return.
+      .catch(() => setPersistence(auth, browserSessionPersistence))
+      .catch(() => undefined);
   }
   return persistencePromise ?? Promise.resolve();
 }
@@ -56,26 +65,25 @@ export async function getFirebaseUser(): Promise<User | null> {
   const auth = getFirebaseAuth();
   if (!auth) return null;
   if (auth.currentUser) return auth.currentUser;
-  // Auth state is normally delivered immediately. If browser storage or a
-  // provider is unavailable, resolve as signed out instead of making headers,
-  // navigation, and the admin check wait forever.
-  return new Promise((resolve) => {
-    let settled = false;
-    let stop: () => void = () => undefined;
-    let timeout: number | null = null;
-    const finish = (user: User | null) => {
-      if (settled) return;
-      settled = true;
-      if (timeout !== null) window.clearTimeout(timeout);
-      stop();
-      resolve(user);
-    };
-    timeout = window.setTimeout(() => finish(null), 3000);
-    stop = onAuthStateChanged(auth, (user) => {
-      finish(user);
-    });
-    if (settled) stop();
-  });
+  if (typeof window === 'undefined') {
+    await auth.authStateReady();
+    return auth.currentUser;
+  }
+  // Mobile browsers can take longer to restore IndexedDB/session persistence
+  // after an OAuth redirect. Wait for Firebase's initial auth state instead of
+  // treating the temporary null currentUser as a signed-out account.
+  let timeout: number | null = null;
+  try {
+    await Promise.race([
+      Promise.all([preparePersistence(auth), auth.authStateReady()]),
+      new Promise<void>((resolve) => {
+        timeout = window.setTimeout(resolve, 10000);
+      }),
+    ]);
+  } finally {
+    if (timeout !== null) window.clearTimeout(timeout);
+  }
+  return auth.currentUser;
 }
 
 export async function getFirebaseIdToken(): Promise<string | null> {

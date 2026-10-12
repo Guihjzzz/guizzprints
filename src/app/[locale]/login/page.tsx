@@ -44,6 +44,7 @@ function LoginForm() {
   const redirectStarted = useRef(false);
   const redirectTimeout = useRef<number | null>(null);
   const captchaEnabled = Boolean(siteKey && !firebaseEnabled);
+  const next = useCallback(() => getSafeReturnPath(new URLSearchParams(window.location.search).get('next')), []);
   const onToken = useCallback((token: string) => setCaptchaToken(token), []);
   const email = form.email.trim().toLowerCase();
   const wait = Math.max(0, Math.ceil(((cooldownView[email] ?? 0) - clock) / 1000));
@@ -72,26 +73,40 @@ function LoginForm() {
         redirectTimeout.current = null;
       }
     };
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let redirectResultResolved = false;
+    let observedUser = auth.currentUser;
+    const continueWithUser = (user: typeof auth.currentUser) => {
       if (!active || !user || redirectStarted.current) return;
       redirectStarted.current = true;
       finishRedirect();
       window.location.replace(next() ?? `/${locale}`);
+    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      observedUser = user;
+      // Do not navigate away on Firebase's initial persisted-user event before
+      // getRedirectResult has consumed the Google response from the mobile tab.
+      if (redirectResultResolved) continueWithUser(user);
     });
-    void getRedirectResult(auth).then((result) => {
-      if (!active || !result?.user || redirectStarted.current) return;
-      redirectStarted.current = true;
-      finishRedirect();
-      window.location.replace(next() ?? `/${locale}`);
+    void getRedirectResult(auth).then(async (result) => {
+      await auth.authStateReady();
+      if (!active) return;
+      redirectResultResolved = true;
+      continueWithUser(result?.user ?? auth.currentUser ?? observedUser);
     }).catch((error: unknown) => {
       if (!active) return;
+      redirectResultResolved = true;
+      const restoredUser = auth.currentUser ?? observedUser;
+      if (restoredUser) {
+        continueWithUser(restoredUser);
+        return;
+      }
       const code = (error as { code?: string } | null)?.code || '';
       setMessage({ success: false, text: code === 'auth/unauthorized-domain'
         ? 'Este domínio ainda não está autorizado no Firebase.'
         : t('googleUnavailable') });
     });
     return () => { active = false; finishRedirect(); unsubscribe(); };
-  }, [firebaseEnabled, locale, t]);
+  }, [firebaseEnabled, locale, next, t]);
 
   React.useEffect(() => {
     if (!focusEmailRef.current) return;
@@ -99,7 +114,6 @@ function LoginForm() {
     focusEmailRef.current = false;
   }, [mode]);
 
-  const next = () => getSafeReturnPath(new URLSearchParams(window.location.search).get('next'));
   const changeMode = (value: AuthMode) => {
     if (busy.current) return;
     setMode(value); focusEmailRef.current = true; setConfirmation(false); setShowPassword(false); setMessage(null); setCaptchaToken(''); setCaptchaReset(value => value + 1);

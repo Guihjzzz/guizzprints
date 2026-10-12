@@ -2,7 +2,7 @@
 
 import { onAuthStateChanged } from 'firebase/auth';
 import { supabase } from './supabase';
-import { getFirebaseAuth } from './firebase-client';
+import { getFirebaseAuth, getFirebaseUser } from './firebase-client';
 
 let adminLookup: Promise<string | null> | null = null;
 let cachedAdminToken: string | null = null;
@@ -15,7 +15,7 @@ function clearAdminLookup() {
 }
 
 export async function getClientAuthToken() {
-  const firebaseToken = await getFirebaseAuth()?.currentUser?.getIdToken() ?? null;
+  const firebaseToken = await (await getFirebaseUser())?.getIdToken() ?? null;
   if (firebaseToken) return firebaseToken;
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? null;
@@ -27,7 +27,7 @@ export async function getClientAdminAuthToken() {
 
   adminLookup = (async () => {
   const [firebaseToken, supabaseSession] = await Promise.all([
-    getFirebaseAuth()?.currentUser?.getIdToken() ?? null,
+    getFirebaseUser().then(user => user?.getIdToken() ?? null),
     supabase.auth.getSession(),
   ]);
   const candidates = [...new Set([
@@ -64,7 +64,7 @@ export async function getClientAdminAuthToken() {
 }
 
 export async function getClientAuthUser() {
-  const firebaseUser = getFirebaseAuth()?.currentUser;
+  const firebaseUser = await getFirebaseUser();
   if (firebaseUser) return { id: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName };
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return null;

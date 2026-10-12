@@ -15,7 +15,10 @@
       "emailPassword": true,
       "googleSignIn": {
         "oAuthBrandDisplayName": "Guizzprints",
-        "supportEmail": "junindacosta064@gmail.com"
+        "supportEmail": "junindacosta064@gmail.com",
+        "authorizedRedirectUris": [
+          "https://guizzprints.xyz/__/auth/handler"
+        ]
       }
     }
   }

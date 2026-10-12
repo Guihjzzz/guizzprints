@@ -16,7 +16,15 @@ export function TopHeader() {
 
   useEffect(() => {
     let active = true;
-    const refresh = () => { void getClientAuthUser().then((nextUser) => { if (active) setUser(nextUser); }); };
+    let refreshVersion = 0;
+    const refresh = () => {
+      const version = ++refreshVersion;
+      void getClientAuthUser().then((nextUser) => {
+        // An earlier Supabase lookup must not overwrite the Firebase identity
+        // restored after Google redirects back to the site.
+        if (active && version === refreshVersion) setUser(nextUser);
+      });
+    };
     refresh();
     const unsubscribe = listenToClientAuth(refresh);
     return () => { active = false; unsubscribe(); };

@@ -27,5 +27,7 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|auth|_next|.*\\..*).*)']
+  // Firebase's auth helper must reach the external rewrite with its original
+  // path. Running next-intl on it would add a locale and break OAuth callbacks.
+  matcher: ['/((?!api|auth|__/auth|__/firebase|_next|.*\\..*).*)']
 };
