@@ -36,7 +36,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: { title, description, siteName: 'Guizzprints', type: 'website', url: `/${safeLocale}`, images: [{ url: '/guizz-cover.jpg', alt: 'Guizzprints' }] },
     twitter: { card: 'summary_large_image', title, description, images: ['/guizz-cover.jpg'] },
     manifest: '/manifest.webmanifest',
-    icons: { icon: [{ url: '/icon.jpg', type: 'image/jpeg' }], shortcut: '/icon.jpg', apple: '/icons/guizz-180.png' },
+    icons: {
+      icon: [{ url: '/icon.jpg?v=2026-10-site-cover-v3', type: 'image/jpeg' }],
+      shortcut: '/icon.jpg?v=2026-10-site-cover-v3',
+      apple: '/icons/guizz-180.png?v=2026-10-site-cover-v3',
+    },
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_WORKER_VERSION = '2026-09-covers-v2';
+const APP_WORKER_VERSION = '2026-10-site-cover-v3';
 
 /**
  * Keeps the installed Guizzprints app attached to the current website.
