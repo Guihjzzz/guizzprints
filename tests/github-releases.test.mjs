@@ -148,3 +148,56 @@ test('a 422 upload conflict moves the asset to a different batch and publishes i
     globalThis.fetch = originalFetch;
   }
 });
+
+test('a 422 across all available batches creates a clean batch before failing', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const firstRelease = release(1, 'assets-batch-001');
+  const secondRelease = release(2, 'assets-batch-002');
+  const thirdRelease = release(3, 'assets-batch-003');
+  const freshRelease = release(4, 'assets-batch-004', { draft: true });
+  const uploaded = {
+    id: 84,
+    name: 'cover.png',
+    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-004/cover.png',
+    size: 4,
+  };
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || 'GET';
+    calls.push({ path: url.pathname, method });
+    if (url.pathname.endsWith('/releases') && method === 'GET') {
+      return jsonResponse([firstRelease, secondRelease, thirdRelease]);
+    }
+    if (url.pathname.endsWith('/releases') && method === 'POST') {
+      assert.equal(JSON.parse(String(init.body)).tag_name, 'assets-batch-004');
+      return jsonResponse(freshRelease, 201);
+    }
+    if (/\/releases\/[123]\/assets$/.test(url.pathname) && method === 'POST') {
+      return jsonResponse({ message: 'Validation Failed', errors: [{ code: 'already_exists' }] }, 422);
+    }
+    if (/\/releases\/[123]$/.test(url.pathname) && method === 'GET') {
+      const found = [firstRelease, secondRelease, thirdRelease].find((item) => url.pathname.endsWith(`/${item.id}`));
+      return jsonResponse(found);
+    }
+    if (url.pathname.endsWith('/releases/4/assets') && method === 'POST') return jsonResponse(uploaded, 201);
+    if (url.pathname.endsWith('/releases/4') && method === 'PATCH') return jsonResponse({ ...freshRelease, draft: false });
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.url, uploaded.browser_download_url);
+    assert.equal(result.releaseTag, 'assets-batch-004');
+    assert.deepEqual(calls.filter((call) => call.method === 'POST' && call.path.endsWith('/assets')).map((call) => call.path), [
+      '/repos/owner/repo/releases/1/assets',
+      '/repos/owner/repo/releases/2/assets',
+      '/repos/owner/repo/releases/3/assets',
+      '/repos/owner/repo/releases/4/assets',
+    ]);
+    assert.equal(calls.filter((call) => call.method === 'PATCH').length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

@@ -33,7 +33,9 @@ type GitHubRelease = {
 
 type GithubApiFailure = Error & { status?: number };
 
-const MAX_ASSET_UPLOAD_ATTEMPTS = 3;
+// Try the available releases first, then let the final attempt create a clean
+// batch if every existing batch rejects the upload (for example, a 422).
+const MAX_ASSET_UPLOAD_ATTEMPTS = 4;
 
 export type UploadedReleaseAsset = {
   url: string;
