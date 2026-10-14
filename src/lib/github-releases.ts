@@ -4,6 +4,7 @@ const GITHUB_API = 'https://api.github.com';
 const MAX_ASSETS_PER_RELEASE = 1_000;
 const BATCH_TAG = /^assets-batch-(\d{3,})$/;
 const MAX_GITHUB_REQUEST_ATTEMPTS = 3;
+const MAX_BATCH_RELEASE_CREATE_ATTEMPTS = 10;
 const RETRYABLE_GITHUB_STATUSES = new Set([408, 500, 502, 503, 504]);
 const RETRYABLE_NETWORK_CODES = new Set([
   'ECONNRESET',
@@ -196,23 +197,37 @@ async function createBatchRelease(number: number) {
   });
 }
 
+function isExistingReleaseTagConflict(error: unknown) {
+  if (githubReleaseErrorStatus(error) !== 422 || !(error instanceof Error)) return false;
+  return /tag_name\s*:\s*already_exists/i.test(error.message);
+}
+
 async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   const releases = await listBatchReleases();
   const existing = releases.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
   if (existing) return existing;
 
-  const number = nextBatchNumber(releases);
-  try {
-    return await createBatchRelease(number);
-  } catch (error) {
-    // A second publish request can create the same next batch between our
-    // listing and POST. Read the list again and use its available release.
-    if ((error as GithubApiFailure).status !== 422) throw error;
-    const refreshed = await listBatchReleases();
-    const createdElsewhere = refreshed.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
-    if (createdElsewhere) return createdElsewhere;
-    throw error;
+  // A deleted release can leave its Git tag behind, and GitHub refuses to
+  // recreate a release with that tag. Also handle concurrent publishers that
+  // choose the same next number. Keep trying the next number after refreshing
+  // releases; only skip when GitHub explicitly identifies tag_name as the
+  // conflicting field.
+  let number = nextBatchNumber(releases);
+  let lastTagConflict: unknown;
+  for (let attempt = 0; attempt < MAX_BATCH_RELEASE_CREATE_ATTEMPTS; attempt += 1) {
+    try {
+      return await createBatchRelease(number);
+    } catch (error) {
+      if (!isExistingReleaseTagConflict(error)) throw error;
+      lastTagConflict = error;
+
+      const refreshed = await listBatchReleases();
+      const createdElsewhere = refreshed.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
+      if (createdElsewhere) return createdElsewhere;
+      number = Math.max(number, nextBatchNumber(refreshed)) + 1;
+    }
   }
+  throw lastTagConflict instanceof Error ? lastTagConflict : new Error('Could not create a new GitHub asset batch after repeated tag conflicts.');
 }
 
 async function getRelease(releaseId: number) {

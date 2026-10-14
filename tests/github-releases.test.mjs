@@ -201,3 +201,74 @@ test('a 422 across all available batches creates a clean batch before failing', 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('a stale GitHub tag conflict skips to the next available batch number', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const fullReleases = Array.from({ length: 21 }, (_, index) => release(index + 1, `assets-batch-${String(index + 1).padStart(3, '0')}`, {
+    assets: Array.from({ length: 1_000 }, (_, assetIndex) => ({ id: assetIndex + 1, name: `asset-${assetIndex}.bin` })),
+  }));
+  const nextRelease = release(23, 'assets-batch-023', { draft: true });
+  const uploaded = {
+    id: 99,
+    name: 'cover.png',
+    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-023/cover.png',
+    size: 4,
+  };
+  const createTags = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || 'GET';
+    if (url.pathname.endsWith('/releases') && method === 'GET') return jsonResponse(fullReleases);
+    if (url.pathname.endsWith('/releases') && method === 'POST') {
+      const tag = JSON.parse(String(init.body)).tag_name;
+      createTags.push(tag);
+      if (tag === 'assets-batch-022') {
+        return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'tag_name', code: 'already_exists' }] }, 422);
+      }
+      assert.equal(tag, 'assets-batch-023');
+      return jsonResponse(nextRelease, 201);
+    }
+    if (url.pathname.endsWith('/releases/23/assets') && method === 'POST') return jsonResponse(uploaded, 201);
+    if (url.pathname.endsWith('/releases/23') && method === 'PATCH') return jsonResponse({ ...nextRelease, draft: false });
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.url, uploaded.browser_download_url);
+    assert.equal(result.releaseTag, 'assets-batch-023');
+    assert.deepEqual(createTags, ['assets-batch-022', 'assets-batch-023']);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('a release creation 422 unrelated to tag_name is returned without skipping tags', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const fullReleases = [release(1, 'assets-batch-001', {
+    assets: Array.from({ length: 1_000 }, (_, index) => ({ id: index + 1, name: `asset-${index}.bin` })),
+  })];
+  const createTags = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || 'GET';
+    if (url.pathname.endsWith('/releases') && method === 'GET') return jsonResponse(fullReleases);
+    if (url.pathname.endsWith('/releases') && method === 'POST') {
+      createTags.push(JSON.parse(String(init.body)).tag_name);
+      return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'name', code: 'already_exists' }] }, 422);
+    }
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+
+  try {
+    await assert.rejects(
+      uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png'),
+      /name: already_exists/,
+    );
+    assert.deepEqual(createTags, ['assets-batch-002']);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
