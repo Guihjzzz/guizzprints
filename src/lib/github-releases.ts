@@ -319,9 +319,9 @@ export async function uploadReleaseAsset(file: ArrayBuffer, fileName: string, co
   let release = await selectReleaseWithSpace();
   const assetName = safeAssetName(fileName);
   const attemptedReleaseIds = new Set<number>();
-  let asset: GitHubAsset | null = null;
 
   for (let attempt = 0; attempt < MAX_ASSET_UPLOAD_ATTEMPTS; attempt += 1) {
+    let asset: GitHubAsset | null = null;
     const uploadBase = release.upload_url.replace(/\{\?.*$/, '');
     const url = new URL(uploadBase);
     url.searchParams.set('name', assetName);
@@ -332,7 +332,6 @@ export async function uploadReleaseAsset(file: ArrayBuffer, fileName: string, co
         headers: { 'Content-Type': contentType || 'application/octet-stream' },
         body: file,
       });
-      break;
     } catch (error) {
       if (githubReleaseErrorStatus(error) !== 422) throw error;
 
@@ -350,22 +349,44 @@ export async function uploadReleaseAsset(file: ArrayBuffer, fileName: string, co
       if (existing) {
         release = refreshed;
         asset = existing;
-        break;
+      } else {
+        // GitHub rejects duplicate asset names with 422. Retry the same asset
+        // name in another batch when the selected release changed concurrently
+        // or already contains an incompatible asset with that name.
+        attemptedReleaseIds.add(release.id);
+        if (attempt + 1 >= MAX_ASSET_UPLOAD_ATTEMPTS) throw error;
+        release = await selectReleaseWithSpace(attemptedReleaseIds);
+        continue;
+      }
+    }
+
+    if (!asset) throw new Error('GitHub Releases could not store the generated asset.');
+    try {
+      release = await publishRelease(release);
+      return { url: asset.browser_download_url, releaseTag: release.tag_name, assetName: asset.name };
+    } catch (error) {
+      // A draft release may accept the asset but fail when it is published if
+      // GitHub reports that its tag is already attached to another release.
+      // Keep this batch out of future attempts and upload the same asset into
+      // another batch with a fresh tag instead of failing the whole publish.
+      if (!isExistingReleaseTagConflict(error)) throw error;
+      const refreshed = await getRelease(release.id).catch(() => null);
+      if (refreshed && !refreshed.draft) {
+        return { url: asset.browser_download_url, releaseTag: refreshed.tag_name, assetName: asset.name };
       }
 
-      // GitHub rejects duplicate asset names with 422. Retry the same asset
-      // name in another batch when the selected release changed concurrently
-      // or already contains an incompatible asset with that name.
       attemptedReleaseIds.add(release.id);
       if (attempt + 1 >= MAX_ASSET_UPLOAD_ATTEMPTS) throw error;
+      console.warn('github-release-batch-publish-tag-conflict', {
+        releaseId: release.id,
+        releaseTag: release.tag_name,
+        attempt: attempt + 1,
+      });
       release = await selectReleaseWithSpace(attemptedReleaseIds);
     }
   }
 
-  if (!asset) throw new Error('GitHub Releases could not store the generated asset.');
-  release = await publishRelease(release);
-
-  return { url: asset.browser_download_url, releaseTag: release.tag_name, assetName: asset.name };
+  throw new Error('GitHub Releases could not store the generated asset after trying multiple batches.');
 }
 
 export function isGithubReleaseAssetUrl(value: string) {
