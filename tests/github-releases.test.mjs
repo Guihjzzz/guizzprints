@@ -205,20 +205,18 @@ test('a 422 across all available batches creates a clean batch before failing', 
   }
 });
 
-test('a stale GitHub tag conflict skips to the next available batch number', async () => {
+test('a stale GitHub tag conflict falls back to a unique tag without scanning every orphaned number', async () => {
   const { uploadReleaseAsset } = loadGithubReleases();
   const fullReleases = Array.from({ length: 21 }, (_, index) => release(index + 1, `assets-batch-${String(index + 1).padStart(3, '0')}`, {
     assets: Array.from({ length: 1_000 }, (_, assetIndex) => ({ id: assetIndex + 1, name: `asset-${assetIndex}.bin` })),
   }));
-  const nextRelease = release(23, 'assets-batch-023', { draft: true });
-  const uploaded = {
-    id: 99,
-    name: 'cover.png',
-    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-023/cover.png',
-    size: 4,
-  };
+  const nextReleaseBase = release(23, 'assets-batch-023', { draft: true });
+  let uploaded;
   const createTags = [];
   let tagReads = 0;
+  let createdTag = '';
+  const originalNow = Date.now;
+  Date.now = () => 2_000_000_000_000;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -237,22 +235,30 @@ test('a stale GitHub tag conflict skips to the next available batch number', asy
       if (tag === 'assets-batch-022') {
         return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'tag_name', code: 'already_exists' }] }, 422);
       }
-      assert.equal(tag, 'assets-batch-023');
-      return jsonResponse(nextRelease, 201);
+      assert.match(tag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+      createdTag = tag;
+      uploaded = {
+        id: 99,
+        name: 'cover.png',
+        browser_download_url: `https://github.com/owner/repo/releases/download/${tag}/cover.png`,
+        size: 4,
+      };
+      return jsonResponse({ ...nextReleaseBase, tag_name: tag }, 201);
     }
     if (url.pathname.endsWith('/releases/23/assets') && method === 'POST') return jsonResponse(uploaded, 201);
-    if (url.pathname.endsWith('/releases/23') && method === 'PATCH') return jsonResponse({ ...nextRelease, draft: false });
+    if (url.pathname.endsWith('/releases/23') && method === 'PATCH') return jsonResponse({ ...nextReleaseBase, tag_name: createdTag, draft: false });
     throw new Error(`Unexpected GitHub request: ${method} ${url}`);
   };
 
   try {
-    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png');
     assert.equal(result.url, uploaded.browser_download_url);
-    assert.equal(result.releaseTag, 'assets-batch-023');
-    assert.deepEqual(createTags, ['assets-batch-022', 'assets-batch-023']);
+    assert.match(result.releaseTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+    assert.deepEqual(createTags, ['assets-batch-022', result.releaseTag]);
     assert.equal(tagReads, 2);
   } finally {
     globalThis.fetch = originalFetch;
+    Date.now = originalNow;
   }
 });
 

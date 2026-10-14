@@ -2,7 +2,7 @@ import 'server-only';
 
 const GITHUB_API = 'https://api.github.com';
 const MAX_ASSETS_PER_RELEASE = 1_000;
-const BATCH_TAG = /^assets-batch-(\d{3,})$/;
+const BATCH_TAG = /^assets-batch-(\d{3,})(?:-[0-9a-f-]{36})?$/i;
 const MAX_GITHUB_REQUEST_ATTEMPTS = 3;
 const MAX_BATCH_RELEASE_CREATE_ATTEMPTS = 10;
 const MAX_BATCH_TAG_PAGES = 100;
@@ -175,7 +175,7 @@ async function listBatchTagNumbers() {
     );
     numbers.push(...refs.flatMap((reference) => {
       if (typeof reference.ref !== 'string') return [];
-      const match = /^refs\/tags\/assets-batch-(\d{3,})$/.exec(reference.ref);
+      const match = /^refs\/tags\/assets-batch-(\d{3,})(?:-[0-9a-f-]{36})?$/i.exec(reference.ref);
       return match ? [Number.parseInt(match[1], 10)] : [];
     }));
     if (refs.length < GITHUB_PAGE_SIZE) return numbers;
@@ -202,17 +202,18 @@ function releaseTitle(number: number) {
   return `Guizzprints · Lote ${String(number).padStart(3, '0')}`;
 }
 
-function releaseTag(number: number) {
-  return `assets-batch-${String(number).padStart(3, '0')}`;
+function releaseTag(number: number, nonce?: string) {
+  const base = `assets-batch-${String(number).padStart(3, '0')}`;
+  return nonce ? `${base}-${nonce}` : base;
 }
 
-async function createBatchRelease(number: number) {
+async function createBatchRelease(number: number, nonce?: string) {
   const repository = githubReleaseRepository();
   return await githubRequest<GitHubRelease>(`${GITHUB_API}/repos/${repository}/releases`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      tag_name: releaseTag(number),
+      tag_name: releaseTag(number, nonce),
       name: releaseTitle(number),
       body: 'Lote automático do catálogo Guizzprints. Os arquivos são publicados pelo painel administrativo.',
       draft: true,
@@ -247,17 +248,22 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   });
   let lastTagConflict: unknown;
   for (let attempt = 0; attempt < MAX_BATCH_RELEASE_CREATE_ATTEMPTS; attempt += 1) {
+    // Keep the familiar sequential tag for the normal case. If GitHub reports
+    // a stale/unlisted tag collision, move to a timestamped, UUID-suffixed tag
+    // so a large run of orphaned refs cannot stall publication one number at a time.
+    const nonce = attempt > 0 ? crypto.randomUUID() : undefined;
+    const attemptedTag = releaseTag(number, nonce);
     try {
-      return await createBatchRelease(number);
+      return await createBatchRelease(number, nonce);
     } catch (error) {
       if (!isExistingReleaseTagConflict(error)) throw error;
-      console.warn('github-release-batch-tag-conflict', { attemptedTag: releaseTag(number), attempt: attempt + 1 });
+      console.warn('github-release-batch-tag-conflict', { attemptedTag, attempt: attempt + 1 });
       lastTagConflict = error;
 
       const [refreshed, tagNumbers] = await Promise.all([listBatchReleases(), listBatchTagNumbers()]);
       const createdElsewhere = refreshed.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
       if (createdElsewhere) return createdElsewhere;
-      number = Math.max(number + 1, nextBatchNumberFromReferences(refreshed, tagNumbers));
+      number = Math.max(number + 1, nextBatchNumberFromReferences(refreshed, tagNumbers), Date.now());
     }
   }
   throw lastTagConflict instanceof Error ? lastTagConflict : new Error('Could not create a new GitHub asset batch after repeated tag conflicts.');
