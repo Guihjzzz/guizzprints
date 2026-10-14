@@ -164,8 +164,23 @@ async function listBatchReleases() {
     .sort((left, right) => (batchNumber(left) || 0) - (batchNumber(right) || 0));
 }
 
+async function listBatchTagNumbers() {
+  const repository = githubReleaseRepository();
+  const refs = await githubRequest<Array<{ ref?: string }>>(`${GITHUB_API}/repos/${repository}/git/matching-refs/tags/assets-batch-`);
+  return refs.flatMap((reference) => {
+    if (typeof reference.ref !== 'string') return [];
+    const match = /^refs\/tags\/assets-batch-(\d{3,})$/.exec(reference.ref);
+    return match ? [Number.parseInt(match[1], 10)] : [];
+  });
+}
+
 function nextBatchNumber(releases: GitHubRelease[]) {
   return releases.reduce((maximum, release) => Math.max(maximum, batchNumber(release) || 0), 0) + 1;
+}
+
+function nextBatchNumberFromReferences(releases: GitHubRelease[], tagNumbers: number[]) {
+  const maximumTag = tagNumbers.reduce((maximum, number) => Math.max(maximum, number), 0);
+  return Math.max(nextBatchNumber(releases), maximumTag + 1);
 }
 
 export function githubReleaseErrorStatus(error: unknown) {
@@ -212,7 +227,7 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   // choose the same next number. Keep trying the next number after refreshing
   // releases; only skip when GitHub explicitly identifies tag_name as the
   // conflicting field.
-  let number = nextBatchNumber(releases);
+  let number = nextBatchNumberFromReferences(releases, await listBatchTagNumbers());
   let lastTagConflict: unknown;
   for (let attempt = 0; attempt < MAX_BATCH_RELEASE_CREATE_ATTEMPTS; attempt += 1) {
     try {
@@ -221,10 +236,10 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
       if (!isExistingReleaseTagConflict(error)) throw error;
       lastTagConflict = error;
 
-      const refreshed = await listBatchReleases();
+      const [refreshed, tagNumbers] = await Promise.all([listBatchReleases(), listBatchTagNumbers()]);
       const createdElsewhere = refreshed.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
       if (createdElsewhere) return createdElsewhere;
-      number = Math.max(number, nextBatchNumber(refreshed)) + 1;
+      number = Math.max(number + 1, nextBatchNumberFromReferences(refreshed, tagNumbers));
     }
   }
   throw lastTagConflict instanceof Error ? lastTagConflict : new Error('Could not create a new GitHub asset batch after repeated tag conflicts.');

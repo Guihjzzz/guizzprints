@@ -170,6 +170,9 @@ test('a 422 across all available batches creates a clean batch before failing', 
     if (url.pathname.endsWith('/releases') && method === 'GET') {
       return jsonResponse([firstRelease, secondRelease, thirdRelease]);
     }
+    if (url.pathname.endsWith('/git/matching-refs/tags/assets-batch-')) {
+      return jsonResponse([firstRelease, secondRelease, thirdRelease].map((item) => ({ ref: `refs/tags/${item.tag_name}` })));
+    }
     if (url.pathname.endsWith('/releases') && method === 'POST') {
       assert.equal(JSON.parse(String(init.body)).tag_name, 'assets-batch-004');
       return jsonResponse(freshRelease, 201);
@@ -215,11 +218,19 @@ test('a stale GitHub tag conflict skips to the next available batch number', asy
     size: 4,
   };
   const createTags = [];
+  let tagReads = 0;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
     const method = init.method || 'GET';
     if (url.pathname.endsWith('/releases') && method === 'GET') return jsonResponse(fullReleases);
+    if (url.pathname.endsWith('/git/matching-refs/tags/assets-batch-')) {
+      tagReads += 1;
+      const highestTag = tagReads === 1 ? 21 : 22;
+      return jsonResponse(Array.from({ length: highestTag }, (_, index) => ({
+        ref: `refs/tags/assets-batch-${String(index + 1).padStart(3, '0')}`,
+      })));
+    }
     if (url.pathname.endsWith('/releases') && method === 'POST') {
       const tag = JSON.parse(String(init.body)).tag_name;
       createTags.push(tag);
@@ -239,6 +250,7 @@ test('a stale GitHub tag conflict skips to the next available batch number', asy
     assert.equal(result.url, uploaded.browser_download_url);
     assert.equal(result.releaseTag, 'assets-batch-023');
     assert.deepEqual(createTags, ['assets-batch-022', 'assets-batch-023']);
+    assert.equal(tagReads, 2);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -255,6 +267,7 @@ test('a release creation 422 unrelated to tag_name is returned without skipping 
     const url = new URL(String(input));
     const method = init.method || 'GET';
     if (url.pathname.endsWith('/releases') && method === 'GET') return jsonResponse(fullReleases);
+    if (url.pathname.endsWith('/git/matching-refs/tags/assets-batch-')) return jsonResponse([{ ref: 'refs/tags/assets-batch-001' }]);
     if (url.pathname.endsWith('/releases') && method === 'POST') {
       createTags.push(JSON.parse(String(init.body)).tag_name);
       return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'name', code: 'already_exists' }] }, 422);
