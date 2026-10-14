@@ -229,7 +229,15 @@ function isExistingReleaseTagConflict(error: unknown) {
 
 async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   const releases = await listBatchReleases();
-  const existing = releases.find((release) => !excludedReleaseIds.has(release.id) && release.assets.length < MAX_ASSETS_PER_RELEASE);
+  // Draft releases with assets may be left behind when GitHub accepts an
+  // upload but rejects publishing the release because its tag is already
+  // attached to an orphaned ref. Reusing that stale draft for each next file
+  // makes every generated asset pay for a failed upload/publish cycle. Empty
+  // drafts are safe to reuse, while a newly created draft is used immediately
+  // by uploadReleaseAsset.
+  const existing = releases.find((release) => (!release.draft || release.assets.length === 0)
+    && !excludedReleaseIds.has(release.id)
+    && release.assets.length < MAX_ASSETS_PER_RELEASE);
   if (existing) return existing;
 
   // A deleted release can leave its Git tag behind, and GitHub refuses to

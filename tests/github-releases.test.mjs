@@ -211,11 +211,13 @@ test('a 422 across all available batches creates a clean batch before failing', 
   }
 });
 
-test('a draft batch with a conflicting tag is skipped and its asset is uploaded to a fresh batch', async () => {
+test('a stale draft batch is skipped and the asset is uploaded directly to a fresh batch', async () => {
   const { uploadReleaseAsset } = loadGithubReleases();
-  const conflictedDraft = release(1, 'assets-batch-021', { draft: true });
+  const conflictedDraft = release(1, 'assets-batch-021', {
+    draft: true,
+    assets: [{ id: 100, name: 'stuck-cover.png' }],
+  });
   const freshReleaseBase = release(2, 'assets-batch-022', { draft: true });
-  const firstAsset = { id: 101, name: 'cover.png', browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-021/cover.png', size: 4 };
   const secondAsset = { id: 102, name: 'cover.png', browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-2000000000000-00000000-0000-4000-8000-000000000000/cover.png', size: 4 };
   const calls = [];
   const originalFetch = globalThis.fetch;
@@ -235,13 +237,6 @@ test('a draft batch with a conflicting tag is skipped and its asset is uploaded 
       secondAsset.browser_download_url = `https://github.com/owner/repo/releases/download/${tag}/cover.png`;
       return jsonResponse({ ...freshReleaseBase, tag_name: tag }, 201);
     }
-    if (url.pathname.endsWith('/releases/1/assets') && method === 'POST') return jsonResponse(firstAsset, 201);
-    if (url.pathname.endsWith('/releases/1') && method === 'PATCH') {
-      return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'tag_name', code: 'already_exists' }] }, 422);
-    }
-    if (url.pathname.endsWith('/releases/1') && method === 'GET') {
-      return jsonResponse({ ...conflictedDraft, assets: [firstAsset] });
-    }
     if (url.pathname.endsWith('/releases/2/assets') && method === 'POST') return jsonResponse(secondAsset, 201);
     if (url.pathname.endsWith('/releases/2') && method === 'PATCH') return jsonResponse({ ...freshReleaseBase, tag_name: secondAsset.browser_download_url.split('/').at(-2), draft: false });
     throw new Error(`Unexpected GitHub request: ${method} ${url}`);
@@ -252,10 +247,10 @@ test('a draft batch with a conflicting tag is skipped and its asset is uploaded 
     assert.equal(result.url, secondAsset.browser_download_url);
     assert.match(result.releaseTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
     assert.deepEqual(calls.filter((call) => call.method === 'POST' && call.path.endsWith('/assets')).map((call) => call.path), [
-      '/repos/owner/repo/releases/1/assets',
       '/repos/owner/repo/releases/2/assets',
     ]);
-    assert.equal(calls.filter((call) => call.method === 'PATCH').length, 2);
+    assert.equal(calls.some((call) => call.path === '/repos/owner/repo/releases/1/assets'), false);
+    assert.equal(calls.filter((call) => call.method === 'PATCH').length, 1);
   } finally {
     globalThis.fetch = originalFetch;
     Date.now = originalNow;
