@@ -87,6 +87,41 @@ test('a transient fetch failure is retried before uploading an asset', async () 
   }
 });
 
+test('an available newest batch avoids fetching the full release history', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const currentRelease = release(21, 'assets-batch-021', {
+    assets: Array.from({ length: 275 }, (_, index) => ({ id: index + 1, name: `existing-${index}.png` })),
+  });
+  const uploaded = {
+    id: 777,
+    name: 'new-view.png',
+    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-021/new-view.png',
+    size: 4,
+  };
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || 'GET';
+    calls.push({ method, path: url.pathname, perPage: url.searchParams.get('per_page') });
+    if (url.pathname.endsWith('/releases') && method === 'GET') {
+      return jsonResponse(url.searchParams.get('per_page') === '1' ? [currentRelease] : [currentRelease]);
+    }
+    if (url.pathname.endsWith('/releases/21/assets') && method === 'POST') return jsonResponse(uploaded, 201);
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.url, uploaded.browser_download_url);
+    assert.deepEqual(calls.filter((call) => call.path.endsWith('/releases')), [
+      { method: 'GET', path: '/repos/owner/repo/releases', perPage: '1' },
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('a lost upload response reuses the asset created by the first request', async () => {
   const { uploadReleaseAsset } = loadGithubReleases();
   const uploaded = { id: 88, name: 'cover.png', browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-008/cover.png', size: 4 };

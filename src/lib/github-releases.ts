@@ -166,6 +166,12 @@ async function listBatchReleases() {
     .sort((left, right) => (batchNumber(left) || 0) - (batchNumber(right) || 0));
 }
 
+async function listNewestBatchRelease() {
+  const repository = githubReleaseRepository();
+  const releases = await githubRequest<GitHubRelease[]>(`${GITHUB_API}/repos/${repository}/releases?per_page=1&page=1`);
+  return releases.find((release) => batchNumber(release) !== null) || null;
+}
+
 async function listBatchTagNumbers() {
   const repository = githubReleaseRepository();
   const numbers: number[] = [];
@@ -228,6 +234,16 @@ function isExistingReleaseTagConflict(error: unknown) {
 }
 
 async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
+  // Most uploads fit in the newest batch. Read that single release first so
+  // each generated image does not download metadata for every older release
+  // and its thousands of assets. Fall back to the complete list only when the
+  // newest release is full, stale, or unrelated to this asset store.
+  const newest = await listNewestBatchRelease();
+  if (newest
+    && (!newest.draft || newest.assets.length === 0)
+    && !excludedReleaseIds.has(newest.id)
+    && newest.assets.length < MAX_ASSETS_PER_RELEASE) return newest;
+
   const releases = await listBatchReleases();
   // Draft releases with assets may be left behind when GitHub accepts an
   // upload but rejects publishing the release because its tag is already
