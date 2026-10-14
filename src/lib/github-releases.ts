@@ -117,8 +117,19 @@ async function githubRequest<T>(url: string, init: RequestInit = {}) {
 
       let detail = '';
       try {
-        const payload = await response.json() as { message?: unknown };
+        const payload = await response.json() as { message?: unknown; errors?: unknown };
         if (typeof payload.message === 'string') detail = payload.message;
+        if (Array.isArray(payload.errors)) {
+          const validationDetails = payload.errors.flatMap((entry) => {
+            if (!entry || typeof entry !== 'object') return [];
+            const error = entry as { field?: unknown; code?: unknown; message?: unknown };
+            const parts = [error.field, error.code, error.message]
+              .filter((part): part is string => typeof part === 'string' && Boolean(part.trim()))
+              .map((part) => part.trim().slice(0, 120));
+            return parts.length ? [parts.join(': ')] : [];
+          });
+          if (validationDetails.length) detail = [detail, validationDetails.join('; ')].filter(Boolean).join(' — ');
+        }
       } catch {
         // GitHub occasionally sends an empty non-JSON error body. Keep the
         // server response useful without leaking credentials or response data.

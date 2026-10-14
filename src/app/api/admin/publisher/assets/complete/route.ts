@@ -85,7 +85,11 @@ export async function POST(request: NextRequest) {
     const githubStatus = githubReleaseErrorStatus(error);
     console.error('publisher-upload-complete-failure', { kind: error instanceof Error ? error.name : 'unknown', githubStatus });
     if (githubStatus === 422) {
-      return fail('O GitHub recusou o arquivo (422). O envio foi tentado novamente em outro lote; tente novamente se o erro persistir.', 422);
+      const detail = error instanceof Error
+        ? error.message.replace(/^GitHub Releases request failed \(422\):\s*/i, '').replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, 300)
+        : '';
+      console.error('publisher-github-asset-rejected', { status: 422, detail });
+      return fail(`O GitHub recusou o arquivo (422).${detail ? ` Motivo: ${detail}` : ' O provedor não informou o motivo.'}`, 422);
     }
     return fail('Não foi possível finalizar o envio do arquivo.', 500);
   } finally {
