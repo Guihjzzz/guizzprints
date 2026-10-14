@@ -5,6 +5,8 @@ const MAX_ASSETS_PER_RELEASE = 1_000;
 const BATCH_TAG = /^assets-batch-(\d{3,})$/;
 const MAX_GITHUB_REQUEST_ATTEMPTS = 3;
 const MAX_BATCH_RELEASE_CREATE_ATTEMPTS = 10;
+const MAX_BATCH_TAG_PAGES = 100;
+const GITHUB_PAGE_SIZE = 100;
 const RETRYABLE_GITHUB_STATUSES = new Set([408, 500, 502, 503, 504]);
 const RETRYABLE_NETWORK_CODES = new Set([
   'ECONNRESET',
@@ -166,12 +168,19 @@ async function listBatchReleases() {
 
 async function listBatchTagNumbers() {
   const repository = githubReleaseRepository();
-  const refs = await githubRequest<Array<{ ref?: string }>>(`${GITHUB_API}/repos/${repository}/git/matching-refs/tags/assets-batch-`);
-  return refs.flatMap((reference) => {
-    if (typeof reference.ref !== 'string') return [];
-    const match = /^refs\/tags\/assets-batch-(\d{3,})$/.exec(reference.ref);
-    return match ? [Number.parseInt(match[1], 10)] : [];
-  });
+  const numbers: number[] = [];
+  for (let page = 1; page <= MAX_BATCH_TAG_PAGES; page += 1) {
+    const refs = await githubRequest<Array<{ ref?: string }>>(
+      `${GITHUB_API}/repos/${repository}/git/matching-refs/tags/assets-batch-?per_page=${GITHUB_PAGE_SIZE}&page=${page}`,
+    );
+    numbers.push(...refs.flatMap((reference) => {
+      if (typeof reference.ref !== 'string') return [];
+      const match = /^refs\/tags\/assets-batch-(\d{3,})$/.exec(reference.ref);
+      return match ? [Number.parseInt(match[1], 10)] : [];
+    }));
+    if (refs.length < GITHUB_PAGE_SIZE) return numbers;
+  }
+  throw new Error('GitHub returned too many asset batch tags to safely choose the next release.');
 }
 
 function nextBatchNumber(releases: GitHubRelease[]) {

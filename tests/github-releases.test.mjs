@@ -285,3 +285,52 @@ test('a release creation 422 unrelated to tag_name is returned without skipping 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('batch selection reads all pages of Git tags before creating a release', async () => {
+  const { uploadReleaseAsset } = loadGithubReleases();
+  const fullRelease = release(1, 'assets-batch-001', {
+    assets: Array.from({ length: 1_000 }, (_, index) => ({ id: index + 1, name: `asset-${index}.bin` })),
+  });
+  const nextRelease = release(106, 'assets-batch-106', { draft: true });
+  const uploaded = {
+    id: 1061,
+    name: 'cover.png',
+    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-106/cover.png',
+    size: 4,
+  };
+  const pagesRead = [];
+  let createdTag = '';
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || 'GET';
+    if (url.pathname.endsWith('/releases') && method === 'GET') return jsonResponse([fullRelease]);
+    if (url.pathname.endsWith('/git/matching-refs/tags/assets-batch-')) {
+      const page = Number(url.searchParams.get('page'));
+      assert.equal(url.searchParams.get('per_page'), '100');
+      pagesRead.push(page);
+      const firstNumber = (page - 1) * 100 + 1;
+      const endNumber = page === 1 ? 100 : 105;
+      return jsonResponse(Array.from({ length: endNumber - firstNumber + 1 }, (_, index) => ({
+        ref: `refs/tags/assets-batch-${String(firstNumber + index).padStart(3, '0')}`,
+      })));
+    }
+    if (url.pathname.endsWith('/releases') && method === 'POST') {
+      createdTag = JSON.parse(String(init.body)).tag_name;
+      assert.equal(createdTag, 'assets-batch-106');
+      return jsonResponse(nextRelease, 201);
+    }
+    if (url.pathname.endsWith('/releases/106/assets') && method === 'POST') return jsonResponse(uploaded, 201);
+    if (url.pathname.endsWith('/releases/106') && method === 'PATCH') return jsonResponse({ ...nextRelease, draft: false });
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+
+  try {
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    assert.equal(result.releaseTag, 'assets-batch-106');
+    assert.equal(createdTag, 'assets-batch-106');
+    assert.deepEqual(pagesRead, [1, 2]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
