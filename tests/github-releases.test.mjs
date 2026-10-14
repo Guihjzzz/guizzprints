@@ -154,14 +154,12 @@ test('a 422 across all available batches creates a clean batch before failing', 
   const firstRelease = release(1, 'assets-batch-001');
   const secondRelease = release(2, 'assets-batch-002');
   const thirdRelease = release(3, 'assets-batch-003');
-  const freshRelease = release(4, 'assets-batch-004', { draft: true });
-  const uploaded = {
-    id: 84,
-    name: 'cover.png',
-    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-004/cover.png',
-    size: 4,
-  };
+  const freshReleaseBase = release(4, 'assets-batch-004', { draft: true });
+  let uploaded;
+  let createdTag = '';
   const calls = [];
+  const originalNow = Date.now;
+  Date.now = () => 2_000_000_000_000;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -174,8 +172,15 @@ test('a 422 across all available batches creates a clean batch before failing', 
       return jsonResponse([firstRelease, secondRelease, thirdRelease].map((item) => ({ ref: `refs/tags/${item.tag_name}` })));
     }
     if (url.pathname.endsWith('/releases') && method === 'POST') {
-      assert.equal(JSON.parse(String(init.body)).tag_name, 'assets-batch-004');
-      return jsonResponse(freshRelease, 201);
+      createdTag = JSON.parse(String(init.body)).tag_name;
+      assert.match(createdTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+      uploaded = {
+        id: 84,
+        name: 'cover.png',
+        browser_download_url: `https://github.com/owner/repo/releases/download/${createdTag}/cover.png`,
+        size: 4,
+      };
+      return jsonResponse({ ...freshReleaseBase, tag_name: createdTag }, 201);
     }
     if (/\/releases\/[123]\/assets$/.test(url.pathname) && method === 'POST') {
       return jsonResponse({ message: 'Validation Failed', errors: [{ code: 'already_exists' }] }, 422);
@@ -185,14 +190,14 @@ test('a 422 across all available batches creates a clean batch before failing', 
       return jsonResponse(found);
     }
     if (url.pathname.endsWith('/releases/4/assets') && method === 'POST') return jsonResponse(uploaded, 201);
-    if (url.pathname.endsWith('/releases/4') && method === 'PATCH') return jsonResponse({ ...freshRelease, draft: false });
+    if (url.pathname.endsWith('/releases/4') && method === 'PATCH') return jsonResponse({ ...freshReleaseBase, tag_name: createdTag, draft: false });
     throw new Error(`Unexpected GitHub request: ${method} ${url}`);
   };
 
   try {
-    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png');
     assert.equal(result.url, uploaded.browser_download_url);
-    assert.equal(result.releaseTag, 'assets-batch-004');
+    assert.equal(result.releaseTag, createdTag);
     assert.deepEqual(calls.filter((call) => call.method === 'POST' && call.path.endsWith('/assets')).map((call) => call.path), [
       '/repos/owner/repo/releases/1/assets',
       '/repos/owner/repo/releases/2/assets',
@@ -202,6 +207,7 @@ test('a 422 across all available batches creates a clean batch before failing', 
     assert.equal(calls.filter((call) => call.method === 'PATCH').length, 1);
   } finally {
     globalThis.fetch = originalFetch;
+    Date.now = originalNow;
   }
 });
 
@@ -232,10 +238,10 @@ test('a stale GitHub tag conflict falls back to a unique tag without scanning ev
     if (url.pathname.endsWith('/releases') && method === 'POST') {
       const tag = JSON.parse(String(init.body)).tag_name;
       createTags.push(tag);
-      if (tag === 'assets-batch-022') {
+      if (createTags.length === 1) {
         return jsonResponse({ message: 'Validation Failed', errors: [{ field: 'tag_name', code: 'already_exists' }] }, 422);
       }
-      assert.match(tag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+      assert.match(tag, /^assets-batch-2000000000001-[0-9a-f-]{36}$/i);
       createdTag = tag;
       uploaded = {
         id: 99,
@@ -253,8 +259,9 @@ test('a stale GitHub tag conflict falls back to a unique tag without scanning ev
   try {
     const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png');
     assert.equal(result.url, uploaded.browser_download_url);
-    assert.match(result.releaseTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
-    assert.deepEqual(createTags, ['assets-batch-022', result.releaseTag]);
+    assert.match(result.releaseTag, /^assets-batch-2000000000001-[0-9a-f-]{36}$/i);
+    assert.match(createTags[0], /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+    assert.deepEqual(createTags, [createTags[0], result.releaseTag]);
     assert.equal(tagReads, 2);
   } finally {
     globalThis.fetch = originalFetch;
@@ -286,7 +293,8 @@ test('a release creation 422 unrelated to tag_name is returned without skipping 
       uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png'),
       /name: already_exists/,
     );
-    assert.deepEqual(createTags, ['assets-batch-002']);
+    assert.equal(createTags.length, 1);
+    assert.match(createTags[0], /^assets-batch-\d{13}-[0-9a-f-]{36}$/i);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -297,15 +305,12 @@ test('batch selection reads all pages of Git tags before creating a release', as
   const fullRelease = release(1, 'assets-batch-001', {
     assets: Array.from({ length: 1_000 }, (_, index) => ({ id: index + 1, name: `asset-${index}.bin` })),
   });
-  const nextRelease = release(106, 'assets-batch-106', { draft: true });
-  const uploaded = {
-    id: 1061,
-    name: 'cover.png',
-    browser_download_url: 'https://github.com/owner/repo/releases/download/assets-batch-106/cover.png',
-    size: 4,
-  };
-  const pagesRead = [];
+  const nextReleaseBase = release(106, 'assets-batch-106', { draft: true });
   let createdTag = '';
+  let uploaded;
+  const pagesRead = [];
+  const originalNow = Date.now;
+  Date.now = () => 2_000_000_000_000;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -323,20 +328,27 @@ test('batch selection reads all pages of Git tags before creating a release', as
     }
     if (url.pathname.endsWith('/releases') && method === 'POST') {
       createdTag = JSON.parse(String(init.body)).tag_name;
-      assert.equal(createdTag, 'assets-batch-106');
-      return jsonResponse(nextRelease, 201);
+      assert.match(createdTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
+      uploaded = {
+        id: 1061,
+        name: 'cover.png',
+        browser_download_url: `https://github.com/owner/repo/releases/download/${createdTag}/cover.png`,
+        size: 4,
+      };
+      return jsonResponse({ ...nextReleaseBase, tag_name: createdTag }, 201);
     }
     if (url.pathname.endsWith('/releases/106/assets') && method === 'POST') return jsonResponse(uploaded, 201);
-    if (url.pathname.endsWith('/releases/106') && method === 'PATCH') return jsonResponse({ ...nextRelease, draft: false });
+    if (url.pathname.endsWith('/releases/106') && method === 'PATCH') return jsonResponse({ ...nextReleaseBase, tag_name: createdTag, draft: false });
     throw new Error(`Unexpected GitHub request: ${method} ${url}`);
   };
 
   try {
-    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, uploaded.name, 'image/png');
-    assert.equal(result.releaseTag, 'assets-batch-106');
-    assert.equal(createdTag, 'assets-batch-106');
+    const result = await uploadReleaseAsset(new Uint8Array([1, 2, 3, 4]).buffer, 'cover.png', 'image/png');
+    assert.equal(result.releaseTag, createdTag);
+    assert.match(result.releaseTag, /^assets-batch-2000000000000-[0-9a-f-]{36}$/i);
     assert.deepEqual(pagesRead, [1, 2]);
   } finally {
     globalThis.fetch = originalFetch;
+    Date.now = originalNow;
   }
 });

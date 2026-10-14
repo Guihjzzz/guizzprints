@@ -238,21 +238,25 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   // releases; only skip when GitHub explicitly identifies tag_name as the
   // conflicting field.
   const tagNumbers = await listBatchTagNumbers();
-  let number = nextBatchNumberFromReferences(releases, tagNumbers);
+  // Start new releases above the existing numeric batches, but use a UUID
+  // suffix immediately. Sequential tags can already exist as orphaned refs
+  // which GitHub's release list does not expose.
+  let number = Math.max(nextBatchNumberFromReferences(releases, tagNumbers), Date.now());
   console.info('github-release-batch-selection', {
     releaseCount: releases.length,
     highestReleaseBatch: Math.max(0, ...releases.map((release) => batchNumber(release) || 0)),
     tagCount: tagNumbers.length,
     highestTagNumber: Math.max(0, ...tagNumbers),
-    candidateTag: releaseTag(number),
+    candidateTagPrefix: releaseTag(number),
   });
   let lastTagConflict: unknown;
+  let lastAttemptedTag = '';
   for (let attempt = 0; attempt < MAX_BATCH_RELEASE_CREATE_ATTEMPTS; attempt += 1) {
-    // Keep the familiar sequential tag for the normal case. If GitHub reports
-    // a stale/unlisted tag collision, move to a timestamped, UUID-suffixed tag
-    // so a large run of orphaned refs cannot stall publication one number at a time.
-    const nonce = attempt > 0 ? crypto.randomUUID() : undefined;
+    // Every newly created release gets a unique tag, avoiding collisions from
+    // orphaned refs and concurrent publishers even on the first attempt.
+    const nonce = crypto.randomUUID();
     const attemptedTag = releaseTag(number, nonce);
+    lastAttemptedTag = attemptedTag;
     try {
       return await createBatchRelease(number, nonce);
     } catch (error) {
@@ -266,7 +270,12 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
       number = Math.max(number + 1, nextBatchNumberFromReferences(refreshed, tagNumbers), Date.now());
     }
   }
-  throw lastTagConflict instanceof Error ? lastTagConflict : new Error('Could not create a new GitHub asset batch after repeated tag conflicts.');
+  if (lastTagConflict instanceof Error) {
+    const error = new Error(`${lastTagConflict.message} (last attempted batch tag: ${lastAttemptedTag})`) as GithubApiFailure;
+    error.status = githubReleaseErrorStatus(lastTagConflict) ?? undefined;
+    throw error;
+  }
+  throw new Error('Could not create a new GitHub asset batch after repeated tag conflicts.');
 }
 
 async function getRelease(releaseId: number) {
