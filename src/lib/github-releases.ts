@@ -236,13 +236,22 @@ async function selectReleaseWithSpace(excludedReleaseIds = new Set<number>()) {
   // choose the same next number. Keep trying the next number after refreshing
   // releases; only skip when GitHub explicitly identifies tag_name as the
   // conflicting field.
-  let number = nextBatchNumberFromReferences(releases, await listBatchTagNumbers());
+  const tagNumbers = await listBatchTagNumbers();
+  let number = nextBatchNumberFromReferences(releases, tagNumbers);
+  console.info('github-release-batch-selection', {
+    releaseCount: releases.length,
+    highestReleaseBatch: Math.max(0, ...releases.map((release) => batchNumber(release) || 0)),
+    tagCount: tagNumbers.length,
+    highestTagNumber: Math.max(0, ...tagNumbers),
+    candidateTag: releaseTag(number),
+  });
   let lastTagConflict: unknown;
   for (let attempt = 0; attempt < MAX_BATCH_RELEASE_CREATE_ATTEMPTS; attempt += 1) {
     try {
       return await createBatchRelease(number);
     } catch (error) {
       if (!isExistingReleaseTagConflict(error)) throw error;
+      console.warn('github-release-batch-tag-conflict', { attemptedTag: releaseTag(number), attempt: attempt + 1 });
       lastTagConflict = error;
 
       const [refreshed, tagNumbers] = await Promise.all([listBatchReleases(), listBatchTagNumbers()]);
