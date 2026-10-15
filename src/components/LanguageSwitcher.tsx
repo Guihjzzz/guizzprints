@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, ChevronDown } from 'lucide-react';
 import { isAppLocale, usePathname, useRouter, type AppLocale } from '@/i18n/routing';
@@ -9,20 +9,20 @@ import { LANGUAGE_OPTIONS } from '@/i18n/languages';
 type Props = { variant?: 'compact' | 'full'; className?: string };
 type FlagCode = 'us' | 'gb' | 'es' | 'pt' | 'br' | 'fr' | 'ca' | 'de' | 'it' | 'pl' | 'id' | 'in' | 'jp' | 'kr' | 'vn' | 'th';
 
-const LANGUAGE_FLAGS: Record<AppLocale, FlagCode[]> = {
-  en: ['us', 'gb'],
-  es: ['es'],
-  pt: ['br', 'pt'],
-  fr: ['fr', 'ca'],
-  de: ['de'],
-  it: ['it'],
-  pl: ['pl'],
-  id: ['id'],
-  hi: ['in'],
-  ja: ['jp'],
-  ko: ['kr'],
-  vi: ['vn'],
-  th: ['th'],
+const LANGUAGE_FLAGS: Record<AppLocale, FlagCode> = {
+  en: 'us',
+  es: 'es',
+  pt: 'br',
+  fr: 'fr',
+  de: 'de',
+  it: 'it',
+  pl: 'pl',
+  id: 'id',
+  hi: 'in',
+  ja: 'jp',
+  ko: 'kr',
+  vi: 'vn',
+  th: 'th',
 };
 
 function FlagArt({ code }: { code: FlagCode }) {
@@ -77,12 +77,18 @@ function CountryFlag({ code }: { code: FlagCode }) {
   );
 }
 
-function FlagGroup({ locale }: { locale: AppLocale }) {
-  return (
-    <span aria-hidden="true" className="inline-flex items-center justify-center gap-0.5">
-      {LANGUAGE_FLAGS[locale].map((code) => <CountryFlag key={code} code={code} />)}
-    </span>
-  );
+function getMenuPosition(details: HTMLDetailsElement) {
+  const summary = details.querySelector('summary');
+  if (!summary) return { left: 8, width: 224 };
+
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const width = Math.min(350, Math.max(224, viewportWidth - 48), viewportWidth - 16);
+  const detailsRect = details.getBoundingClientRect();
+  const summaryRect = summary.getBoundingClientRect();
+  const maxLeft = Math.max(8, viewportWidth - width - 8);
+  const pageLeft = Math.min(Math.max(summaryRect.right - width, 8), maxLeft);
+
+  return { left: pageLeft - detailsRect.left, width };
 }
 
 export function LanguageSwitcher({ variant = 'compact', className = '' }: Props) {
@@ -91,18 +97,31 @@ export function LanguageSwitcher({ variant = 'compact', className = '' }: Props)
   const router = useRouter();
   const t = useTranslations('Header');
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ left: 8, width: 224 });
   const selectedLanguage = LANGUAGE_OPTIONS.find((option) => option.locale === locale) ?? LANGUAGE_OPTIONS[2];
   const selectedLocale = selectedLanguage.locale;
+
+  const handleToggle = () => {
+    const details = detailsRef.current;
+    const open = details?.open ?? false;
+    if (open && details) setMenuPosition(getMenuPosition(details));
+    setMenuOpen(open);
+  };
 
   useEffect(() => {
     const closeOnOutsidePointer = (event: PointerEvent) => {
       const details = detailsRef.current;
-      if (details?.open && event.target instanceof Node && !details.contains(event.target)) details.open = false;
+      if (details?.open && event.target instanceof Node && !details.contains(event.target)) {
+        details.open = false;
+        setMenuOpen(false);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       const details = detailsRef.current;
       if (event.key !== 'Escape' || !details?.open) return;
       details.open = false;
+      setMenuOpen(false);
       details.querySelector('summary')?.focus();
     };
 
@@ -114,8 +133,23 @@ export function LanguageSwitcher({ variant = 'compact', className = '' }: Props)
     };
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const reposition = () => {
+      const details = detailsRef.current;
+      if (details?.open) setMenuPosition(getMenuPosition(details));
+    };
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [menuOpen]);
+
   const changeLanguage = (nextLocale: string) => {
     if (detailsRef.current) detailsRef.current.open = false;
+    setMenuOpen(false);
     if (!isAppLocale(nextLocale) || nextLocale === locale) return;
     const query = typeof window === 'undefined' ? '' : window.location.search;
     const hash = typeof window === 'undefined' ? '' : window.location.hash;
@@ -123,20 +157,21 @@ export function LanguageSwitcher({ variant = 'compact', className = '' }: Props)
   };
 
   return (
-    <details ref={detailsRef} className={`group relative z-0 shrink-0 open:z-50 ${className}`}>
+    <details ref={detailsRef} onToggle={handleToggle} className={`group relative z-0 shrink-0 open:z-50 ${className}`}>
       <summary
         aria-label={`${t('language')}: ${selectedLanguage.label}`}
         title={`${t('language')}: ${selectedLanguage.label}`}
         className={`flex cursor-pointer list-none select-none items-center justify-center gap-1.5 rounded-lg border border-[#253047] bg-[#111318] text-zinc-300 transition hover:border-blue-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 [&::-webkit-details-marker]:hidden ${variant === 'compact' ? 'min-h-10 px-2' : 'min-h-11 w-full px-3'}`}
       >
-        <CountryFlag code={LANGUAGE_FLAGS[selectedLocale][0]} />
+        <CountryFlag code={LANGUAGE_FLAGS[selectedLocale]} />
         <ChevronDown size={14} aria-hidden="true" className="text-blue-300 transition-transform group-open:rotate-180" />
         <span className="sr-only">{selectedLanguage.label}</span>
       </summary>
       <div
         role="group"
         aria-label={t('language')}
-        className="absolute right-0 top-[calc(100%+8px)] z-[60] grid w-[184px] max-h-[70dvh] grid-cols-3 gap-1.5 overflow-y-auto overscroll-contain rounded-xl border border-[#253047] bg-[#111318] p-2 shadow-xl shadow-black/50 sm:w-[242px] sm:grid-cols-4"
+        style={menuPosition}
+        className="absolute top-[calc(100%+8px)] z-[60] grid max-h-[70dvh] grid-cols-1 gap-1.5 overflow-y-auto overscroll-contain rounded-xl border border-[#253047] bg-[#111318] p-2 shadow-xl shadow-black/50 sm:grid-cols-2"
       >
         {LANGUAGE_OPTIONS.map(({ locale: optionLocale, label }) => {
           const selected = optionLocale === selectedLocale;
@@ -148,11 +183,11 @@ export function LanguageSwitcher({ variant = 'compact', className = '' }: Props)
               aria-pressed={selected}
               title={label}
               onClick={() => changeLanguage(optionLocale)}
-              className={`relative flex h-10 w-[52px] items-center justify-center rounded-lg border transition hover:border-blue-500/70 hover:bg-blue-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${selected ? 'border-blue-500/70 bg-blue-500/10' : 'border-transparent'}`}
+              className={`relative flex h-10 w-full items-center justify-start gap-2 rounded-lg border px-2 pr-5 text-left transition hover:border-blue-500/70 hover:bg-blue-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${selected ? 'border-blue-500/70 bg-blue-500/10' : 'border-transparent'}`}
             >
-              <FlagGroup locale={optionLocale} />
-              {selected && <Check size={12} aria-hidden="true" className="absolute bottom-0.5 right-0.5 rounded-full bg-[#111318] text-emerald-300" />}
-              <span className="sr-only">{label}</span>
+              <CountryFlag code={LANGUAGE_FLAGS[optionLocale]} />
+              <span className="min-w-0 flex-1 truncate text-left text-xs font-medium text-zinc-200">{label}</span>
+              {selected && <Check size={14} aria-hidden="true" className="absolute right-2 rounded-full text-emerald-300" />}
             </button>
           );
         })}
