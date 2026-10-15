@@ -5,9 +5,10 @@ import { siteLocales } from '@/lib/site-pages';
 import { getPublicCatalogClient } from '@/lib/public-catalog';
 
 export const SITE_URL = 'https://guizzprints.xyz';
-// Supabase projects commonly cap a REST result at 1,000 rows. Keeping one
-// sitemap page within that bound makes the index complete at 20,000+ builds.
-export const MODS_PER_SITEMAP = 1_000;
+// Keep shards well under Vercel's 20 MB ISR response limit. Each listing also
+// carries hreflang alternates for every supported locale, so URL count grows
+// quadratically with the number of locales; 250 leaves room for catalog growth.
+export const MODS_PER_SITEMAP = 250;
 
 const staticPaths = ['', '/about', '/privacy', '/terms', '/contact', '/category/bedrock', '/category/java'];
 
