@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Download, ChevronRight, ChevronLeft, Star, Gamepad2, Coffee, Box, Eye, FileArchive, type LucideIcon } from "lucide-react";
 import { useTranslations } from 'next-intl';
+import { BrowserOnlyInstallPromotion } from '@/components/BrowserOnlyInstallPromotion';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { categoryFilter } from '@/lib/mod-categories';
@@ -242,18 +243,20 @@ export default function Home() {
         <ModList title="Construções Bedrock" icon={Gamepad2} iconColor="text-emerald-500" indicatorColor="bg-emerald-600" mods={latestBedrock} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/bedrock`} viewAllLabel={t('viewAll')} />
         <ModList title="Construções Java" icon={Coffee} iconColor="text-orange-500" indicatorColor="bg-orange-600" mods={latestJava} loading={loading} locale={locale} getCategoryColor={getCategoryColor} viewAllHref={`/${locale}/category/java`} viewAllLabel={t('viewAll')} />
 
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)]">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0 relative">
-              <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={64} alt="Guizzprints" fill className="rounded-lg object-cover" sizes="48px" />
+        <BrowserOnlyInstallPromotion>
+          <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)]">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0 relative">
+                <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={64} alt="Guizzprints" fill className="rounded-lg object-cover" sizes="48px" />
+              </div>
+              <div>
+                <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
+                <p className="text-xs text-zinc-400 font-medium">{promotion('appDescription')}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
-              <p className="text-xs text-zinc-400 font-medium">{promotion('appDescription')}</p>
-            </div>
-          </div>
-          <InstallAppButton className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#0a0a0a] border border-[#2563EB]/30 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/60 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all text-white cursor-pointer" />
-        </section>
+            <InstallAppButton className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#0a0a0a] border border-[#2563EB]/30 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/60 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all text-white cursor-pointer" />
+          </section>
+        </BrowserOnlyInstallPromotion>
 
         <section aria-labelledby="quick-start-title" className="rounded-2xl border border-[#1D2433] bg-[#111318] p-4 shadow-xl sm:p-6">
           <div className="max-w-2xl">

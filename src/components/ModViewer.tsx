@@ -7,6 +7,7 @@ import { Download, Share2, Star, Clock, Shield, HardDrive, ChevronRight, Tag, Ga
 import DownloadFlow, { type DownloadFormat } from './DownloadFlow';
 import { supabase } from "@/lib/supabase";
 import { useTranslations } from 'next-intl';
+import { BrowserOnlyInstallPromotion } from '@/components/BrowserOnlyInstallPromotion';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { CategoryBadges } from '@/components/CategoryBadges';
 import { FavoriteButton } from '@/components/FavoriteButton';
@@ -745,18 +746,20 @@ export default function ModViewer({ mod, locale }: ModViewerProps) {
         </section>
 
         {/* FOOTER APP & REDES */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] mt-8">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0">
-              <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={96} optimizeHeight={96} alt="Guizzprints" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
+        <BrowserOnlyInstallPromotion>
+          <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#2563EB]/20 to-black border border-[#2563EB]/30 p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] mt-8">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="w-12 h-12 bg-black/50 rounded-xl p-1 border border-white/10 flex-shrink-0">
+                <OptimizedImage src="/guizz-cover.jpg" optimizeWidth={96} optimizeHeight={96} alt="Guizzprints" width={48} height={48} className="w-full h-full rounded-lg object-cover" />
+              </div>
+              <div>
+                <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
+                <p className="text-xs text-zinc-400 font-medium">{promotion('appDescription')}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base md:text-lg font-black italic uppercase text-white">{promotion('appTitle')}</h3>
-              <p className="text-xs text-zinc-400 font-medium">{promotion('appDescription')}</p>
-            </div>
-          </div>
-          <InstallAppButton className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#0a0a0a] border border-[#2563EB]/30 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/60 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all text-white cursor-pointer" />
-        </section>
+            <InstallAppButton className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#0a0a0a] border border-[#2563EB]/30 hover:bg-[#2563EB]/10 hover:border-[#2563EB]/60 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all text-white cursor-pointer" />
+          </section>
+        </BrowserOnlyInstallPromotion>
 
         <section className="mt-6 bg-gradient-to-r from-[#2563EB]/10 to-black p-6 border-t border-[#2563EB]/30 text-center rounded-2xl">
           <h3 className="text-lg md:text-xl font-black text-white uppercase italic mb-2">{promotion('followTitle')}</h3>
