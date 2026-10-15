@@ -15,14 +15,15 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { SiteMotion } from '@/components/SiteMotion';
 import { JsonLd } from '@/components/JsonLd';
 import { siteStructuredData } from '@/lib/seo';
-import { siteLocales, toSiteLocale } from '@/lib/site-pages';
+import { siteLocales } from '@/lib/site-pages';
 import { AppFreshness } from '@/components/AppFreshness';
+import { defaultLocale, isAppLocale } from '@/i18n/routing';
+import { SEO_COPY } from '@/i18n/seo-copy';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const safeLocale = toSiteLocale(locale);
-  const title = 'Guizzprints — Construções Minecraft';
-  const description = 'Construções Minecraft para Bedrock e Java com prévias, Guia 3D e download direto.';
+  const safeLocale = isAppLocale(locale) ? locale : defaultLocale;
+  const { title, description } = SEO_COPY[safeLocale];
   const languages = Object.fromEntries(siteLocales.map((item) => [item, `/${item}`]));
 
   return {
@@ -81,7 +82,7 @@ export default async function RootLayout({
                 </div>
               </Link>
               <nav className="flex min-h-0 flex-col items-center gap-1 w-full px-2 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
-                {SIDEBAR_ITEMS.filter((item) => item.id !== 'favorites' && item.id !== 'settings').map((item) => <SidebarItem key={item.id} item={item} label={item.label} locale={locale} />)}
+                {SIDEBAR_ITEMS.filter((item) => item.id !== 'favorites' && item.id !== 'settings').map((item) => <SidebarItem key={item.id} item={item} label={t(item.id)} locale={locale} />)}
               </nav>
             </div>
             <div className="flex shrink-0 flex-col items-center gap-1 w-full px-2 pt-2">

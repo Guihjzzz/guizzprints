@@ -12,7 +12,7 @@ const { create, act } = require(path.join(deps, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const messages = JSON.parse(readFileSync('src/messages/pt.json', 'utf8')).Auth;
 const t = (key, values) => messages[key]?.replace('{seconds}', String(values?.seconds)) ?? key;
-const localeModules = { '@/i18n/routing': { defaultLocale: 'en', isAppLocale: value => ['en', 'pt', 'es'].includes(value) },
+const localeModules = { '@/i18n/routing': { defaultLocale: 'en', isAppLocale: value => ['en', 'es', 'pt', 'fr', 'de', 'it', 'pl', 'id', 'hi', 'ja', 'ko', 'vi', 'th'].includes(value) },
   'next/navigation': { useParams: () => ({ locale: 'pt' }), useSearchParams: () => new URLSearchParams('next=%2Fpt%2Fvip%3Fplan%3Dweekly') },
   'next-intl': { useTranslations: () => t },
   'lucide-react': Object.fromEntries(['Mail', 'Lock', 'LogIn', 'UserPlus', 'ArrowLeft', 'Loader2', 'AtSign', 'KeyRound', 'Save'].map(name => [name, () => null])) };

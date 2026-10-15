@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Settings, User, Mail, Lock, LogOut, Loader2, Save, Globe, AtSign } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isAppLocale } from '@/i18n/routing';
+import { LANGUAGE_OPTIONS } from '@/i18n/languages';
 
 type Props = { params: Promise<{ locale: string }> };
 type Account = {
@@ -159,7 +160,9 @@ export default function SettingsPage({ params }: Props) {
     setSavingLanguage(true);
     setLanguageMessage(null);
 
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    const query = typeof window === 'undefined' ? '' : window.location.search;
+    const hash = typeof window === 'undefined' ? '' : window.location.hash;
+    const newPath = `${pathname.replace(`/${locale}`, `/${newLocale}`)}${query}${hash}`;
     setLanguageMessage({ type: 'success', text: t('languageSaved') });
     router.replace(newPath);
     router.refresh();
@@ -240,9 +243,9 @@ export default function SettingsPage({ params }: Props) {
                 disabled={savingLanguage}
                 className="w-full bg-[#07090D] border border-[#1D2433] hover:border-blue-500 rounded-xl px-4 py-3 text-sm text-white outline-none cursor-pointer transition"
               >
-                <option value="en">{t('english')}</option>
-                <option value="es">{t('spanish')}</option>
-                <option value="pt">{t('portuguese')}</option>
+                {LANGUAGE_OPTIONS.map(({ locale: optionLocale, label }) => (
+                  <option key={optionLocale} value={optionLocale}>{label}</option>
+                ))}
               </select>
               {languageMessage && <p className={`text-xs font-medium ${languageMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>{languageMessage.text}</p>}
             </div>

@@ -1,4 +1,5 @@
 import { SITE_URL } from '@/lib/catalog-sitemap';
+import { locales } from '@/i18n/routing';
 
 type Construction = {
   id: string;
@@ -34,7 +35,7 @@ export function siteStructuredData() {
         name: 'Guizzprints',
         alternateName: ['Guizz Prints', 'Guizz'],
         url: `${SITE_URL}/`,
-        inLanguage: ['pt-BR', 'en', 'es'],
+        inLanguage: locales.map((locale) => locale === 'pt' ? 'pt-BR' : locale),
       },
       {
         '@type': 'Organization',

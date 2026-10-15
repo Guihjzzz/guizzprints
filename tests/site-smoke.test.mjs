@@ -250,16 +250,30 @@ test('English is the default locale', async () => {
 });
 
 test('root locale follows supported browser language preferences', async () => {
-  const portuguese = await fetchManual('/', { headers: { 'accept-language': 'pt-BR,pt;q=0.9,en;q=0.8' } });
-  assert.equal(portuguese.status, 307);
-  assert.equal(portuguese.headers.get('location'), '/pt');
-
-  const spanish = await fetchManual('/', { headers: { 'accept-language': 'es-ES,es;q=0.9,en;q=0.8' } });
-  assert.equal(spanish.status, 307);
-  assert.equal(spanish.headers.get('location'), '/es');
+  const browserLanguages = [
+    ['pt-BR,pt;q=0.9,en;q=0.8', '/pt'], ['es-ES,es;q=0.9,en;q=0.8', '/es'],
+    ['fr-FR,fr;q=0.9,en;q=0.8', '/fr'], ['de-DE,de;q=0.9,en;q=0.8', '/de'],
+    ['it-IT,it;q=0.9,en;q=0.8', '/it'], ['pl-PL,pl;q=0.9,en;q=0.8', '/pl'],
+    ['id-ID,id;q=0.9,en;q=0.8', '/id'], ['hi-IN,hi;q=0.9,en;q=0.8', '/hi'],
+    ['ja-JP,ja;q=0.9,en;q=0.8', '/ja'], ['ko-KR,ko;q=0.9,en;q=0.8', '/ko'],
+    ['vi-VN,vi;q=0.9,en;q=0.8', '/vi'], ['th-TH,th;q=0.9,en;q=0.8', '/th'],
+  ];
+  for (const [acceptLanguage, expectedPath] of browserLanguages) {
+    const response = await fetchManual('/', { headers: { 'accept-language': acceptLanguage } });
+    assert.equal(response.status, 307, acceptLanguage);
+    assert.equal(response.headers.get('location'), expectedPath, acceptLanguage);
+  }
 
   const explicitEnglish = await fetchManual('/en', { headers: { 'accept-language': 'pt-BR,pt;q=0.9' } });
   assert.equal(explicitEnglish.status, 200);
+});
+
+test('a saved language choice takes priority over browser language detection', async () => {
+  const response = await fetchManual('/', {
+    headers: { cookie: 'NEXT_LOCALE=fr', 'accept-language': 'pt-BR,pt;q=0.9' },
+  });
+  assert.equal(response.status, 307);
+  assert.equal(response.headers.get('location'), '/fr');
 });
 
 test('invalid and missing locale prefixes are normalized', async () => {
@@ -267,7 +281,7 @@ test('invalid and missing locale prefixes are normalized', async () => {
   assert.equal(invalid.status, 307);
   assert.equal(invalid.headers.get('location'), '/en');
 
-  const invalidWithPath = await fetchManual('/fr-FR/search?q=test');
+  const invalidWithPath = await fetchManual('/zh-CN/search?q=test');
   assert.equal(invalidWithPath.status, 307);
   assert.equal(invalidWithPath.headers.get('location'), '/en/search?q=test');
 
@@ -287,6 +301,22 @@ test('English, Spanish, and Portuguese pages render their translations', async (
     const response = await fetchManual(pathname);
     assert.equal(response.status, 200);
     assert.match(await response.text(), new RegExp(expectedText, 'u'));
+  }
+});
+
+test('additional locales render translated navigation and search and expose the language selector', async () => {
+  for (const [locale, expectedText, translatedTitle, loginText] of [['fr', 'Rechercher', 'Trouvez la construction idéale', 'Continuer avec Google'], ['de', 'Suchen', 'Finde das passende Bauwerk', 'Mit Google fortfahren'], ['it', 'Cerca', 'Trova la costruzione giusta', 'Continua con Google'], ['pl', 'Szukaj', 'Znajdź odpowiednią budowlę', 'Kontynuuj przez Google'], ['id', 'Cari', 'Temukan bangunan yang tepat', 'Lanjutkan dengan Google'], ['hi', 'खोजें', 'सही निर्माण खोजें', 'Google से जारी रखें'], ['ja', '検索', 'ぴったりの建築を見つけよう', 'Googleで続行'], ['ko', '검색', '원하는 건축물을 찾아보세요', 'Google로 계속하기'], ['vi', 'Tìm kiếm', 'Tìm công trình phù hợp', 'Tiếp tục với Google'], ['th', 'ค้นหา', 'ค้นหาสิ่งก่อสร้างที่ใช่', 'ดำเนินการต่อด้วย Google']]) {
+    const response = await fetchManual(`/${locale}/search`);
+    assert.equal(response.status, 200, locale);
+    const html = await response.text();
+    assert.ok(html.includes(expectedText), `search translation missing for ${locale}`);
+    assert.ok(html.includes(translatedTitle), `search page copy missing for ${locale}`);
+    assert.ok(html.includes(`value="${locale}"`), `language selector missing for ${locale}`);
+    assert.match(html, new RegExp(`<html lang="${locale}"`, 'u'));
+
+    const login = await fetchManual(`/${locale}/login`);
+    assert.equal(login.status, 200, `${locale} login route`);
+    assert.ok((await login.text()).includes(loginText), `login translation missing for ${locale}`);
   }
 });
 

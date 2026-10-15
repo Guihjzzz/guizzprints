@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { getClientAuthUser, listenToClientAuth } from '@/lib/client-auth';
 import { User, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export function TopHeader() {
-  const pathname = usePathname();
-  const locale = pathname.split('/')[1] || 'en';
+  const locale = useLocale();
   const t = useTranslations('Header');
   const [user, setUser] = useState<{ email: string | null; displayName: string | null } | null>(null);
 
@@ -49,6 +49,7 @@ export function TopHeader() {
 
       {/* Direita: Auth / Perfil */}
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+        <LanguageSwitcher />
         {user ? (
           <Link href={`/${locale}/settings`} className="group flex items-center gap-2 rounded-xl border border-transparent p-2 transition-all hover:border-[#1D2433] hover:bg-[#111318] cursor-pointer">
             <span className="hidden max-w-28 truncate text-sm font-bold text-zinc-300 group-hover:text-white sm:block">

@@ -1,4 +1,7 @@
-export type SiteLocale = 'en' | 'es' | 'pt';
+import { locales } from '@/i18n/routing';
+
+export type SiteLocale = typeof locales[number];
+type LocalizedSiteCopy = 'en' | 'es' | 'pt';
 export type SitePage = 'about' | 'privacy' | 'terms' | 'contact';
 
 export type SiteLink = {
@@ -20,10 +23,10 @@ export type SitePageContent = {
   sections: SiteSection[];
 };
 
-export const siteLocales: SiteLocale[] = ['en', 'es', 'pt'];
+export const siteLocales: SiteLocale[] = [...locales];
 
-export function toSiteLocale(locale: string): SiteLocale {
-  return siteLocales.includes(locale as SiteLocale) ? (locale as SiteLocale) : 'en';
+export function toSiteLocale(locale: string): LocalizedSiteCopy {
+  return locale === 'pt' || locale === 'es' ? locale : 'en';
 }
 
 export const footerCopy: Record<SiteLocale, {
@@ -58,9 +61,19 @@ export const footerCopy: Record<SiteLocale, {
     disclaimer: 'NÃO É UM SERVIÇO OFICIAL DO MINECRAFT. NÃO É APROVADO NEM ASSOCIADO À MOJANG OU À MICROSOFT.',
     rights: 'Catálogo independente feito para a comunidade de Minecraft.',
   },
+  fr: { about: 'À propos', privacy: 'Confidentialité', terms: 'Conditions', contact: 'Contact', disclaimer: 'CE SERVICE MINECRAFT N’EST PAS OFFICIEL. IL N’EST NI APPROUVÉ NI ASSOCIÉ À MOJANG OU MICROSOFT.', rights: 'Catalogue indépendant créé pour la communauté Minecraft.' },
+  de: { about: 'Über uns', privacy: 'Datenschutz', terms: 'Nutzungsbedingungen', contact: 'Kontakt', disclaimer: 'DIES IST KEIN OFFIZIELLER MINECRAFT-DIENST. KEINE GENEHMIGUNG ODER VERBINDUNG MIT MOJANG ODER MICROSOFT.', rights: 'Unabhängiger Katalog für die Minecraft-Community.' },
+  it: { about: 'Informazioni', privacy: 'Privacy', terms: 'Termini', contact: 'Contatti', disclaimer: 'QUESTO NON È UN SERVIZIO UFFICIALE DI MINECRAFT. NON È APPROVATO NÉ ASSOCIATO A MOJANG O MICROSOFT.', rights: 'Catalogo indipendente creato per la community di Minecraft.' },
+  pl: { about: 'O nas', privacy: 'Prywatność', terms: 'Warunki', contact: 'Kontakt', disclaimer: 'TO NIE JEST OFICJALNA USŁUGA MINECRAFT. NIE JEST ZATWIERDZONA ANI POWIĄZANA Z MOJANG LUB MICROSOFT.', rights: 'Niezależny katalog stworzony dla społeczności Minecraft.' },
+  id: { about: 'Tentang', privacy: 'Privasi', terms: 'Ketentuan', contact: 'Kontak', disclaimer: 'INI BUKAN LAYANAN RESMI MINECRAFT. TIDAK DISETUJUI ATAU TERKAIT DENGAN MOJANG MAUPUN MICROSOFT.', rights: 'Katalog independen untuk komunitas Minecraft.' },
+  hi: { about: 'हमारे बारे में', privacy: 'गोपनीयता', terms: 'नियम', contact: 'संपर्क', disclaimer: 'यह MINECRAFT की आधिकारिक सेवा नहीं है। इसे MOJANG या MICROSOFT ने अनुमोदित नहीं किया है और न ही यह उनसे संबद्ध है।', rights: 'Minecraft समुदाय के लिए स्वतंत्र कैटलॉग।' },
+  ja: { about: 'このサイトについて', privacy: 'プライバシー', terms: '利用規約', contact: 'お問い合わせ', disclaimer: 'MINECRAFTの公式サービスではありません。MOJANGまたはMICROSOFTによる承認・提携はありません。', rights: 'Minecraftコミュニティ向けの独立したカタログです。' },
+  ko: { about: '소개', privacy: '개인정보', terms: '이용 약관', contact: '문의', disclaimer: 'MINECRAFT 공식 서비스가 아닙니다. MOJANG 또는 MICROSOFT의 승인이나 제휴를 받지 않았습니다.', rights: 'Minecraft 커뮤니티를 위한 독립 카탈로그입니다.' },
+  vi: { about: 'Giới thiệu', privacy: 'Quyền riêng tư', terms: 'Điều khoản', contact: 'Liên hệ', disclaimer: 'ĐÂY KHÔNG PHẢI DỊCH VỤ MINECRAFT CHÍNH THỨC. KHÔNG ĐƯỢC MOJANG HOẶC MICROSOFT PHÊ DUYỆT HAY LIÊN KẾT.', rights: 'Danh mục độc lập dành cho cộng đồng Minecraft.' },
+  th: { about: 'เกี่ยวกับ', privacy: 'ความเป็นส่วนตัว', terms: 'ข้อกำหนด', contact: 'ติดต่อ', disclaimer: 'นี่ไม่ใช่บริการอย่างเป็นทางการของ MINECRAFT และไม่ได้รับการรับรองหรือเกี่ยวข้องกับ MOJANG หรือ MICROSOFT', rights: 'แคตตาล็อกอิสระสำหรับชุมชน Minecraft' },
 };
 
-const pages: Record<SiteLocale, Record<SitePage, SitePageContent>> = {
+const pages: Record<LocalizedSiteCopy, Record<SitePage, SitePageContent>> = {
   en: {
     about: {
       title: 'About Guizzprints',

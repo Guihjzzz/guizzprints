@@ -17,6 +17,7 @@
     "reports": "Reportes de jogadores"
   },
   "Header": {
+    "language": "Idioma do site",
     "signIn": "Entrar",
     "user": "Usuário"
   },

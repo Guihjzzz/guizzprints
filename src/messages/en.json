@@ -17,6 +17,7 @@
     "reports": "Player reports"
   },
   "Header": {
+    "language": "Site language",
     "signIn": "Sign in",
     "user": "User"
   },
