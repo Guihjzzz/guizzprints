@@ -1,4 +1,4 @@
-import { GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, updateProfile, type Auth } from 'firebase/auth';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithCredential, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, updateProfile, type Auth } from 'firebase/auth';
 import { getPreparedFirebaseAuth } from './firebase-client';
 import { getSafeReturnPath } from './auth-return';
 import { normalizeAuthEmail, normalizeAuthUsername, type AuthMessageKey, type AuthMode, type AuthOutcome } from './auth-actions';
@@ -97,6 +97,20 @@ export async function resendFirebaseConfirmation(input: Omit<FirebaseAuthInput, 
     return { key: 'confirmationSent', success: true, confirmation: true, emailAttempt: true };
   } catch (error) {
     return { key: errorKey(error), success: false, emailAttempt: true };
+  }
+}
+
+export async function signInWithFirebaseGoogleIdToken(
+  idToken: string,
+  input: Pick<FirebaseAuthInput, 'locale' | 'next'>,
+): Promise<AuthOutcome> {
+  if (!idToken) return { key: 'authUnavailable', success: false };
+  const auth = await configuredAuth();
+  try {
+    await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+    return { redirect: continueTo(input.locale, input.next) };
+  } catch (error) {
+    return { key: errorKey(error), success: false };
   }
 }
 

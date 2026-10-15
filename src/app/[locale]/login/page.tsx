@@ -11,11 +11,31 @@ import { googleAuthUrl, resendConfirmation, submitEmailAuth, type AuthMode, type
 import { isFirebaseConfigured } from '@/lib/firebase-client';
 import { getFirebaseAuth } from '@/lib/firebase-client';
 import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
-import { resendFirebaseConfirmation, signInWithFirebaseGoogle, submitFirebaseEmailAuth } from '@/lib/firebase-auth-actions';
+import { resendFirebaseConfirmation, signInWithFirebaseGoogle, signInWithFirebaseGoogleIdToken, submitFirebaseEmailAuth } from '@/lib/firebase-auth-actions';
+import { getNativeGoogleSignIn, isNativeApp } from '@/lib/native-app-bridge';
 import AuthCaptcha from '@/components/AuthCaptcha';
 
 const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 const fieldClass = 'w-full bg-[#07090D] border border-[#1D2433] rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition text-white disabled:opacity-50';
+
+async function createGoogleNonce() {
+  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+  const nonce = btoa(String.fromCharCode(...randomBytes));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(nonce));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function googleTokenMatchesNonce(idToken: string, expectedNonce: string) {
+  try {
+    const payloadSegment = idToken.split('.')[1];
+    if (!payloadSegment) return false;
+    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))) as { nonce?: unknown };
+    return payload.nonce === expectedNonce;
+  } catch {
+    return false;
+  }
+}
 
 export default function LoginPage() {
   return <React.Suspense fallback={<div className="min-h-screen bg-[#07090D]"/>}><LoginForm/></React.Suspense>;
@@ -166,6 +186,25 @@ function LoginForm() {
     busy.current = true; setLoading(true); setMessage(null);
     let navigating = false;
     try {
+      const nativeApp = isNativeApp();
+      const nativeGoogleSignIn = getNativeGoogleSignIn();
+      if (nativeApp) {
+        if (!firebaseEnabled || !nativeGoogleSignIn) {
+          setMessage({ success: false, text: t('googleUnavailable') });
+          return;
+        }
+        const hashedNonce = await createGoogleNonce();
+        const { idToken } = await nativeGoogleSignIn(hashedNonce);
+        if (!googleTokenMatchesNonce(idToken, hashedNonce)) throw new Error('google_nonce_mismatch');
+        const outcome = await signInWithFirebaseGoogleIdToken(idToken, { locale, next: next() });
+        if ('redirect' in outcome) {
+          // The Firebase auth-state listener completes the in-app navigation.
+          navigating = true;
+          return;
+        }
+        applyOutcome(outcome);
+        return;
+      }
       if (firebaseEnabled) {
         const outcome = await signInWithFirebaseGoogle({ locale, next: next() });
         if ('redirectStarted' in outcome) {
